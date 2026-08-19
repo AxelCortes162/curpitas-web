@@ -20,7 +20,13 @@ export const IniciarSesion = () => {
     setLoading(false);
 
     if (error) {
-      setError('Correo o contraseña incorrectos.');
+      if (error.message.toLowerCase().includes('email not confirmed')) {
+        setError('Tu correo todavía no ha sido confirmado. Revisa tu bandeja de entrada (o spam).');
+      } else if (error.message.toLowerCase().includes('invalid login credentials')) {
+        setError('Correo o contraseña incorrectos.');
+      } else {
+        setError(error.message);
+      }
       return;
     }
 

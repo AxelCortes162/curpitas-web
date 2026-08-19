@@ -13,6 +13,7 @@ export const Registro = () => {
   const [aceptaAviso, setAceptaAviso] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [registroExitoso, setRegistroExitoso] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -29,7 +30,7 @@ export const Registro = () => {
     }
 
     setLoading(true);
-    const { error } = await signUp({ email, password, fullName, phone });
+    const { data, error } = await signUp({ email, password, fullName, phone });
     setLoading(false);
 
     if (error) {
@@ -37,9 +38,36 @@ export const Registro = () => {
       return;
     }
 
-    // Registro exitoso: lo mandamos a su panel de cuenta
-    navigate('/mi-cuenta');
+    if (data?.session) {
+      // Poco común con confirmación de correo activada, pero por si acaso:
+      // si ya hay sesión, lo mandamos directo a su cuenta.
+      navigate('/mi-cuenta');
+    } else {
+      // Caso normal: se creó el usuario, pero necesita confirmar su correo
+      // antes de poder iniciar sesión.
+      setRegistroExitoso(true);
+    }
   };
+
+  if (registroExitoso) {
+    return (
+      <div className="min-h-screen bg-[#E8F3F1] flex items-center justify-center p-4 font-sans antialiased">
+        <div className="w-full max-w-sm bg-white rounded-[28px] shadow-xl p-6 border border-emerald-100/60 text-center">
+          <h1 className="text-xl font-black text-[#1C5253] mb-2">Revisa tu correo</h1>
+          <p className="text-sm text-gray-500 leading-relaxed">
+            Te enviamos un link de confirmación a <strong>{email}</strong>. Ábrelo desde tu celular o
+            computadora para activar tu cuenta, y después regresa aquí para iniciar sesión.
+          </p>
+          <Link
+            to="/iniciar-sesion"
+            className="inline-block mt-6 text-sm font-bold text-[#1C5253] hover:underline"
+          >
+            Ir a iniciar sesión
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#E8F3F1] flex items-center justify-center p-4 font-sans antialiased">
