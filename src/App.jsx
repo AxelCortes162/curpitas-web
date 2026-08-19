@@ -6,12 +6,18 @@ import PerfilMascota from './pages/PerfilMascota';
 import Registro from './pages/Registro';
 import IniciarSesion from './pages/IniciarSesion';
 import MiCuenta from './pages/MiCuenta';
+import Inicio from './pages/Inicio';
+import RutaAdmin from './context/RutaAdmin';
+import Admin from './pages/Admin';
+import AvisoPrivacidad from './pages/AvisoPrivacidad';
 
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
+          <Route path="/" element={<Inicio />} />
+          <Route path="/aviso-de-privacidad" element={<AvisoPrivacidad />} />
           {/* La búsqueda pública se quitó — el acceso normal es vía QR/NFC */}
           <Route path="/mascota/:curpita" element={<PerfilMascota />} />
           <Route path="/registro" element={<Registro />} />
@@ -21,6 +27,16 @@ function App() {
             element={
               <RutaProtegida>
                 <MiCuenta />
+              </RutaProtegida>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <RutaProtegida>
+                <RutaAdmin>
+                  <Admin />
+                </RutaAdmin>
               </RutaProtegida>
             }
           />

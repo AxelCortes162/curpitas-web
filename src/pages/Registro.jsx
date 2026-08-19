@@ -10,6 +10,7 @@ export const Registro = () => {
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [aceptaAviso, setAceptaAviso] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -19,6 +20,11 @@ export const Registro = () => {
 
     if (!fullName || !phone || !email || !password) {
       setError('Todos los campos son obligatorios.');
+      return;
+    }
+
+    if (!aceptaAviso) {
+      setError('Debes aceptar el Aviso de Privacidad para continuar.');
       return;
     }
 
@@ -87,6 +93,22 @@ export const Registro = () => {
               placeholder="Mínimo 6 caracteres"
             />
           </div>
+
+          <label className="flex items-start gap-2 text-[11px] text-gray-500 leading-snug">
+            <input
+              type="checkbox"
+              checked={aceptaAviso}
+              onChange={(e) => setAceptaAviso(e.target.checked)}
+              className="mt-0.5 w-3.5 h-3.5 accent-[#1C5253] shrink-0"
+            />
+            <span>
+              He leído y acepto el{' '}
+              <Link to="/aviso-de-privacidad" target="_blank" className="text-[#1C5253] font-bold hover:underline">
+                Aviso de Privacidad
+              </Link>
+              , incluyendo que mi teléfono se mostrará públicamente en el perfil de mi mascota.
+            </span>
+          </label>
 
           {error && <p className="text-red-500 text-xs font-semibold">{error}</p>}
 
