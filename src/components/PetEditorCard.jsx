@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { ShieldAlert, CheckCircle2, Save } from 'lucide-react';
+import { ShieldAlert, CheckCircle2, Save, Camera, Loader2 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
+import { useAuth } from '../context/AuthContext';
 
 export const PetEditorCard = ({ pet, onUpdated }) => {
+  const { user } = useAuth();
   const [form, setForm] = useState({
     name: pet.name || '',
     breed: pet.breed || '',
@@ -18,9 +20,43 @@ export const PetEditorCard = ({ pet, onUpdated }) => {
   });
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState('');
+  const [subiendoFoto, setSubiendoFoto] = useState(false);
+  const [fotoError, setFotoError] = useState('');
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleFotoSeleccionada = async (e) => {
+    const archivo = e.target.files?.[0];
+    if (!archivo) return;
+
+    setFotoError('');
+
+    // Límite de tamaño razonable: 5 MB
+    if (archivo.size > 5 * 1024 * 1024) {
+      setFotoError('La foto pesa demasiado (máximo 5 MB).');
+      return;
+    }
+
+    setSubiendoFoto(true);
+
+    const extension = archivo.name.split('.').pop();
+    const ruta = `${user.id}/${pet.id}-${Date.now()}.${extension}`;
+
+    const { error: errorSubida } = await supabase.storage
+      .from('pet-photos')
+      .upload(ruta, archivo, { upsert: true });
+
+    if (errorSubida) {
+      setFotoError('No se pudo subir la foto: ' + errorSubida.message);
+      setSubiendoFoto(false);
+      return;
+    }
+
+    const { data } = supabase.storage.from('pet-photos').getPublicUrl(ruta);
+    handleChange('photo_url', data.publicUrl);
+    setSubiendoFoto(false);
   };
 
   const handleSave = async () => {
@@ -93,13 +129,38 @@ export const PetEditorCard = ({ pet, onUpdated }) => {
             className="w-full mt-0.5 py-2 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-xs text-[#1C5253]"
           />
         </div>
-        <div>
-          <label className="text-[10px] font-bold text-gray-400 uppercase">Foto (URL)</label>
-          <input
-            value={form.photo_url}
-            onChange={(e) => handleChange('photo_url', e.target.value)}
-            className="w-full mt-0.5 py-2 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-xs text-[#1C5253]"
-          />
+        <div className="col-span-2">
+          <label className="text-[10px] font-bold text-gray-400 uppercase">Foto</label>
+          <div className="flex items-center gap-3 mt-0.5">
+            <div className="w-14 h-14 rounded-xl overflow-hidden bg-[#F4F9F8] border border-emerald-100 shrink-0 flex items-center justify-center">
+              {form.photo_url ? (
+                <img src={form.photo_url} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <Camera className="w-5 h-5 text-gray-300" />
+              )}
+            </div>
+            <label className="flex-1">
+              <span className="inline-flex items-center gap-1.5 py-2 px-3 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-xs font-bold text-[#1C5253] cursor-pointer hover:bg-emerald-50">
+                {subiendoFoto ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> Subiendo...
+                  </>
+                ) : (
+                  <>
+                    <Camera className="w-3.5 h-3.5" /> {form.photo_url ? 'Cambiar foto' : 'Subir foto'}
+                  </>
+                )}
+              </span>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFotoSeleccionada}
+                disabled={subiendoFoto}
+                className="hidden"
+              />
+            </label>
+          </div>
+          {fotoError && <p className="text-[10px] text-red-500 mt-1">{fotoError}</p>}
         </div>
         <div className="col-span-2">
           <label className="text-[10px] font-bold text-gray-400 uppercase">Info médica</label>
