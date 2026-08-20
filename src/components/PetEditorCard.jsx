@@ -212,13 +212,17 @@ export const PetEditorCard = ({ pet, onUpdated, onDeleted }) => {
               className="w-full mt-0.5 py-2 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-xs text-[#1C5253]"
             />
           </div>
-          <div>
-            <label className="text-[10px] font-bold text-gray-400 uppercase">Ciudad</label>
+          <div className="col-span-2">
+            <label className="text-[10px] font-bold text-gray-400 uppercase">Colonia / Zona</label>
             <input
               value={form.city}
               onChange={(e) => handleChange('city', e.target.value)}
+              placeholder="Ej. Lindavista, CDMX"
               className="w-full mt-0.5 py-2 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-xs text-[#1C5253]"
             />
+            <p className="text-[10px] text-amber-600 mt-1">
+              ⚠️ Por seguridad, no pongas tu dirección exacta (calle y número) — este dato es público.
+            </p>
           </div>
           <div className="col-span-2">
             <label className="text-[10px] font-bold text-gray-400 uppercase">Foto</label>
