@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { MailCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { supabase } from '../supabaseClient';
 
 export const IniciarSesion = () => {
   const { signIn } = useAuth();
@@ -10,10 +12,15 @@ export const IniciarSesion = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [correoSinConfirmar, setCorreoSinConfirmar] = useState(false);
+  const [reenviando, setReenviando] = useState(false);
+  const [reenviado, setReenviado] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setCorreoSinConfirmar(false);
+    setReenviado(false);
     setLoading(true);
 
     const { error } = await signIn({ email, password });
@@ -21,7 +28,8 @@ export const IniciarSesion = () => {
 
     if (error) {
       if (error.message.toLowerCase().includes('email not confirmed')) {
-        setError('Tu correo todavía no ha sido confirmado. Revisa tu bandeja de entrada (o spam).');
+        setError('Tu correo todavía no ha sido confirmado.');
+        setCorreoSinConfirmar(true);
       } else if (error.message.toLowerCase().includes('invalid login credentials')) {
         setError('Correo o contraseña incorrectos.');
       } else {
@@ -31,6 +39,13 @@ export const IniciarSesion = () => {
     }
 
     navigate('/mi-cuenta');
+  };
+
+  const handleReenviar = async () => {
+    setReenviando(true);
+    const { error } = await supabase.auth.resend({ type: 'signup', email });
+    setReenviando(false);
+    if (!error) setReenviado(true);
   };
 
   return (
@@ -65,6 +80,28 @@ export const IniciarSesion = () => {
           </div>
 
           {error && <p className="text-red-500 text-xs font-semibold">{error}</p>}
+
+          {correoSinConfirmar && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-center space-y-2">
+              <p className="text-[11px] text-amber-800">
+                Revisa tu bandeja de entrada (o spam) para confirmarlo. ¿No te llegó?
+              </p>
+              {reenviado ? (
+                <p className="text-[11px] font-bold text-emerald-700 flex items-center justify-center gap-1">
+                  <MailCheck className="w-3.5 h-3.5" /> Correo reenviado, revisa tu bandeja.
+                </p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleReenviar}
+                  disabled={reenviando || !email}
+                  className="text-[11px] font-bold text-[#1C5253] hover:underline disabled:opacity-60"
+                >
+                  {reenviando ? 'Reenviando...' : 'Reenviar correo de confirmación'}
+                </button>
+              )}
+            </div>
+          )}
 
           <button
             type="submit"

@@ -42,12 +42,12 @@ const CredencialHero = () => (
       <div className="p-5">
         <div className="flex items-center gap-3">
           <img
-            src="https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&q=80&w=200"
-            alt="Maya"
+            src="/kenai.png"
+            alt="Kenai"
             className="w-14 h-14 rounded-full object-cover border-2 border-[#E8F3F1]"
           />
           <div>
-            <p className="font-black text-[#1C5253] leading-none">MAYA</p>
+            <p className="font-black text-[#1C5253] leading-none">KENAI</p>
             <p className="text-[9px] text-gray-400 font-mono mt-1 tracking-wide">
               CURPITA80233025
             </p>
