@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { MailCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import BrandHeader from '../components/BrandHeader';
 
 // Calcula qué tan fuerte es una contraseña, además del mínimo obligatorio
 const calcularFuerza = (pwd) => {
@@ -94,26 +95,29 @@ export const Registro = () => {
   if (registroExitoso) {
     return (
       <div className="min-h-screen bg-[#E8F3F1] flex items-center justify-center p-4 font-sans antialiased">
-        <div className="w-full max-w-sm bg-white rounded-[28px] shadow-xl p-6 border border-emerald-100/60 text-center">
-          <div className="w-16 h-16 bg-[#88D49E]/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <MailCheck className="w-8 h-8 text-[#1C5253]" />
-          </div>
-          <h1 className="text-xl font-black text-[#1C5253] mb-2">¡Ya casi! Revisa tu correo</h1>
-          <p className="text-sm text-gray-500 leading-relaxed">
-            Te enviamos un link de confirmación a <strong className="text-[#1C5253]">{email}</strong>.
-          </p>
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mt-4 text-left">
-            <p className="text-xs text-amber-800">
-              <strong>Importante:</strong> tienes que abrir ese correo y confirmar tu cuenta antes de
-              poder iniciar sesión. Si intentas entrar antes, te va a marcar error.
+        <div className="w-full max-w-sm">
+          <BrandHeader />
+          <div className="bg-white rounded-[28px] shadow-xl p-6 border border-emerald-100/60 text-center">
+            <div className="w-16 h-16 bg-[#88D49E]/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <MailCheck className="w-8 h-8 text-[#1C5253]" />
+            </div>
+            <h1 className="text-xl font-black text-[#1C5253] mb-2">¡Ya casi! Revisa tu correo</h1>
+            <p className="text-sm text-gray-500 leading-relaxed">
+              Te enviamos un link de confirmación a <strong className="text-[#1C5253]">{email}</strong>.
             </p>
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mt-4 text-left">
+              <p className="text-xs text-amber-800">
+                <strong>Importante:</strong> tienes que abrir ese correo y confirmar tu cuenta antes de
+                poder iniciar sesión. Si intentas entrar antes, te va a marcar error.
+              </p>
+            </div>
+            <Link
+              to="/iniciar-sesion"
+              className="inline-block mt-6 text-sm font-bold text-[#1C5253] hover:underline"
+            >
+              Ya confirmé, ir a iniciar sesión
+            </Link>
           </div>
-          <Link
-            to="/iniciar-sesion"
-            className="inline-block mt-6 text-sm font-bold text-[#1C5253] hover:underline"
-          >
-            Ya confirmé, ir a iniciar sesión
-          </Link>
         </div>
       </div>
     );
@@ -121,7 +125,9 @@ export const Registro = () => {
 
   return (
     <div className="min-h-screen bg-[#E8F3F1] flex items-center justify-center p-4 font-sans antialiased">
-      <div className="w-full max-w-sm bg-white rounded-[28px] shadow-xl p-6 border border-emerald-100/60">
+      <div className="w-full max-w-sm">
+        <BrandHeader />
+        <div className="bg-white rounded-[28px] shadow-xl p-6 border border-emerald-100/60">
         <h1 className="text-xl font-black text-[#1C5253] text-center mb-1">Crear cuenta</h1>
         <p className="text-xs text-gray-400 text-center mb-6">
           Para registrar y administrar tus mascotas CURPitas
@@ -227,6 +233,7 @@ export const Registro = () => {
             Inicia sesión
           </Link>
         </p>
+        </div>
       </div>
     </div>
   );

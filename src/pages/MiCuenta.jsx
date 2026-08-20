@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { LogOut, Link2 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
@@ -65,10 +66,13 @@ export const MiCuenta = () => {
       <div className="w-full max-w-sm mx-auto">
         {/* Encabezado */}
         <div className="flex items-center justify-between mb-5">
-          <div>
-            <h1 className="text-xl font-black text-[#1C5253]">Mi cuenta</h1>
-            <p className="text-xs text-gray-400">{user.email}</p>
-          </div>
+          <Link to="/" className="flex items-center gap-2">
+            <img src="/logo.png" alt="CURPitas" className="w-9 h-9 object-contain" />
+            <div>
+              <h1 className="text-xl font-black text-[#1C5253] leading-none">Mi cuenta</h1>
+              <p className="text-xs text-gray-400 mt-0.5">{user.email}</p>
+            </div>
+          </Link>
           <button
             onClick={signOut}
             className="flex items-center gap-1 text-xs font-bold text-red-500 hover:underline"

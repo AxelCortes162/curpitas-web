@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import {
   PawPrint,
   ShieldCheck,
@@ -10,6 +11,7 @@ import {
   EyeOff,
   CheckCircle2,
   ArrowRight,
+  User,
 } from 'lucide-react';
 
 // ⚠️ EDITA ESTO cuando tengas tus cuentas y número reales.
@@ -47,18 +49,27 @@ const WhatsAppIcon = (props) => (
   </svg>
 );
 
-const NavBar = () => (
-  <nav className="max-w-6xl mx-auto px-6 py-6 flex items-center justify-between">
-    <div className="flex items-center gap-2">
-      <img src="/logo.png" alt="CURPitas" className="w-9 h-9 object-contain" />
-      <span className="font-black text-[#1C5253] tracking-tight">CURPitas</span>
-    </div>
-    <Link
-      to="/iniciar-sesion"
-      className="text-sm font-bold text-[#1C5253] hover:text-[#88D49E] transition-colors"
-    >
-      Iniciar sesión
+const NavBar = ({ user }) => (
+  <nav className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
+    <Link to="/" className="flex items-center gap-2.5">
+      <img src="/logo.png" alt="CURPitas" className="w-12 h-12 object-contain" />
+      <span className="font-black text-[#1C5253] tracking-tight text-lg">CURPitas</span>
     </Link>
+    {user ? (
+      <Link
+        to="/mi-cuenta"
+        className="flex items-center gap-1.5 text-sm font-bold text-[#1C5253] hover:text-[#88D49E] transition-colors"
+      >
+        <User className="w-4 h-4" /> Mi cuenta
+      </Link>
+    ) : (
+      <Link
+        to="/iniciar-sesion"
+        className="text-sm font-bold text-[#1C5253] hover:text-[#88D49E] transition-colors"
+      >
+        Iniciar sesión
+      </Link>
+    )}
   </nav>
 );
 
@@ -138,9 +149,11 @@ const TogglePreview = ({ label, on }) => (
 );
 
 export const Inicio = () => {
+  const { user } = useAuth();
+
   return (
     <div className="min-h-screen bg-[#E8F3F1] font-sans antialiased overflow-x-hidden">
-      <NavBar />
+      <NavBar user={user} />
 
       {/* HERO */}
       <section className="max-w-6xl mx-auto px-6 pt-8 pb-20 grid md:grid-cols-2 gap-12 items-center">
@@ -160,18 +173,20 @@ export const Inicio = () => {
           </p>
           <div className="flex flex-wrap gap-3 mt-8">
             <Link
-              to="/registro"
+              to={user ? '/mi-cuenta' : '/registro'}
               className="inline-flex items-center gap-2 px-6 py-3.5 bg-[#1C5253] hover:bg-[#164343] text-white font-black rounded-2xl text-sm shadow-lg shadow-[#1C5253]/20 transition-colors"
             >
-              Registrar mi mascota
+              {user ? 'Ir a mi cuenta' : 'Registrar mi mascota'}
               <ArrowRight className="w-4 h-4" />
             </Link>
-            <Link
-              to="/iniciar-sesion"
-              className="inline-flex items-center px-6 py-3.5 bg-white border-2 border-[#1C5253] text-[#1C5253] font-bold rounded-2xl text-sm hover:bg-emerald-50/50 transition-colors"
-            >
-              Ya tengo cuenta
-            </Link>
+            {!user && (
+              <Link
+                to="/iniciar-sesion"
+                className="inline-flex items-center px-6 py-3.5 bg-white border-2 border-[#1C5253] text-[#1C5253] font-bold rounded-2xl text-sm hover:bg-emerald-50/50 transition-colors"
+              >
+                Ya tengo cuenta
+              </Link>
+            )}
           </div>
         </div>
 
@@ -281,10 +296,10 @@ export const Inicio = () => {
           Dale a tu mascota un camino de regreso a casa.
         </h2>
         <Link
-          to="/registro"
+          to={user ? '/mi-cuenta' : '/registro'}
           className="inline-flex items-center gap-2 mt-6 px-7 py-4 bg-[#1C5253] hover:bg-[#164343] text-white font-black rounded-2xl text-sm shadow-lg shadow-[#1C5253]/20 transition-colors"
         >
-          Crear mi cuenta
+          {user ? 'Ir a mi cuenta' : 'Crear mi cuenta'}
           <ArrowRight className="w-4 h-4" />
         </Link>
       </section>

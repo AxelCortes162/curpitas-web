@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { MailCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabaseClient';
+import BrandHeader from '../components/BrandHeader';
 
 export const IniciarSesion = () => {
   const { signIn } = useAuth();
@@ -50,7 +51,9 @@ export const IniciarSesion = () => {
 
   return (
     <div className="min-h-screen bg-[#E8F3F1] flex items-center justify-center p-4 font-sans antialiased">
-      <div className="w-full max-w-sm bg-white rounded-[28px] shadow-xl p-6 border border-emerald-100/60">
+      <div className="w-full max-w-sm">
+        <BrandHeader />
+        <div className="bg-white rounded-[28px] shadow-xl p-6 border border-emerald-100/60">
         <h1 className="text-xl font-black text-[#1C5253] text-center mb-1">Iniciar sesión</h1>
         <p className="text-xs text-gray-400 text-center mb-6">
           Entra para administrar tus mascotas
@@ -118,6 +121,7 @@ export const IniciarSesion = () => {
             Regístrate
           </Link>
         </p>
+        </div>
       </div>
     </div>
   );
