@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Phone, ShieldAlert, MapPin, AlertCircle, CheckCircle2, Cake, X } from 'lucide-react';
+import { Phone, ShieldAlert, MapPin, AlertCircle, CheckCircle2, Cake, X, Loader2 } from 'lucide-react';
 
 // Calcula la edad a partir de una fecha en formato ISO (YYYY-MM-DD, como la
 // devuelve Postgres/Supabase).
@@ -33,6 +33,8 @@ export const PetProfile = ({ pet }) => {
   const isLost = pet.is_lost ?? true;
   const [mostrarModal, setMostrarModal] = useState(false);
   const [animando, setAnimando] = useState(false);
+  const [obteniendoUbicacion, setObteniendoUbicacion] = useState(false);
+  const [errorUbicacion, setErrorUbicacion] = useState('');
 
   const tieneFotoReal = Boolean(pet.photo_url);
 
@@ -44,6 +46,46 @@ export const PetProfile = ({ pet }) => {
   const cerrarFoto = () => {
     setAnimando(false);
     setTimeout(() => setMostrarModal(false), 200);
+  };
+
+  // Arma el link de WhatsApp hacia el dueño, agregando "52" (México) si
+  // el teléfono guardado no lo trae ya.
+  const construirLinkWhatsApp = (mensaje) => {
+    let digitos = pet.phone.replace(/\D/g, '');
+    if (!digitos.startsWith('52')) digitos = '52' + digitos;
+    return `https://wa.me/${digitos}?text=${encodeURIComponent(mensaje)}`;
+  };
+
+  const handleCompartirUbicacion = () => {
+    setErrorUbicacion('');
+
+    if (!navigator.geolocation) {
+      // El navegador no soporta geolocalización: igual abrimos WhatsApp,
+      // sin coordenadas, para que puedan escribirle directo.
+      const mensaje = `¡Hola! Creo que encontré a ${pet.name} 🐾. Tu navegador no me dejó compartir mi ubicación exacta, pero contáctame por aquí.`;
+      window.open(construirLinkWhatsApp(mensaje), '_blank');
+      return;
+    }
+
+    setObteniendoUbicacion(true);
+
+    navigator.geolocation.getCurrentPosition(
+      (posicion) => {
+        const { latitude, longitude } = posicion.coords;
+        const linkMapa = `https://www.google.com/maps?q=${latitude},${longitude}`;
+        const mensaje = `¡Hola! Encontré a ${pet.name} 🐾 (folio ${pet.curpita}). Esta es mi ubicación actual: ${linkMapa}`;
+        window.open(construirLinkWhatsApp(mensaje), '_blank');
+        setObteniendoUbicacion(false);
+      },
+      () => {
+        // Permiso denegado o falló: abrimos WhatsApp igual, sin ubicación
+        setObteniendoUbicacion(false);
+        setErrorUbicacion('No pudimos obtener tu ubicación. Te conectamos con el dueño de todas formas.');
+        const mensaje = `¡Hola! Creo que encontré a ${pet.name} 🐾. No pude compartir mi ubicación exacta (permiso denegado), pero contáctame por aquí.`;
+        window.open(construirLinkWhatsApp(mensaje), '_blank');
+      },
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
   };
 
   const edad = getAge(pet.birth_date);
@@ -202,12 +244,23 @@ export const PetProfile = ({ pet }) => {
             </a>
 
             <button
-              onClick={() => alert('Ubicación compartida con el dueño.')}
-              className="w-full py-2.5 bg-white border-2 border-[#1C5253] text-[#1C5253] font-bold rounded-2xl flex items-center justify-center gap-2 text-xs hover:bg-emerald-50/50 active:scale-[0.99] transition-transform"
+              onClick={handleCompartirUbicacion}
+              disabled={obteniendoUbicacion}
+              className="w-full py-2.5 bg-white border-2 border-[#1C5253] text-[#1C5253] font-bold rounded-2xl flex items-center justify-center gap-2 text-xs hover:bg-emerald-50/50 active:scale-[0.99] transition-transform disabled:opacity-60"
             >
-              <MapPin className="w-3.5 h-3.5" />
-              Compartir mi ubicación GPS
+              {obteniendoUbicacion ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" /> Obteniendo ubicación...
+                </>
+              ) : (
+                <>
+                  <MapPin className="w-3.5 h-3.5" /> Enviar mi ubicación por WhatsApp
+                </>
+              )}
             </button>
+            {errorUbicacion && (
+              <p className="text-[10px] text-amber-600 text-center">{errorUbicacion}</p>
+            )}
           </div>
         </div>
 

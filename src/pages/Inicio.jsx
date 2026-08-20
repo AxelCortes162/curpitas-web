@@ -12,6 +12,41 @@ import {
   ArrowRight,
 } from 'lucide-react';
 
+// ⚠️ EDITA ESTO cuando tengas tus cuentas y número reales.
+// El número de WhatsApp va sin espacios ni signos, con código de país (52 = México).
+const REDES = {
+  instagram: 'https://instagram.com/curpitas', // PENDIENTE: confirmar disponibilidad
+  tiktok: 'https://tiktok.com/@curpitas', // PENDIENTE: confirmar disponibilidad
+  facebook: 'https://facebook.com/curpitas', // PENDIENTE: confirmar disponibilidad
+  whatsapp: 'https://wa.me/5215500000000', // PENDIENTE: poner tu número real
+};
+
+const InstagramIcon = (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+    <rect x="2" y="2" width="20" height="20" rx="5" />
+    <circle cx="12" cy="12" r="4" />
+    <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+  </svg>
+);
+
+const TikTokIcon = (props) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+    <path d="M16.5 2h-3.2v13.2a2.9 2.9 0 1 1-2.1-2.8v-3.3a6.2 6.2 0 1 0 5.3 6.1V8.9a7.6 7.6 0 0 0 4.5 1.5V7.2a4.4 4.4 0 0 1-4.5-4.4V2z" />
+  </svg>
+);
+
+const FacebookIcon = (props) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+    <path d="M13.5 21v-8h2.7l.4-3.1h-3.1V8c0-.9.25-1.5 1.55-1.5H16.7V3.7A21 21 0 0 0 14.4 3.6c-2.3 0-3.9 1.4-3.9 4v2.3H8v3.1h2.5v8h3z" />
+  </svg>
+);
+
+const WhatsAppIcon = (props) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+    <path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5.1-1.3A10 10 0 1 0 12 2zm0 18.2a8.1 8.1 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.4-.7-1.7-.8-.2-.1-.4-.1-.6.1-.2.2-.6.8-.8 1-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-2-1.2 7.4 7.4 0 0 1-1.4-1.7c-.1-.2 0-.4.1-.5l.4-.5a1 1 0 0 0 .1-.5c0-.1-.6-1.4-.8-1.9-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2c0 1.3.9 2.6 1.1 2.8.1.2 1.9 2.9 4.6 4a15 15 0 0 0 1.5.5c.6.2 1.2.2 1.6.1.5-.1 1.4-.6 1.6-1.1.2-.5.2-1 .1-1.1-.1-.1-.2-.2-.4-.3z" />
+  </svg>
+);
+
 const NavBar = () => (
   <nav className="max-w-6xl mx-auto px-6 py-6 flex items-center justify-between">
     <div className="flex items-center gap-2">
@@ -266,9 +301,49 @@ export const Inicio = () => {
             <Link to="/registro" className="hover:text-[#1C5253]">Crear cuenta</Link>
             <Link to="/aviso-de-privacidad" className="hover:text-[#1C5253]">Aviso de Privacidad</Link>
           </div>
+          <div className="flex items-center gap-3">
+            <a
+              href={REDES.instagram}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram"
+              className="w-8 h-8 rounded-full bg-[#F4F9F8] flex items-center justify-center text-[#1C5253] hover:bg-[#88D49E]/30 transition-colors"
+            >
+              <InstagramIcon className="w-4 h-4" />
+            </a>
+            <a
+              href={REDES.tiktok}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="TikTok"
+              className="w-8 h-8 rounded-full bg-[#F4F9F8] flex items-center justify-center text-[#1C5253] hover:bg-[#88D49E]/30 transition-colors"
+            >
+              <TikTokIcon className="w-4 h-4" />
+            </a>
+            <a
+              href={REDES.facebook}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Facebook"
+              className="w-8 h-8 rounded-full bg-[#F4F9F8] flex items-center justify-center text-[#1C5253] hover:bg-[#88D49E]/30 transition-colors"
+            >
+              <FacebookIcon className="w-4 h-4" />
+            </a>
+          </div>
           <p className="text-[11px] text-gray-400">© 2026 CURPitas</p>
         </div>
       </footer>
+
+      {/* Botón flotante de WhatsApp */}
+      <a
+        href={REDES.whatsapp}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Escríbenos por WhatsApp"
+        className="fixed bottom-5 right-5 w-14 h-14 bg-[#25D366] hover:bg-[#20bd5a] rounded-full shadow-xl flex items-center justify-center z-40 transition-transform hover:scale-105"
+      >
+        <WhatsAppIcon className="w-7 h-7 text-white" />
+      </a>
     </div>
   );
 };
