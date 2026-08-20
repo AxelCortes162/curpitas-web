@@ -101,9 +101,7 @@ export const Admin = () => {
     <div className="min-h-screen bg-[#E8F3F1] p-4 font-sans antialiased">
       <div className="w-full max-w-lg mx-auto">
         <div className="flex items-center gap-2 mb-1">
-          <div className="w-8 h-8 bg-[#1C5253] rounded-xl flex items-center justify-center">
-            <PawPrint className="w-4 h-4 text-[#88D49E]" />
-          </div>
+          <img src="/logo.png" alt="CURPitas" className="w-8 h-8 object-contain" />
           <h1 className="text-xl font-black text-[#1C5253]">Panel de administrador</h1>
         </div>
         <p className="text-xs text-gray-400 mb-5">

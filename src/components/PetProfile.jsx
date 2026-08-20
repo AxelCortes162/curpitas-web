@@ -1,5 +1,5 @@
-import React from 'react';
-import { Phone, ShieldAlert, MapPin, AlertCircle, CheckCircle2, Cake } from 'lucide-react';
+import React, { useState } from 'react';
+import { Phone, ShieldAlert, MapPin, AlertCircle, CheckCircle2, Cake, X } from 'lucide-react';
 
 // Calcula la edad a partir de una fecha en formato ISO (YYYY-MM-DD, como la
 // devuelve Postgres/Supabase).
@@ -31,6 +31,20 @@ const formatFecha = (isoDateStr) => {
 
 export const PetProfile = ({ pet }) => {
   const isLost = pet.is_lost ?? true;
+  const [mostrarModal, setMostrarModal] = useState(false);
+  const [animando, setAnimando] = useState(false);
+
+  const tieneFotoReal = Boolean(pet.photo_url);
+
+  const abrirFoto = () => {
+    setMostrarModal(true);
+    requestAnimationFrame(() => setAnimando(true));
+  };
+
+  const cerrarFoto = () => {
+    setAnimando(false);
+    setTimeout(() => setMostrarModal(false), 200);
+  };
 
   const edad = getAge(pet.birth_date);
   const fechaNacimiento = formatFecha(pet.birth_date);
@@ -56,24 +70,57 @@ export const PetProfile = ({ pet }) => {
 
         {/* Encabezado Hero */}
         <div className="bg-[#1C5253] pt-12 pb-16 px-6 text-center relative overflow-hidden flex flex-col items-center justify-center">
-          <div className="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none">
-            <img src="/logo.png" alt="" className="w-40 h-40 object-contain invert" />
+          <div className="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none -translate-y-3">
+            <img src="/logo.png" alt="" className="w-40 h-40 object-contain brightness-0 invert" />
           </div>
         </div>
 
         {/* Foto de la Mascota */}
         <div className="-mt-14 flex justify-center relative z-10">
           <div className="relative">
-            <img
-              src={pet.photo_url || 'https://placehold.co/200x200/E8F3F1/1C5253?text=%3A%29'}
-              alt={pet.name}
-              className="w-28 h-28 rounded-full object-cover border-4 border-white shadow-xl"
-            />
+            <button
+              type="button"
+              onClick={() => tieneFotoReal && abrirFoto()}
+              className="block rounded-full"
+            >
+              <img
+                src={pet.photo_url || 'https://placehold.co/200x200/E8F3F1/1C5253?text=%3A%29'}
+                alt={pet.name}
+                className="w-28 h-28 rounded-full object-cover border-4 border-white shadow-xl"
+              />
+            </button>
             <div className="absolute bottom-1 right-1 bg-[#88D49E] p-1.5 rounded-full border-2 border-white shadow-md">
               <CheckCircle2 className="w-3.5 h-3.5 text-[#1C5253]" />
             </div>
           </div>
         </div>
+
+        {/* Ver foto en grande, con transición de entrada/salida */}
+        {mostrarModal && (
+          <div
+            className={`fixed inset-0 z-50 flex items-center justify-center p-6 transition-opacity duration-200 ${
+              animando ? 'bg-black/70' : 'bg-black/0'
+            }`}
+            onClick={cerrarFoto}
+          >
+            <img
+              src={pet.photo_url}
+              alt={pet.name}
+              className={`max-w-full max-h-full rounded-2xl shadow-2xl transition-all duration-200 ${
+                animando ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
+              }`}
+              onClick={(e) => e.stopPropagation()}
+            />
+            <button
+              onClick={cerrarFoto}
+              className={`absolute top-4 right-4 text-white bg-white/20 hover:bg-white/30 rounded-full p-2 transition-opacity duration-200 ${
+                animando ? 'opacity-100' : 'opacity-0'
+              }`}
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        )}
 
         {/* Detalles de Identidad */}
         <div className="px-6 pb-6 pt-2 text-center">

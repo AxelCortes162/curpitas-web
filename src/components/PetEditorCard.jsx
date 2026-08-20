@@ -1,9 +1,19 @@
 import React, { useState } from 'react';
-import { ShieldAlert, CheckCircle2, Save, Camera, Loader2 } from 'lucide-react';
+import {
+  ShieldAlert,
+  CheckCircle2,
+  Save,
+  Camera,
+  Loader2,
+  ExternalLink,
+  Trash2,
+  X,
+} from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 
-export const PetEditorCard = ({ pet, onUpdated }) => {
+export const PetEditorCard = ({ pet, onUpdated, onDeleted }) => {
   const { user } = useAuth();
   const [form, setForm] = useState({
     name: pet.name || '',
@@ -22,6 +32,21 @@ export const PetEditorCard = ({ pet, onUpdated }) => {
   const [savedMsg, setSavedMsg] = useState('');
   const [subiendoFoto, setSubiendoFoto] = useState(false);
   const [fotoError, setFotoError] = useState('');
+  const [confirmandoEliminar, setConfirmandoEliminar] = useState(false);
+  const [eliminando, setEliminando] = useState(false);
+  const [errorEliminar, setErrorEliminar] = useState('');
+  const [mostrarModal, setMostrarModal] = useState(false);
+  const [animando, setAnimando] = useState(false);
+
+  const abrirFoto = () => {
+    setMostrarModal(true);
+    requestAnimationFrame(() => setAnimando(true));
+  };
+
+  const cerrarFoto = () => {
+    setAnimando(false);
+    setTimeout(() => setMostrarModal(false), 200);
+  };
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -33,7 +58,6 @@ export const PetEditorCard = ({ pet, onUpdated }) => {
 
     setFotoError('');
 
-    // Límite de tamaño razonable: 5 MB
     if (archivo.size > 5 * 1024 * 1024) {
       setFotoError('La foto pesa demasiado (máximo 5 MB).');
       return;
@@ -63,10 +87,7 @@ export const PetEditorCard = ({ pet, onUpdated }) => {
     setSaving(true);
     setSavedMsg('');
 
-    const { error } = await supabase
-      .from('pets')
-      .update(form)
-      .eq('id', pet.id);
+    const { error } = await supabase.from('pets').update(form).eq('id', pet.id);
 
     setSaving(false);
 
@@ -79,167 +100,264 @@ export const PetEditorCard = ({ pet, onUpdated }) => {
     onUpdated?.();
   };
 
+  const handleEliminar = async () => {
+    setEliminando(true);
+    setErrorEliminar('');
+
+    const { error } = await supabase.from('pets').delete().eq('id', pet.id);
+
+    setEliminando(false);
+
+    if (error) {
+      setErrorEliminar('No se pudo eliminar: ' + error.message);
+      return;
+    }
+
+    onDeleted?.(pet.id);
+  };
+
   return (
-    <div className="bg-white rounded-2xl border border-emerald-100/80 shadow-sm p-4 space-y-3">
-      <div className="flex items-center justify-between">
-        <span className="font-mono text-[10px] text-gray-400">{pet.curpita}</span>
+    <div className="bg-white rounded-2xl border border-emerald-100/80 shadow-sm overflow-hidden">
+      {/* Vista de credencial, en vivo con lo que vas editando */}
+      <div className="bg-[#1C5253] px-4 py-2.5 flex items-center justify-between">
+        <span className="font-mono text-[9px] text-[#88D49E] tracking-wide">{pet.curpita}</span>
         {form.is_lost ? (
-          <span className="flex items-center gap-1 text-[10px] font-bold text-red-500 uppercase">
-            <ShieldAlert className="w-3 h-3" /> Perdida
+          <span className="flex items-center gap-1 text-[9px] font-black text-white bg-red-500 px-2 py-0.5 rounded-full uppercase">
+            <ShieldAlert className="w-2.5 h-2.5" /> Perdida
           </span>
         ) : (
-          <span className="flex items-center gap-1 text-[10px] font-bold text-[#1C5253] uppercase">
-            <CheckCircle2 className="w-3 h-3 text-[#88D49E]" /> A salvo
+          <span className="flex items-center gap-1 text-[9px] font-black text-[#1C5253] bg-[#88D49E] px-2 py-0.5 rounded-full uppercase">
+            <CheckCircle2 className="w-2.5 h-2.5" /> A salvo
           </span>
         )}
       </div>
 
-      {/* Campos editables */}
-      <div className="grid grid-cols-2 gap-2">
-        <div className="col-span-2">
-          <label className="text-[10px] font-bold text-gray-400 uppercase">Nombre</label>
-          <input
-            value={form.name}
-            onChange={(e) => handleChange('name', e.target.value)}
-            className="w-full mt-0.5 py-2 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-xs text-[#1C5253]"
+      <div className="px-4 pt-4 pb-3 flex flex-col items-center text-center gap-1 border-b border-emerald-100">
+        <button
+          type="button"
+          onClick={() => form.photo_url && abrirFoto()}
+          className="w-20 h-20 rounded-full overflow-hidden bg-[#E8F3F1] border-2 border-emerald-100 shrink-0 flex items-center justify-center"
+          disabled={!form.photo_url}
+        >
+          {form.photo_url ? (
+            <img src={form.photo_url} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <Camera className="w-6 h-6 text-[#1C5253]/30" />
+          )}
+        </button>
+        <p className="font-black text-[#1C5253] leading-tight mt-1.5">
+          {form.name || 'Sin nombre aún'}
+        </p>
+        <Link
+          to={`/mascota/${pet.curpita}`}
+          target="_blank"
+          className="inline-flex items-center gap-1 text-[10px] font-bold text-gray-400 hover:text-[#1C5253]"
+        >
+          Ver perfil público <ExternalLink className="w-2.5 h-2.5" />
+        </Link>
+      </div>
+
+      {/* Modal para ver la foto en grande, con transición de entrada/salida */}
+      {mostrarModal && (
+        <div
+          className={`fixed inset-0 z-50 flex items-center justify-center p-6 transition-opacity duration-200 ${
+            animando ? 'bg-black/70' : 'bg-black/0'
+          }`}
+          onClick={cerrarFoto}
+        >
+          <img
+            src={form.photo_url}
+            alt={form.name}
+            className={`max-w-full max-h-full rounded-2xl shadow-2xl transition-all duration-200 ${
+              animando ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
+            }`}
+            onClick={(e) => e.stopPropagation()}
           />
+          <button
+            onClick={cerrarFoto}
+            className={`absolute top-4 right-4 text-white bg-white/20 hover:bg-white/30 rounded-full p-2 transition-opacity duration-200 ${
+              animando ? 'opacity-100' : 'opacity-0'
+            }`}
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
-        <div>
-          <label className="text-[10px] font-bold text-gray-400 uppercase">Raza</label>
-          <input
-            value={form.breed}
-            onChange={(e) => handleChange('breed', e.target.value)}
-            className="w-full mt-0.5 py-2 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-xs text-[#1C5253]"
-          />
-        </div>
-        <div>
-          <label className="text-[10px] font-bold text-gray-400 uppercase">Nacimiento</label>
-          <input
-            type="date"
-            value={form.birth_date}
-            onChange={(e) => handleChange('birth_date', e.target.value)}
-            className="w-full mt-0.5 py-2 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-xs text-[#1C5253]"
-          />
-        </div>
-        <div>
-          <label className="text-[10px] font-bold text-gray-400 uppercase">Ciudad</label>
-          <input
-            value={form.city}
-            onChange={(e) => handleChange('city', e.target.value)}
-            className="w-full mt-0.5 py-2 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-xs text-[#1C5253]"
-          />
-        </div>
-        <div className="col-span-2">
-          <label className="text-[10px] font-bold text-gray-400 uppercase">Foto</label>
-          <div className="flex items-center gap-3 mt-0.5">
-            <div className="w-14 h-14 rounded-xl overflow-hidden bg-[#F4F9F8] border border-emerald-100 shrink-0 flex items-center justify-center">
-              {form.photo_url ? (
-                <img src={form.photo_url} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <Camera className="w-5 h-5 text-gray-300" />
-              )}
-            </div>
-            <label className="flex-1">
-              <span className="inline-flex items-center gap-1.5 py-2 px-3 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-xs font-bold text-[#1C5253] cursor-pointer hover:bg-emerald-50">
-                {subiendoFoto ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> Subiendo...
-                  </>
-                ) : (
-                  <>
-                    <Camera className="w-3.5 h-3.5" /> {form.photo_url ? 'Cambiar foto' : 'Subir foto'}
-                  </>
-                )}
-              </span>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFotoSeleccionada}
-                disabled={subiendoFoto}
-                className="hidden"
-              />
-            </label>
+      )}
+
+      {/* Formulario de edición */}
+      <div className="px-4 pb-4 pt-3 space-y-3">
+        <div className="grid grid-cols-2 gap-2">
+          <div className="col-span-2">
+            <label className="text-[10px] font-bold text-gray-400 uppercase">Nombre</label>
+            <input
+              value={form.name}
+              onChange={(e) => handleChange('name', e.target.value)}
+              className="w-full mt-0.5 py-2 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-xs text-[#1C5253]"
+            />
           </div>
-          {fotoError && <p className="text-[10px] text-red-500 mt-1">{fotoError}</p>}
+          <div>
+            <label className="text-[10px] font-bold text-gray-400 uppercase">Raza</label>
+            <input
+              value={form.breed}
+              onChange={(e) => handleChange('breed', e.target.value)}
+              className="w-full mt-0.5 py-2 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-xs text-[#1C5253]"
+            />
+          </div>
+          <div>
+            <label className="text-[10px] font-bold text-gray-400 uppercase">Nacimiento</label>
+            <input
+              type="date"
+              value={form.birth_date}
+              onChange={(e) => handleChange('birth_date', e.target.value)}
+              className="w-full mt-0.5 py-2 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-xs text-[#1C5253]"
+            />
+          </div>
+          <div>
+            <label className="text-[10px] font-bold text-gray-400 uppercase">Ciudad</label>
+            <input
+              value={form.city}
+              onChange={(e) => handleChange('city', e.target.value)}
+              className="w-full mt-0.5 py-2 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-xs text-[#1C5253]"
+            />
+          </div>
+          <div className="col-span-2">
+            <label className="text-[10px] font-bold text-gray-400 uppercase">Foto</label>
+            <div className="mt-0.5">
+              <label>
+                <span className="inline-flex items-center gap-1.5 py-2 px-3 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-xs font-bold text-[#1C5253] cursor-pointer hover:bg-emerald-50">
+                  {subiendoFoto ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" /> Subiendo...
+                    </>
+                  ) : (
+                    <>
+                      <Camera className="w-3.5 h-3.5" /> {form.photo_url ? 'Cambiar foto' : 'Subir foto'}
+                    </>
+                  )}
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFotoSeleccionada}
+                  disabled={subiendoFoto}
+                  className="hidden"
+                />
+              </label>
+            </div>
+            {fotoError && <p className="text-[10px] text-red-500 mt-1">{fotoError}</p>}
+          </div>
+          <div className="col-span-2">
+            <label className="text-[10px] font-bold text-gray-400 uppercase">Info médica</label>
+            <textarea
+              value={form.medical_info}
+              onChange={(e) => handleChange('medical_info', e.target.value)}
+              rows={2}
+              className="w-full mt-0.5 py-2 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-xs text-[#1C5253]"
+            />
+          </div>
         </div>
-        <div className="col-span-2">
-          <label className="text-[10px] font-bold text-gray-400 uppercase">Info médica</label>
-          <textarea
-            value={form.medical_info}
-            onChange={(e) => handleChange('medical_info', e.target.value)}
-            rows={2}
-            className="w-full mt-0.5 py-2 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-xs text-[#1C5253]"
+
+        <label className="flex items-center justify-between text-xs font-bold text-gray-600">
+          Marcar como perdida
+          <input
+            type="checkbox"
+            checked={form.is_lost}
+            onChange={(e) => handleChange('is_lost', e.target.checked)}
+            className="w-4 h-4 accent-red-500"
           />
+        </label>
+
+        <div className="border-t border-emerald-100 pt-2 space-y-1.5">
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+            Qué se muestra en el perfil público
+          </p>
+          <label className="flex items-center justify-between text-xs text-gray-600">
+            Raza
+            <input
+              type="checkbox"
+              checked={form.show_breed}
+              onChange={(e) => handleChange('show_breed', e.target.checked)}
+              className="w-4 h-4 accent-[#88D49E]"
+            />
+          </label>
+          <label className="flex items-center justify-between text-xs text-gray-600">
+            Fecha de nacimiento
+            <input
+              type="checkbox"
+              checked={form.show_birth_date}
+              onChange={(e) => handleChange('show_birth_date', e.target.checked)}
+              className="w-4 h-4 accent-[#88D49E]"
+            />
+          </label>
+          <label className="flex items-center justify-between text-xs text-gray-600">
+            Información médica
+            <input
+              type="checkbox"
+              checked={form.show_medical_info}
+              onChange={(e) => handleChange('show_medical_info', e.target.checked)}
+              className="w-4 h-4 accent-[#88D49E]"
+            />
+          </label>
+          <label className="flex items-center justify-between text-xs text-gray-600">
+            Nombre del tutor
+            <input
+              type="checkbox"
+              checked={form.show_owner_name}
+              onChange={(e) => handleChange('show_owner_name', e.target.checked)}
+              className="w-4 h-4 accent-[#88D49E]"
+            />
+          </label>
+          <p className="text-[10px] text-gray-400 italic">
+            El teléfono siempre se muestra — no es opcional.
+          </p>
+        </div>
+
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="w-full py-2.5 bg-[#1C5253] hover:bg-[#164343] text-white font-bold rounded-xl flex items-center justify-center gap-2 text-xs disabled:opacity-60"
+        >
+          <Save className="w-3.5 h-3.5" />
+          {saving ? 'Guardando...' : 'Guardar cambios'}
+        </button>
+
+        {savedMsg && <p className="text-center text-[11px] text-emerald-700">{savedMsg}</p>}
+
+        {/* Eliminar mascota */}
+        <div className="border-t border-emerald-100 pt-3">
+          {!confirmandoEliminar ? (
+            <button
+              onClick={() => setConfirmandoEliminar(true)}
+              className="w-full py-2 text-[11px] font-bold text-red-500 hover:underline flex items-center justify-center gap-1.5"
+            >
+              <Trash2 className="w-3.5 h-3.5" /> Eliminar mascota
+            </button>
+          ) : (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-center space-y-2">
+              <p className="text-[11px] text-red-700 font-semibold">
+                ¿Seguro que quieres eliminar a {form.name || 'esta mascota'}? Su perfil público y su
+                folio dejarán de funcionar. Esta acción no se puede deshacer.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setConfirmandoEliminar(false)}
+                  className="flex-1 py-2 text-xs font-bold text-gray-600 bg-white border border-gray-200 rounded-lg"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleEliminar}
+                  disabled={eliminando}
+                  className="flex-1 py-2 text-xs font-bold text-white bg-red-500 hover:bg-red-600 rounded-lg disabled:opacity-60"
+                >
+                  {eliminando ? 'Eliminando...' : 'Sí, eliminar'}
+                </button>
+              </div>
+              {errorEliminar && <p className="text-[10px] text-red-600">{errorEliminar}</p>}
+            </div>
+          )}
         </div>
       </div>
-
-      {/* Estado perdida/a salvo */}
-      <label className="flex items-center justify-between text-xs font-bold text-gray-600">
-        Marcar como perdida
-        <input
-          type="checkbox"
-          checked={form.is_lost}
-          onChange={(e) => handleChange('is_lost', e.target.checked)}
-          className="w-4 h-4 accent-red-500"
-        />
-      </label>
-
-      {/* Interruptores de visibilidad */}
-      <div className="border-t border-emerald-100 pt-2 space-y-1.5">
-        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-          Qué se muestra en el perfil público
-        </p>
-        <label className="flex items-center justify-between text-xs text-gray-600">
-          Raza
-          <input
-            type="checkbox"
-            checked={form.show_breed}
-            onChange={(e) => handleChange('show_breed', e.target.checked)}
-            className="w-4 h-4 accent-[#88D49E]"
-          />
-        </label>
-        <label className="flex items-center justify-between text-xs text-gray-600">
-          Fecha de nacimiento
-          <input
-            type="checkbox"
-            checked={form.show_birth_date}
-            onChange={(e) => handleChange('show_birth_date', e.target.checked)}
-            className="w-4 h-4 accent-[#88D49E]"
-          />
-        </label>
-        <label className="flex items-center justify-between text-xs text-gray-600">
-          Información médica
-          <input
-            type="checkbox"
-            checked={form.show_medical_info}
-            onChange={(e) => handleChange('show_medical_info', e.target.checked)}
-            className="w-4 h-4 accent-[#88D49E]"
-          />
-        </label>
-        <label className="flex items-center justify-between text-xs text-gray-600">
-          Nombre del tutor
-          <input
-            type="checkbox"
-            checked={form.show_owner_name}
-            onChange={(e) => handleChange('show_owner_name', e.target.checked)}
-            className="w-4 h-4 accent-[#88D49E]"
-          />
-        </label>
-        <p className="text-[10px] text-gray-400 italic">
-          El teléfono siempre se muestra — no es opcional.
-        </p>
-      </div>
-
-      <button
-        onClick={handleSave}
-        disabled={saving}
-        className="w-full py-2.5 bg-[#1C5253] hover:bg-[#164343] text-white font-bold rounded-xl flex items-center justify-center gap-2 text-xs disabled:opacity-60"
-      >
-        <Save className="w-3.5 h-3.5" />
-        {saving ? 'Guardando...' : 'Guardar cambios'}
-      </button>
-
-      {savedMsg && <p className="text-center text-[11px] text-emerald-700">{savedMsg}</p>}
     </div>
   );
 };

@@ -121,7 +121,12 @@ export const MiCuenta = () => {
 
         <div className="space-y-3">
           {pets.map((pet) => (
-            <PetEditorCard key={pet.id} pet={pet} onUpdated={cargarMascotas} />
+            <PetEditorCard
+              key={pet.id}
+              pet={pet}
+              onUpdated={cargarMascotas}
+              onDeleted={cargarMascotas}
+            />
           ))}
         </div>
       </div>

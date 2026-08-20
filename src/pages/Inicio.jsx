@@ -15,9 +15,7 @@ import {
 const NavBar = () => (
   <nav className="max-w-6xl mx-auto px-6 py-6 flex items-center justify-between">
     <div className="flex items-center gap-2">
-      <div className="w-9 h-9 bg-[#1C5253] rounded-xl flex items-center justify-center">
-        <PawPrint className="w-4.5 h-4.5 text-[#88D49E]" />
-      </div>
+      <img src="/logo.png" alt="CURPitas" className="w-9 h-9 object-contain" />
       <span className="font-black text-[#1C5253] tracking-tight">CURPitas</span>
     </div>
     <Link
@@ -260,9 +258,7 @@ export const Inicio = () => {
       <footer className="border-t border-emerald-100/70">
         <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-[#1C5253] rounded-lg flex items-center justify-center">
-              <PawPrint className="w-3 h-3 text-[#88D49E]" />
-            </div>
+            <img src="/logo.png" alt="CURPitas" className="w-6 h-6 object-contain" />
             <span className="text-xs font-bold text-[#1C5253]">CURPitas</span>
           </div>
           <div className="flex items-center gap-5 text-xs text-gray-400 font-medium">
