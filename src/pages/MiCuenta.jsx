@@ -4,6 +4,7 @@ import { LogOut, Link2 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import PetEditorCard from '../components/PetEditorCard';
+import TestimonioForm from '../components/TestimonioForm';
 
 export const MiCuenta = () => {
   const { user, signOut } = useAuth();
@@ -132,6 +133,11 @@ export const MiCuenta = () => {
               onDeleted={cargarMascotas}
             />
           ))}
+        </div>
+
+        {/* Testimonio */}
+        <div className="mt-6">
+          <TestimonioForm />
         </div>
       </div>
     </div>

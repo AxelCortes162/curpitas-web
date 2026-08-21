@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { supabase } from '../supabaseClient';
 import {
   PawPrint,
   ShieldCheck,
@@ -12,6 +13,7 @@ import {
   CheckCircle2,
   ArrowRight,
   User,
+  Star,
 } from 'lucide-react';
 
 // ⚠️ EDITA ESTO cuando tengas tus cuentas y número reales.
@@ -22,6 +24,9 @@ const REDES = {
   facebook: 'https://facebook.com/curpitas', // PENDIENTE: confirmar disponibilidad
   whatsapp: 'https://wa.me/5215500000000', // PENDIENTE: poner tu número real
 };
+
+// Los testimonios reales se cargan desde Supabase (tabla "testimonials",
+// solo los que ya aprobaste en el panel de admin). Ver componente Inicio.
 
 const InstagramIcon = (props) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
@@ -148,8 +153,40 @@ const TogglePreview = ({ label, on }) => (
   </div>
 );
 
+const TestimonioCard = ({ name, city, rating, text }) => (
+  <div className="bg-white rounded-2xl p-5 border border-emerald-100/70 shadow-sm">
+    <div className="flex gap-0.5 mb-3">
+      {[1, 2, 3, 4, 5].map((i) => (
+        <Star
+          key={i}
+          className={`w-4 h-4 ${i <= rating ? 'fill-[#88D49E] text-[#88D49E]' : 'fill-gray-200 text-gray-200'}`}
+        />
+      ))}
+    </div>
+    <p className="text-sm text-gray-600 leading-relaxed">"{text}"</p>
+    <p className="text-xs font-black text-[#1C5253] mt-3">
+      {name}
+      {city && <span className="font-medium text-gray-400"> · {city}</span>}
+    </p>
+  </div>
+);
+
 export const Inicio = () => {
   const { user } = useAuth();
+  const [testimonios, setTestimonios] = useState([]);
+
+  useEffect(() => {
+    const cargarTestimonios = async () => {
+      const { data } = await supabase
+        .from('testimonials')
+        .select('*')
+        .eq('approved', true)
+        .order('created_at', { ascending: false })
+        .limit(6);
+      setTestimonios(data || []);
+    };
+    cargarTestimonios();
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#E8F3F1] font-sans antialiased overflow-x-hidden">
@@ -289,6 +326,29 @@ export const Inicio = () => {
           </div>
         </div>
       </section>
+
+      {/* TESTIMONIOS — solo se muestra si hay al menos uno aprobado */}
+      {testimonios.length > 0 && (
+        <section className="max-w-6xl mx-auto px-6 py-16">
+          <h2 className="text-xs font-bold text-[#88D49E] uppercase tracking-[0.2em] mb-2">
+            Testimonios
+          </h2>
+          <div className="flex items-center gap-2 mb-8">
+            <p className="text-2xl font-black text-[#1C5253]">Lo que dicen nuestros clientes</p>
+            <span className="flex items-center gap-1 text-sm font-bold text-[#1C5253] bg-[#88D49E]/25 px-2.5 py-1 rounded-full">
+              <Star className="w-3.5 h-3.5 fill-[#1C5253] text-[#1C5253]" />
+              {(
+                testimonios.reduce((suma, t) => suma + t.rating, 0) / testimonios.length
+              ).toFixed(1)}
+            </span>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {testimonios.map((t) => (
+              <TestimonioCard key={t.id} {...t} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* CTA FINAL */}
       <section className="max-w-6xl mx-auto px-6 py-20 text-center">

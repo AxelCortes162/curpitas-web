@@ -205,7 +205,9 @@ export const PetProfile = ({ pet }) => {
             {pet.breed && (
               <div className="flex justify-between items-center border-b border-emerald-100 pb-1.5">
                 <span className="text-gray-400 font-bold text-[10px] tracking-wider uppercase">Raza</span>
-                <span className="font-bold text-gray-700">{pet.breed}</span>
+                <span className="font-bold text-gray-700">
+                  {pet.species === 'gato' ? '🐱' : pet.species === 'otro' ? '✨' : '🐶'} {pet.breed}
+                </span>
               </div>
             )}
 

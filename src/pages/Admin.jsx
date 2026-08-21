@@ -1,12 +1,64 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
-import { PawPrint, Plus, Download, ShieldCheck, ShieldOff } from 'lucide-react';
+import { PawPrint, Plus, Download, ShieldCheck, ShieldOff, Star, Check, X } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 
 // Genera un folio nuevo con formato CURPITA + 8 dígitos aleatorios
 const generarFolio = () => {
   const numero = Math.floor(10000000 + Math.random() * 90000000);
   return `CURPITA${numero}`;
+};
+
+const FilaTestimonioPendiente = ({ testimonio, onResuelto }) => {
+  const [procesando, setProcesando] = useState(false);
+
+  const aprobar = async () => {
+    setProcesando(true);
+    await supabase.from('testimonials').update({ approved: true }).eq('id', testimonio.id);
+    setProcesando(false);
+    onResuelto();
+  };
+
+  const rechazar = async () => {
+    setProcesando(true);
+    await supabase.from('testimonials').delete().eq('id', testimonio.id);
+    setProcesando(false);
+    onResuelto();
+  };
+
+  return (
+    <div className="bg-white rounded-2xl border border-amber-200 shadow-sm p-4">
+      <div className="flex gap-0.5 mb-1.5">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <Star
+            key={i}
+            className={`w-3.5 h-3.5 ${i <= testimonio.rating ? 'fill-[#88D49E] text-[#88D49E]' : 'fill-gray-200 text-gray-200'}`}
+          />
+        ))}
+      </div>
+      <p className="text-sm text-gray-700 italic">"{testimonio.text}"</p>
+      <p className="text-xs font-bold text-[#1C5253] mt-1.5">
+        {testimonio.name}
+        {testimonio.city && <span className="font-medium text-gray-400"> · {testimonio.city}</span>}
+      </p>
+      <div className="flex gap-2 mt-3">
+        <button
+          onClick={aprobar}
+          disabled={procesando}
+          className="flex-1 py-2 text-xs font-bold text-white bg-[#1C5253] hover:bg-[#164343] rounded-lg flex items-center justify-center gap-1 disabled:opacity-60"
+        >
+          <Check className="w-3.5 h-3.5" /> Aprobar
+        </button>
+        <button
+          onClick={rechazar}
+          disabled={procesando}
+          className="flex-1 py-2 text-xs font-bold text-red-500 bg-red-50 hover:bg-red-100 rounded-lg flex items-center justify-center gap-1 disabled:opacity-60"
+        >
+          <X className="w-3.5 h-3.5" /> Rechazar
+        </button>
+      </div>
+    </div>
+  );
 };
 
 const FilaMascota = ({ pet }) => {
@@ -58,6 +110,7 @@ export const Admin = () => {
   const [loading, setLoading] = useState(true);
   const [creando, setCreando] = useState(false);
   const [mensaje, setMensaje] = useState('');
+  const [pendientes, setPendientes] = useState([]);
 
   const cargarMascotas = useCallback(async () => {
     setLoading(true);
@@ -70,9 +123,19 @@ export const Admin = () => {
     setLoading(false);
   }, []);
 
+  const cargarPendientes = useCallback(async () => {
+    const { data } = await supabase
+      .from('testimonials')
+      .select('*')
+      .eq('approved', false)
+      .order('created_at', { ascending: true });
+    setPendientes(data || []);
+  }, []);
+
   useEffect(() => {
     cargarMascotas();
-  }, [cargarMascotas]);
+    cargarPendientes();
+  }, [cargarMascotas, cargarPendientes]);
 
   const handleCrearFolio = async () => {
     setCreando(true);
@@ -117,6 +180,20 @@ export const Admin = () => {
           {creando ? 'Creando...' : 'Crear folio nuevo'}
         </button>
         {mensaje && <p className="text-center text-xs text-[#1C5253] mb-4">{mensaje}</p>}
+
+        {/* Testimonios pendientes de aprobar */}
+        {pendientes.length > 0 && (
+          <>
+            <p className="text-xs font-bold text-amber-600 uppercase tracking-wider mb-2 mt-6">
+              Testimonios pendientes ({pendientes.length})
+            </p>
+            <div className="space-y-2 mb-6">
+              {pendientes.map((t) => (
+                <FilaTestimonioPendiente key={t.id} testimonio={t} onResuelto={cargarPendientes} />
+              ))}
+            </div>
+          </>
+        )}
 
         <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 mt-6">
           Todas las placas

@@ -12,11 +12,13 @@ import {
 import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
+import BreedSelect from './BreedSelect';
 
 export const PetEditorCard = ({ pet, onUpdated, onDeleted }) => {
   const { user } = useAuth();
   const [form, setForm] = useState({
     name: pet.name || '',
+    species: pet.species || 'perro',
     breed: pet.breed || '',
     birth_date: pet.birth_date || '',
     city: pet.city || '',
@@ -50,6 +52,10 @@ export const PetEditorCard = ({ pet, onUpdated, onDeleted }) => {
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleEspecieChange = (nuevaEspecie) => {
+    setForm((prev) => ({ ...prev, species: nuevaEspecie, breed: '' }));
   };
 
   const handleFotoSeleccionada = async (e) => {
@@ -195,15 +201,40 @@ export const PetEditorCard = ({ pet, onUpdated, onDeleted }) => {
               className="w-full mt-0.5 py-2 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-xs text-[#1C5253]"
             />
           </div>
-          <div>
-            <label className="text-[10px] font-bold text-gray-400 uppercase">Raza</label>
-            <input
-              value={form.breed}
-              onChange={(e) => handleChange('breed', e.target.value)}
-              className="w-full mt-0.5 py-2 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-xs text-[#1C5253]"
-            />
+          <div className="col-span-2">
+            <label className="text-[10px] font-bold text-gray-400 uppercase">Especie</label>
+            <div className="flex gap-1.5 mt-0.5">
+              {[
+                { valor: 'perro', label: '🐶 Perro' },
+                { valor: 'gato', label: '🐱 Gato' },
+                { valor: 'otro', label: '✨ Otro' },
+              ].map((op) => (
+                <button
+                  key={op.valor}
+                  type="button"
+                  onClick={() => handleEspecieChange(op.valor)}
+                  className={`flex-1 py-2 rounded-lg text-xs font-bold border transition-colors ${
+                    form.species === op.valor
+                      ? 'bg-[#1C5253] text-white border-[#1C5253]'
+                      : 'bg-[#F4F9F8] text-[#1C5253] border-emerald-100'
+                  }`}
+                >
+                  {op.label}
+                </button>
+              ))}
+            </div>
           </div>
-          <div>
+          <div className="col-span-2">
+            <label className="text-[10px] font-bold text-gray-400 uppercase">Raza</label>
+            <div className="mt-0.5">
+              <BreedSelect
+                species={form.species}
+                value={form.breed}
+                onChange={(valor) => handleChange('breed', valor)}
+              />
+            </div>
+          </div>
+          <div className="col-span-2">
             <label className="text-[10px] font-bold text-gray-400 uppercase">Nacimiento</label>
             <input
               type="date"
