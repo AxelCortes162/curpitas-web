@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
-import { PawPrint, Plus, Download, ShieldCheck, ShieldOff, Star, Check, X, CreditCard } from 'lucide-react';
+import { PawPrint, Plus, Download, ShieldCheck, ShieldOff, Star, Check, X, CreditCard, Tag } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 
 // Genera un folio nuevo con formato CURPITA + 8 dígitos aleatorios
@@ -72,10 +72,57 @@ const trazarRectRedondeado = (ctx, x, y, w, h, r) => {
   ctx.closePath();
 };
 
+// Dibuja el QR real dentro de un círculo con anillo punteado decorativo
+// ("ventana troquelada"), sin recortar el QR — un QR necesita sus esquinas
+// completas para poder escanearse.
+const dibujarQRConAnillo = (ctx, qrCanvas, centerX, centerY, outerR, innerR, qrSize, colores) => {
+  ctx.fillStyle = 'rgba(232, 243, 241, 0.6)';
+  for (let angulo = 0; angulo < 360; angulo += 12) {
+    const rad = (angulo * Math.PI) / 180;
+    const px = centerX + outerR * Math.cos(rad);
+    const py = centerY + outerR * Math.sin(rad);
+    ctx.beginPath();
+    ctx.arc(px, py, 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.fillStyle = colores.white;
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, innerR, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.drawImage(qrCanvas, centerX - qrSize / 2, centerY - qrSize / 2, qrSize, qrSize);
+};
+
+// Dibuja la cajita blanca con el folio
+const dibujarFolio = (ctx, x, y, w, folio, colores, alto = 90) => {
+  ctx.fillStyle = colores.white;
+  trazarRectRedondeado(ctx, x, y, w, alto, 12);
+  ctx.fill();
+  ctx.fillStyle = '#999999';
+  ctx.font = `bold ${Math.max(11, Math.round(alto * 0.16))}px sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillText('FOLIO', x + w / 2, y + alto * 0.38);
+  ctx.fillStyle = colores.teal;
+  ctx.font = `bold ${Math.max(14, Math.round(alto * 0.28))}px monospace`;
+  ctx.fillText(folio, x + w / 2, y + alto * 0.78);
+};
+
 const FilaMascota = ({ pet }) => {
   const canvasRef = useRef(null);
   const qrGrandeRef = useRef(null);
   const url = `${window.location.origin}/mascota/${pet.curpita}`;
+
+  const colores = {
+    teal: '#1C5253',
+    mint: '#88D49E',
+    cream: '#E8F3F1',
+    white: '#ffffff',
+  };
+
+  // Convierte milímetros a píxeles a 300dpi (estándar de impresión)
+  const mmAPx = (mm) => Math.round((mm / 25.4) * 300);
+
+  const CR80 = { w: mmAPx(85.6), h: mmAPx(54) }; // 1011 x 638 px
+  const BLISTER = { w: mmAPx(110), h: mmAPx(80) }; // 1300 x 945 px
 
   const descargarQR = () => {
     const canvas = canvasRef.current?.querySelector('canvas');
@@ -86,131 +133,210 @@ const FilaMascota = ({ pet }) => {
     link.click();
   };
 
-  // Arma la tarjeta completa (frente + reverso) con el QR real de esta
-  // mascota, dibujando todo en un canvas oculto, y descarga el PNG final.
-  const generarTarjeta = () => {
+  const crearCanvas = (w, h, bgColor) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, w, h);
+    return { canvas, ctx };
+  };
+
+  const descargarCanvas = (canvas, sufijo) => {
+    const link = document.createElement('a');
+    link.download = `${pet.curpita}-${sufijo}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  };
+
+  // ============================================
+  // PRESENTACIÓN — tamaño CR80 (85.6mm x 54mm, como una credencial)
+  // ============================================
+  const generarPresentacionFrente = () => {
     const qrCanvas = qrGrandeRef.current?.querySelector('canvas');
     if (!qrCanvas) return;
+    const { w, h } = CR80;
+    const { teal, mint, white } = colores;
+    const { canvas, ctx } = crearCanvas(w, h, teal);
 
-    const teal = '#1C5253';
-    const mint = '#88D49E';
-    const cream = '#E8F3F1';
-    const white = '#ffffff';
-
-    const canvas = document.createElement('canvas');
-    canvas.width = 1200;
-    canvas.height = 700;
-    const ctx = canvas.getContext('2d');
+    const pad = w * 0.045;
 
     ctx.fillStyle = white;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    const panelW = 460;
-    const panelH = 640;
-    const gap = 80;
-    const startX = (canvas.width - (panelW * 2 + gap)) / 2;
-    const y0 = 30;
-
-    // ===== FRENTE =====
-    ctx.fillStyle = teal;
-    trazarRectRedondeado(ctx, startX, y0, panelW, panelH, 28);
-    ctx.fill();
-
-    ctx.fillStyle = white;
-    ctx.font = 'bold 40px sans-serif';
+    ctx.font = `bold ${Math.round(h * 0.09)}px sans-serif`;
     ctx.textAlign = 'left';
-    ctx.fillText('CURPitas', startX + 36, y0 + 70);
+    ctx.fillText('CURPitas', pad, h * 0.2);
 
     ctx.fillStyle = mint;
-    ctx.font = 'bold 13px sans-serif';
-    ctx.fillText('CREDENCIAL OFICIAL DE MASCOTA', startX + 36, y0 + 100);
+    ctx.font = `bold ${Math.round(h * 0.03)}px sans-serif`;
+    ctx.fillText('CREDENCIAL OFICIAL DE MASCOTA', pad, h * 0.28);
 
-    const qrCenterX = startX + panelW / 2;
-    const qrCenterY = y0 + 300;
-    const outerR = 130;
-    const innerR = 100;
-    const qrSize = 130;
+    const qrR = h * 0.19;
+    dibujarQRConAnillo(ctx, qrCanvas, w * 0.75, h * 0.52, qrR * 1.3, qrR, qrR * 1.3, colores);
 
-    // Anillo punteado decorativo ("ventana troquelada")
-    ctx.fillStyle = 'rgba(232, 243, 241, 0.5)';
-    for (let angulo = 0; angulo < 360; angulo += 12) {
-      const rad = (angulo * Math.PI) / 180;
-      const px = qrCenterX + outerR * Math.cos(rad);
-      const py = qrCenterY + outerR * Math.sin(rad);
-      ctx.beginPath();
-      ctx.arc(px, py, 3, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    // Círculo blanco de fondo (más grande que el QR, para no recortarlo:
-    // un QR necesita quedar completo, incluyendo sus esquinas, para
-    // poder escanearse).
-    ctx.fillStyle = white;
-    ctx.beginPath();
-    ctx.arc(qrCenterX, qrCenterY, innerR, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.drawImage(qrCanvas, qrCenterX - qrSize / 2, qrCenterY - qrSize / 2, qrSize, qrSize);
-
-    const folioY = qrCenterY + innerR + 55;
-    ctx.fillStyle = white;
-    trazarRectRedondeado(ctx, startX + 36, folioY, panelW - 72, 90, 12);
-    ctx.fill();
-    ctx.fillStyle = '#999999';
-    ctx.font = 'bold 13px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('FOLIO', startX + panelW / 2, folioY + 32);
-    ctx.fillStyle = teal;
-    ctx.font = 'bold 24px monospace';
-    ctx.fillText(pet.curpita, startX + panelW / 2, folioY + 66);
+    dibujarFolio(ctx, pad, h * 0.78, w * 0.5, pet.curpita, colores, h * 0.14);
 
     ctx.fillStyle = mint;
-    ctx.font = '18px sans-serif';
-    ctx.fillText('curpitas.com', startX + panelW / 2, y0 + panelH - 28);
+    ctx.font = `${Math.round(h * 0.035)}px sans-serif`;
+    ctx.textAlign = 'left';
+    ctx.fillText('curpitas.com', pad, h * 0.94);
 
-    // ===== REVERSO =====
-    const bx0 = startX + panelW + gap;
-    ctx.fillStyle = cream;
-    trazarRectRedondeado(ctx, bx0, y0, panelW, panelH, 28);
-    ctx.fill();
+    descargarCanvas(canvas, 'presentacion-frente');
+  };
+
+  const generarPresentacionReverso = () => {
+    const { w, h } = CR80;
+    const { teal, cream } = colores;
+    const { canvas, ctx } = crearCanvas(w, h, cream);
+    const pad = w * 0.045;
 
     ctx.fillStyle = teal;
-    ctx.font = 'bold 22px sans-serif';
+    ctx.font = `bold ${Math.round(h * 0.055)}px sans-serif`;
     ctx.textAlign = 'left';
-    ctx.fillText('Actívala en 3 pasos', bx0 + 36, y0 + 70);
+    ctx.fillText('Actívala en 3 pasos', pad, h * 0.17);
 
     const pasos = [
       'Crea tu cuenta en curpitas.com',
       'Escribe el folio de esta placa',
       'Completa el perfil de tu mascota',
     ];
-    let sy = y0 + 130;
+    const r = h * 0.06;
+    let sy = h * 0.34;
     pasos.forEach((paso, i) => {
       ctx.fillStyle = teal;
       ctx.beginPath();
-      ctx.arc(bx0 + 56, sy, 20, 0, Math.PI * 2);
+      ctx.arc(pad + r, sy, r, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = cream;
-      ctx.font = 'bold 16px sans-serif';
+      ctx.font = `bold ${Math.round(h * 0.045)}px sans-serif`;
       ctx.textAlign = 'center';
-      ctx.fillText(String(i + 1), bx0 + 56, sy + 6);
+      ctx.fillText(String(i + 1), pad + r, sy + h * 0.015);
 
       ctx.fillStyle = teal;
-      ctx.font = '16px sans-serif';
+      ctx.font = `${Math.round(h * 0.04)}px sans-serif`;
       ctx.textAlign = 'left';
-      ctx.fillText(paso, bx0 + 92, sy + 6);
-      sy += 80;
+      ctx.fillText(paso, pad + r * 2 + 14, sy + h * 0.015);
+      sy += h * 0.22;
     });
 
     ctx.fillStyle = teal;
-    ctx.font = '16px sans-serif';
+    ctx.font = `${Math.round(h * 0.035)}px sans-serif`;
     ctx.textAlign = 'center';
-    ctx.fillText('curpitas.com', bx0 + panelW / 2, y0 + panelH - 28);
+    ctx.fillText('curpitas.com', w / 2, h * 0.94);
 
-    const link = document.createElement('a');
-    link.download = `${pet.curpita}-tarjeta.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
+    descargarCanvas(canvas, 'presentacion-reverso');
+  };
+
+  // ============================================
+  // BLÍSTER — 11cm x 8cm, para colgar en tienda/veterinaria
+  // ============================================
+  const generarBlisterFrente = () => {
+    const { w, h } = BLISTER;
+    const { teal, mint, white } = colores;
+    const { canvas, ctx } = crearCanvas(w, h, teal);
+
+    // Hueco para colgar (euroslot de referencia)
+    ctx.fillStyle = white;
+    ctx.beginPath();
+    ctx.arc(w / 2, h * 0.06, 14, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = teal;
+    ctx.beginPath();
+    ctx.arc(w / 2, h * 0.06, 7, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = white;
+    ctx.font = `bold ${Math.round(h * 0.09)}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText('CURPitas', w / 2, h * 0.19);
+
+    ctx.fillStyle = mint;
+    ctx.font = `bold ${Math.round(h * 0.028)}px sans-serif`;
+    ctx.fillText('CREDENCIAL OFICIAL DE MASCOTA', w / 2, h * 0.24);
+
+    // Zona de montaje — referencia para quien arme el blíster (placa ~55x35mm)
+    ctx.strokeStyle = 'rgba(232, 243, 241, 0.5)';
+    ctx.setLineDash([6, 8]);
+    ctx.lineWidth = 2;
+    const zonaW = mmAPx(75);
+    const zonaH = mmAPx(48);
+    trazarRectRedondeado(ctx, (w - zonaW) / 2, h * 0.34, zonaW, zonaH, 20);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(232, 243, 241, 0.7)';
+    ctx.font = `${Math.round(h * 0.026)}px sans-serif`;
+    ctx.fillText('zona de montaje del blíster', w / 2, h * 0.34 + zonaH / 2);
+    ctx.font = `${Math.round(h * 0.022)}px sans-serif`;
+    ctx.fillText('(referencia para producción, no imprimir en el cliente final)', w / 2, h * 0.34 + zonaH / 2 + 26);
+
+    ctx.fillStyle = mint;
+    ctx.font = `${Math.round(h * 0.03)}px sans-serif`;
+    ctx.fillText('curpitas.com', w / 2, h * 0.94);
+
+    descargarCanvas(canvas, 'blister-frente');
+  };
+
+  const generarBlisterReverso = () => {
+    const qrCanvas = qrGrandeRef.current?.querySelector('canvas');
+    if (!qrCanvas) return;
+    const { w, h } = BLISTER;
+    const { teal, cream } = colores;
+    const { canvas, ctx } = crearCanvas(w, h, cream);
+
+    ctx.fillStyle = teal;
+    ctx.font = `bold ${Math.round(h * 0.045)}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText('Tu CURPITA', w / 2, h * 0.09);
+
+    const qrR = h * 0.15;
+    dibujarQRConAnillo(ctx, qrCanvas, w * 0.28, h * 0.4, qrR * 1.3, qrR, qrR * 1.3, colores);
+    dibujarFolio(ctx, w * 0.48, h * 0.28, w * 0.42, pet.curpita, colores, h * 0.14);
+
+    ctx.fillStyle = teal;
+    ctx.font = `bold ${Math.round(h * 0.035)}px sans-serif`;
+    ctx.textAlign = 'left';
+    ctx.fillText('Actívala en 3 pasos', w * 0.06, h * 0.62);
+
+    const pasos = [
+      'Crea tu cuenta en curpitas.com',
+      'Escribe este folio',
+      'Completa el perfil de tu mascota',
+    ];
+    const r = h * 0.032;
+    let sy = h * 0.72;
+    pasos.forEach((paso, i) => {
+      ctx.fillStyle = teal;
+      ctx.beginPath();
+      ctx.arc(w * 0.06 + r, sy, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = cream;
+      ctx.font = `bold ${Math.round(h * 0.026)}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText(String(i + 1), w * 0.06 + r, sy + h * 0.009);
+
+      ctx.fillStyle = teal;
+      ctx.font = `${Math.round(h * 0.028)}px sans-serif`;
+      ctx.textAlign = 'left';
+      ctx.fillText(paso, w * 0.06 + r * 2 + 10, sy + h * 0.009);
+      sy += h * 0.1;
+    });
+
+    ctx.fillStyle = teal;
+    ctx.font = `${Math.round(h * 0.026)}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText('curpitas.com', w / 2, h * 0.96);
+
+    descargarCanvas(canvas, 'blister-reverso');
+  };
+
+  const handlePresentacion = () => {
+    generarPresentacionFrente();
+    setTimeout(generarPresentacionReverso, 250);
+  };
+
+  const handleBlister = () => {
+    generarBlisterFrente();
+    setTimeout(generarBlisterReverso, 250);
   };
 
   return (
@@ -218,9 +344,9 @@ const FilaMascota = ({ pet }) => {
       <div ref={canvasRef}>
         <QRCodeCanvas value={url} size={64} bgColor="#ffffff" fgColor="#1C5253" />
       </div>
-      {/* QR más grande, oculto, solo para usarlo al generar la tarjeta */}
+      {/* QR más grande, oculto, solo para usarlo al generar las tarjetas */}
       <div ref={qrGrandeRef} style={{ display: 'none' }}>
-        <QRCodeCanvas value={url} size={400} bgColor="#ffffff" fgColor="#1C5253" />
+        <QRCodeCanvas value={url} size={500} bgColor="#ffffff" fgColor="#1C5253" />
       </div>
 
       <div className="flex-1 min-w-0">
@@ -238,11 +364,18 @@ const FilaMascota = ({ pet }) => {
       </div>
 
       <button
-        onClick={generarTarjeta}
+        onClick={handlePresentacion}
         className="p-2.5 bg-[#1C5253] hover:bg-[#164343] rounded-xl text-white shrink-0"
-        title="Generar tarjeta completa"
+        title="Generar tarjeta de presentación (CR80, frente + reverso)"
       >
         <CreditCard className="w-4 h-4" />
+      </button>
+      <button
+        onClick={handleBlister}
+        className="p-2.5 bg-[#88D49E] hover:bg-[#78c98e] rounded-xl text-[#1C5253] shrink-0"
+        title="Generar tarjeta blíster (11x8cm, frente + reverso)"
+      >
+        <Tag className="w-4 h-4" />
       </button>
       <button
         onClick={descargarQR}
