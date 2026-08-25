@@ -121,8 +121,9 @@ const FilaMascota = ({ pet }) => {
   // Convierte milímetros a píxeles a 300dpi (estándar de impresión)
   const mmAPx = (mm) => Math.round((mm / 25.4) * 300);
 
-  const CR80 = { w: mmAPx(85.6), h: mmAPx(54) }; // 1011 x 638 px
-  const BLISTER = { w: mmAPx(110), h: mmAPx(80) }; // 1300 x 945 px
+  // Tamaños en VERTICAL (se invierten ancho/alto respecto a la medida "acostada")
+  const CR80 = { w: mmAPx(54), h: mmAPx(85.6) }; // 638 x 1011 px
+  const BLISTER = { w: mmAPx(80), h: mmAPx(110) }; // 945 x 1300 px
 
   const descargarQR = () => {
     const canvas = canvasRef.current?.querySelector('canvas');
@@ -151,192 +152,143 @@ const FilaMascota = ({ pet }) => {
   };
 
   // ============================================
-  // PRESENTACIÓN — tamaño CR80 (85.6mm x 54mm, como una credencial)
+  // Distribución original — la misma para presentación y blíster,
+  // solo cambia el tamaño final. El espaciado entre elementos se calcula
+  // dinámicamente según el tamaño real de cada texto (no porcentajes fijos),
+  // para que nunca se amontone sin importar la proporción de la tarjeta.
   // ============================================
-  const generarPresentacionFrente = () => {
+  const generarFrente = (w, h, sufijo) => {
     const qrCanvas = qrGrandeRef.current?.querySelector('canvas');
     if (!qrCanvas) return;
-    const { w, h } = CR80;
     const { teal, mint, white } = colores;
     const { canvas, ctx } = crearCanvas(w, h, teal);
 
-    const pad = w * 0.045;
+    const pad = w * 0.08;
+    const base = Math.min(w, h); // referencia única para escalar todo el texto
+    let cursorY = h * 0.075;
 
     ctx.fillStyle = white;
-    ctx.font = `bold ${Math.round(h * 0.09)}px sans-serif`;
     ctx.textAlign = 'left';
-    ctx.fillText('CURPitas', pad, h * 0.2);
+    const tituloSize = base * 0.11;
+    ctx.font = `bold ${Math.round(tituloSize)}px sans-serif`;
+    cursorY += tituloSize * 0.8;
+    ctx.fillText('CURPitas', pad, cursorY);
+    cursorY += tituloSize * 0.35;
 
     ctx.fillStyle = mint;
-    ctx.font = `bold ${Math.round(h * 0.03)}px sans-serif`;
-    ctx.fillText('CREDENCIAL OFICIAL DE MASCOTA', pad, h * 0.28);
+    const subSize = base * 0.036;
+    ctx.font = `bold ${Math.round(subSize)}px sans-serif`;
+    cursorY += subSize * 1.15;
+    ctx.fillText('CREDENCIAL OFICIAL', pad, cursorY);
+    cursorY += subSize * 1.3;
+    ctx.fillText('DE MASCOTA', pad, cursorY);
 
-    const qrR = h * 0.19;
-    dibujarQRConAnillo(ctx, qrCanvas, w * 0.75, h * 0.52, qrR * 1.3, qrR, qrR * 1.3, colores);
+    // Centrado del bloque QR en el espacio restante entre el texto y el folio
+    const qrR = base * 0.22;
+    const folioAlto = base * 0.11;
+    const espacioInferior = folioAlto + base * 0.16; // folio + margen + dominio
+    const espacioDisponibleTop = cursorY + subSize;
+    const centroQRY = espacioDisponibleTop + (h - espacioInferior - espacioDisponibleTop) / 2;
 
-    dibujarFolio(ctx, pad, h * 0.78, w * 0.5, pet.curpita, colores, h * 0.14);
+    dibujarQRConAnillo(ctx, qrCanvas, w / 2, centroQRY, qrR * 1.3, qrR, qrR * 1.3, colores);
+
+    const folioW = w - pad * 2;
+    const folioY = h - espacioInferior;
+    dibujarFolio(ctx, pad, folioY, folioW, pet.curpita, colores, folioAlto);
 
     ctx.fillStyle = mint;
-    ctx.font = `${Math.round(h * 0.035)}px sans-serif`;
-    ctx.textAlign = 'left';
-    ctx.fillText('curpitas.com', pad, h * 0.94);
+    const dominioSize = base * 0.04;
+    ctx.font = `${Math.round(dominioSize)}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText('curpitas.com', w / 2, h - base * 0.045);
 
-    descargarCanvas(canvas, 'presentacion-frente');
+    descargarCanvas(canvas, `${sufijo}-frente`);
   };
 
-  const generarPresentacionReverso = () => {
-    const { w, h } = CR80;
+  const generarReverso = (w, h, sufijo) => {
     const { teal, cream } = colores;
     const { canvas, ctx } = crearCanvas(w, h, cream);
-    const pad = w * 0.045;
+    const pad = w * 0.08;
+    const base = Math.min(w, h);
+    let cursorY = h * 0.075;
 
     ctx.fillStyle = teal;
-    ctx.font = `bold ${Math.round(h * 0.055)}px sans-serif`;
     ctx.textAlign = 'left';
-    ctx.fillText('Actívala en 3 pasos', pad, h * 0.17);
+    const tituloSize = base * 0.06;
+    ctx.font = `bold ${Math.round(tituloSize)}px sans-serif`;
+    cursorY += tituloSize * 0.8;
+    ctx.fillText('Actívala en', pad, cursorY);
+    cursorY += tituloSize * 1.15;
+    ctx.fillText('3 pasos', pad, cursorY);
+    cursorY += tituloSize * 1.6;
 
     const pasos = [
       'Crea tu cuenta en curpitas.com',
       'Escribe el folio de esta placa',
       'Completa el perfil de tu mascota',
     ];
-    const r = h * 0.06;
-    let sy = h * 0.34;
+    const r = base * 0.06;
+    const numSize = base * 0.048;
+    const textoSize = base * 0.04;
+
     pasos.forEach((paso, i) => {
-      ctx.fillStyle = teal;
-      ctx.beginPath();
-      ctx.arc(pad + r, sy, r, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = cream;
-      ctx.font = `bold ${Math.round(h * 0.045)}px sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.fillText(String(i + 1), pad + r, sy + h * 0.015);
+      const circuloY = cursorY + r;
 
       ctx.fillStyle = teal;
-      ctx.font = `${Math.round(h * 0.04)}px sans-serif`;
+      ctx.beginPath();
+      ctx.arc(pad + r, circuloY, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = cream;
+      ctx.font = `bold ${Math.round(numSize)}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText(String(i + 1), pad + r, circuloY + numSize * 0.35);
+
+      ctx.fillStyle = teal;
+      ctx.font = `${Math.round(textoSize)}px sans-serif`;
       ctx.textAlign = 'left';
-      ctx.fillText(paso, pad + r * 2 + 14, sy + h * 0.015);
-      sy += h * 0.22;
+
+      const maxWidth = w - pad - (r * 2 + 16) - pad;
+      const palabras = paso.split(' ');
+      const lineas = [];
+      let actual = '';
+      palabras.forEach((palabra) => {
+        const prueba = actual ? `${actual} ${palabra}` : palabra;
+        if (ctx.measureText(prueba).width > maxWidth && actual) {
+          lineas.push(actual);
+          actual = palabra;
+        } else {
+          actual = prueba;
+        }
+      });
+      lineas.push(actual);
+
+      const lineHeight = textoSize * 1.25;
+      const alturaBloque = lineHeight * lineas.length;
+      const textoStartY = circuloY - alturaBloque / 2 + textoSize * 0.85;
+      lineas.forEach((linea, li) => {
+        ctx.fillText(linea, pad + r * 2 + 16, textoStartY + li * lineHeight);
+      });
+
+      cursorY = circuloY + r + Math.max(r, alturaBloque / 2) + base * 0.05;
     });
 
     ctx.fillStyle = teal;
-    ctx.font = `${Math.round(h * 0.035)}px sans-serif`;
+    const dominioSize = base * 0.04;
+    ctx.font = `${Math.round(dominioSize)}px sans-serif`;
     ctx.textAlign = 'center';
-    ctx.fillText('curpitas.com', w / 2, h * 0.94);
+    ctx.fillText('curpitas.com', w / 2, h - base * 0.045);
 
-    descargarCanvas(canvas, 'presentacion-reverso');
-  };
-
-  // ============================================
-  // BLÍSTER — 11cm x 8cm, para colgar en tienda/veterinaria
-  // ============================================
-  const generarBlisterFrente = () => {
-    const { w, h } = BLISTER;
-    const { teal, mint, white } = colores;
-    const { canvas, ctx } = crearCanvas(w, h, teal);
-
-    // Hueco para colgar (euroslot de referencia)
-    ctx.fillStyle = white;
-    ctx.beginPath();
-    ctx.arc(w / 2, h * 0.06, 14, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = teal;
-    ctx.beginPath();
-    ctx.arc(w / 2, h * 0.06, 7, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = white;
-    ctx.font = `bold ${Math.round(h * 0.09)}px sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.fillText('CURPitas', w / 2, h * 0.19);
-
-    ctx.fillStyle = mint;
-    ctx.font = `bold ${Math.round(h * 0.028)}px sans-serif`;
-    ctx.fillText('CREDENCIAL OFICIAL DE MASCOTA', w / 2, h * 0.24);
-
-    // Zona de montaje — referencia para quien arme el blíster (placa ~55x35mm)
-    ctx.strokeStyle = 'rgba(232, 243, 241, 0.5)';
-    ctx.setLineDash([6, 8]);
-    ctx.lineWidth = 2;
-    const zonaW = mmAPx(75);
-    const zonaH = mmAPx(48);
-    trazarRectRedondeado(ctx, (w - zonaW) / 2, h * 0.34, zonaW, zonaH, 20);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.fillStyle = 'rgba(232, 243, 241, 0.7)';
-    ctx.font = `${Math.round(h * 0.026)}px sans-serif`;
-    ctx.fillText('zona de montaje del blíster', w / 2, h * 0.34 + zonaH / 2);
-    ctx.font = `${Math.round(h * 0.022)}px sans-serif`;
-    ctx.fillText('(referencia para producción, no imprimir en el cliente final)', w / 2, h * 0.34 + zonaH / 2 + 26);
-
-    ctx.fillStyle = mint;
-    ctx.font = `${Math.round(h * 0.03)}px sans-serif`;
-    ctx.fillText('curpitas.com', w / 2, h * 0.94);
-
-    descargarCanvas(canvas, 'blister-frente');
-  };
-
-  const generarBlisterReverso = () => {
-    const qrCanvas = qrGrandeRef.current?.querySelector('canvas');
-    if (!qrCanvas) return;
-    const { w, h } = BLISTER;
-    const { teal, cream } = colores;
-    const { canvas, ctx } = crearCanvas(w, h, cream);
-
-    ctx.fillStyle = teal;
-    ctx.font = `bold ${Math.round(h * 0.045)}px sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.fillText('Tu CURPITA', w / 2, h * 0.09);
-
-    const qrR = h * 0.15;
-    dibujarQRConAnillo(ctx, qrCanvas, w * 0.28, h * 0.4, qrR * 1.3, qrR, qrR * 1.3, colores);
-    dibujarFolio(ctx, w * 0.48, h * 0.28, w * 0.42, pet.curpita, colores, h * 0.14);
-
-    ctx.fillStyle = teal;
-    ctx.font = `bold ${Math.round(h * 0.035)}px sans-serif`;
-    ctx.textAlign = 'left';
-    ctx.fillText('Actívala en 3 pasos', w * 0.06, h * 0.62);
-
-    const pasos = [
-      'Crea tu cuenta en curpitas.com',
-      'Escribe este folio',
-      'Completa el perfil de tu mascota',
-    ];
-    const r = h * 0.032;
-    let sy = h * 0.72;
-    pasos.forEach((paso, i) => {
-      ctx.fillStyle = teal;
-      ctx.beginPath();
-      ctx.arc(w * 0.06 + r, sy, r, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = cream;
-      ctx.font = `bold ${Math.round(h * 0.026)}px sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.fillText(String(i + 1), w * 0.06 + r, sy + h * 0.009);
-
-      ctx.fillStyle = teal;
-      ctx.font = `${Math.round(h * 0.028)}px sans-serif`;
-      ctx.textAlign = 'left';
-      ctx.fillText(paso, w * 0.06 + r * 2 + 10, sy + h * 0.009);
-      sy += h * 0.1;
-    });
-
-    ctx.fillStyle = teal;
-    ctx.font = `${Math.round(h * 0.026)}px sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.fillText('curpitas.com', w / 2, h * 0.96);
-
-    descargarCanvas(canvas, 'blister-reverso');
+    descargarCanvas(canvas, `${sufijo}-reverso`);
   };
 
   const handlePresentacion = () => {
-    generarPresentacionFrente();
-    setTimeout(generarPresentacionReverso, 250);
+    generarFrente(CR80.w, CR80.h, 'presentacion');
+    setTimeout(() => generarReverso(CR80.w, CR80.h, 'presentacion'), 250);
   };
 
   const handleBlister = () => {
-    generarBlisterFrente();
-    setTimeout(generarBlisterReverso, 250);
+    generarFrente(BLISTER.w, BLISTER.h, 'blister');
+    setTimeout(() => generarReverso(BLISTER.w, BLISTER.h, 'blister'), 250);
   };
 
   return (
@@ -366,14 +318,14 @@ const FilaMascota = ({ pet }) => {
       <button
         onClick={handlePresentacion}
         className="p-2.5 bg-[#1C5253] hover:bg-[#164343] rounded-xl text-white shrink-0"
-        title="Generar tarjeta de presentación (CR80, frente + reverso)"
+        title="Generar tarjeta de presentación (CR80 vertical, frente + reverso)"
       >
         <CreditCard className="w-4 h-4" />
       </button>
       <button
         onClick={handleBlister}
         className="p-2.5 bg-[#88D49E] hover:bg-[#78c98e] rounded-xl text-[#1C5253] shrink-0"
-        title="Generar tarjeta blíster (11x8cm, frente + reverso)"
+        title="Generar tarjeta blíster (8x11cm vertical, frente + reverso)"
       >
         <Tag className="w-4 h-4" />
       </button>
