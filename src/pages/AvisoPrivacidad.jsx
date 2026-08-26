@@ -77,7 +77,7 @@ export const AvisoPrivacidad = () => {
             </p>
             <ul className="list-disc pl-5 mt-2 space-y-1">
               <li>Directamente desde tu cuenta, en la sección "Mi cuenta", donde puedes editar o eliminar la información de tus mascotas.</li>
-              <li>Escribiendo a <strong>axelcortes.developer@gmail.com</strong>, indicando tu nombre, el derecho que deseas ejercer, y una identificación que acredite tu titularidad.</li>
+              <li>Escribiendo a <strong>curpitas.mx@gmail.com</strong>, indicando tu nombre, el derecho que deseas ejercer, y una identificación que acredite tu titularidad.</li>
             </ul>
           </section>
 
