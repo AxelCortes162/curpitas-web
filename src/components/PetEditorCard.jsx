@@ -13,6 +13,7 @@ import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import BreedSelect from './BreedSelect';
+import SelectorUbicacionPerdida from './SelectorUbicacionPerdida';
 
 export const PetEditorCard = ({ pet, onUpdated, onDeleted }) => {
   const { user } = useAuth();
@@ -25,6 +26,8 @@ export const PetEditorCard = ({ pet, onUpdated, onDeleted }) => {
     photo_url: pet.photo_url || '',
     medical_info: pet.medical_info || '',
     is_lost: pet.is_lost,
+    lost_lat: pet.lost_lat || null,
+    lost_lng: pet.lost_lng || null,
     show_breed: pet.show_breed,
     show_birth_date: pet.show_birth_date,
     show_medical_info: pet.show_medical_info,
@@ -297,10 +300,29 @@ export const PetEditorCard = ({ pet, onUpdated, onDeleted }) => {
           <input
             type="checkbox"
             checked={form.is_lost}
-            onChange={(e) => handleChange('is_lost', e.target.checked)}
+            onChange={(e) => {
+              const marcada = e.target.checked;
+              handleChange('is_lost', marcada);
+              if (!marcada) {
+                // Al recuperarla, limpiamos la ubicación para no dejar
+                // rastro de "dónde se perdió" una vez que ya no aplica.
+                handleChange('lost_lat', null);
+                handleChange('lost_lng', null);
+              }
+            }}
             className="w-4 h-4 accent-red-500"
           />
         </label>
+
+        {form.is_lost && (
+          <SelectorUbicacionPerdida
+            value={form.lost_lat && form.lost_lng ? { lat: form.lost_lat, lng: form.lost_lng } : null}
+            onChange={(coords) => {
+              handleChange('lost_lat', coords.lat);
+              handleChange('lost_lng', coords.lng);
+            }}
+          />
+        )}
 
         <div className="border-t border-emerald-100 pt-2 space-y-1.5">
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">

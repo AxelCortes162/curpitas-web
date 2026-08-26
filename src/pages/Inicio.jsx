@@ -60,21 +60,29 @@ const NavBar = ({ user }) => (
       <img src="/logo.png" alt="CURPitas" className="w-12 h-12 object-contain" />
       <span className="font-black text-[#1C5253] tracking-tight text-lg">CURPitas</span>
     </Link>
-    {user ? (
+    <div className="flex items-center gap-5">
       <Link
-        to="/mi-cuenta"
-        className="flex items-center gap-1.5 text-sm font-bold text-[#1C5253] hover:text-[#88D49E] transition-colors"
-      >
-        <User className="w-4 h-4" /> Mi cuenta
-      </Link>
-    ) : (
-      <Link
-        to="/iniciar-sesion"
+        to="/mapa"
         className="text-sm font-bold text-[#1C5253] hover:text-[#88D49E] transition-colors"
       >
-        Iniciar sesión
+        Mapa de perdidas
       </Link>
-    )}
+      {user ? (
+        <Link
+          to="/mi-cuenta"
+          className="flex items-center gap-1.5 text-sm font-bold text-[#1C5253] hover:text-[#88D49E] transition-colors"
+        >
+          <User className="w-4 h-4" /> Mi cuenta
+        </Link>
+      ) : (
+        <Link
+          to="/iniciar-sesion"
+          className="text-sm font-bold text-[#1C5253] hover:text-[#88D49E] transition-colors"
+        >
+          Iniciar sesión
+        </Link>
+      )}
+    </div>
   </nav>
 );
 

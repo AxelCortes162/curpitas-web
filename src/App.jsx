@@ -10,6 +10,7 @@ import Inicio from './pages/Inicio';
 import RutaAdmin from './context/RutaAdmin';
 import Admin from './pages/Admin';
 import AvisoPrivacidad from './pages/AvisoPrivacidad';
+import Mapa from './pages/Mapa';
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Inicio />} />
           <Route path="/aviso-de-privacidad" element={<AvisoPrivacidad />} />
+          <Route path="/mapa" element={<Mapa />} />
           {/* La búsqueda pública se quitó — el acceso normal es vía QR/NFC */}
           <Route path="/mascota/:curpita" element={<PerfilMascota />} />
           <Route path="/registro" element={<Registro />} />
