@@ -19,10 +19,10 @@ import {
 // ⚠️ EDITA ESTO cuando tengas tus cuentas y número reales.
 // El número de WhatsApp va sin espacios ni signos, con código de país (52 = México).
 const REDES = {
-  instagram: 'https://instagram.com/curpitas', // PENDIENTE: confirmar disponibilidad
-  tiktok: 'https://tiktok.com/@curpitas', // PENDIENTE: confirmar disponibilidad
-  facebook: 'https://facebook.com/curpitas', // PENDIENTE: confirmar disponibilidad
-  whatsapp: 'https://wa.me/5215500000000', // PENDIENTE: poner tu número real
+  instagram: 'https://www.instagram.com/curpitas',
+  tiktok: 'https://www.tiktok.com/@curpitas',
+  facebook: 'https://www.facebook.com/share/1DszDr7da2/',
+  whatsapp: 'https://wa.me/525661868461',
 };
 
 // Los testimonios reales se cargan desde Supabase (tabla "testimonials",
@@ -55,29 +55,30 @@ const WhatsAppIcon = (props) => (
 );
 
 const NavBar = ({ user }) => (
-  <nav className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
-    <Link to="/" className="flex items-center gap-2.5">
-      <img src="/logo.png" alt="CURPitas" className="w-12 h-12 object-contain" />
-      <span className="font-black text-[#1C5253] tracking-tight text-lg">CURPitas</span>
+  <nav className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between gap-2">
+    <Link to="/" className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+      <img src="/logo.png" alt="CURPitas" className="w-8 h-8 sm:w-12 sm:h-12 object-contain" />
+      <span className="font-black text-[#1C5253] tracking-tight text-base sm:text-lg">CURPitas</span>
     </Link>
-    <div className="flex items-center gap-5">
+    <div className="flex items-center gap-3 sm:gap-5">
       <Link
         to="/mapa"
-        className="text-sm font-bold text-[#1C5253] hover:text-[#88D49E] transition-colors"
+        className="text-xs sm:text-sm font-bold text-[#1C5253] hover:text-[#88D49E] transition-colors whitespace-nowrap"
       >
-        Mapa de perdidas
+        <span className="sm:hidden">Mapa</span>
+        <span className="hidden sm:inline">Mapa de perdidas</span>
       </Link>
       {user ? (
         <Link
           to="/mi-cuenta"
-          className="flex items-center gap-1.5 text-sm font-bold text-[#1C5253] hover:text-[#88D49E] transition-colors"
+          className="flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm font-bold text-[#1C5253] hover:text-[#88D49E] transition-colors whitespace-nowrap"
         >
-          <User className="w-4 h-4" /> Mi cuenta
+          <User className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Mi cuenta
         </Link>
       ) : (
         <Link
           to="/iniciar-sesion"
-          className="text-sm font-bold text-[#1C5253] hover:text-[#88D49E] transition-colors"
+          className="text-xs sm:text-sm font-bold text-[#1C5253] hover:text-[#88D49E] transition-colors whitespace-nowrap"
         >
           Iniciar sesión
         </Link>

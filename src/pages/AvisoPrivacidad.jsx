@@ -18,7 +18,7 @@ export const AvisoPrivacidad = () => {
             <h2 className="font-black text-[#1C5253] text-base mb-2">1. Identidad y domicilio del responsable</h2>
             <p>
               <strong>Axel Alejandro Cortés Fonseca</strong>, con domicilio en{' '}
-              <strong>Eje Central Lázaro Cárdenas 36B, Lindavista Vallejo, Gustavo A. Madero, C.P. 07755, Ciudad de México</strong>
+              <strong>Eje Central Lázaro Cárdenas 36, Lindavista Vallejo, Gustavo A. Madero, C.P. 07755, Ciudad de México</strong>
               {' '}(en adelante, "CURPitas" o "el Responsable"), es responsable del tratamiento de tus
               datos personales conforme a este Aviso de Privacidad, en cumplimiento de la Ley Federal
               de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP) y su Reglamento.
