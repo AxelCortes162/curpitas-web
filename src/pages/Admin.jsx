@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
-import { PawPrint, Plus, Download, ShieldCheck, ShieldOff, Star, Check, X, CreditCard, Tag } from 'lucide-react';
+import { PawPrint, Plus, Download, ShieldCheck, ShieldOff, Star, Check, X, CreditCard, Tag, Circle } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 
 // Genera un folio nuevo con formato CURPITA + 8 dígitos aleatorios
@@ -109,6 +109,7 @@ const dibujarFolio = (ctx, x, y, w, folio, colores, alto = 90) => {
 const FilaMascota = ({ pet }) => {
   const canvasRef = useRef(null);
   const qrGrandeRef = useRef(null);
+  const qrNegroRef = useRef(null);
   const url = `${window.location.origin}/mascota/${pet.curpita}`;
 
   const colores = {
@@ -130,6 +131,49 @@ const FilaMascota = ({ pet }) => {
     if (!canvas) return;
     const link = document.createElement('a');
     link.download = `${pet.curpita}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  };
+
+  // Descarga el QR listo para cortar en vinil: negro sólido, sin el
+  // anillo punteado (imposible de cortar y despegar a este tamaño), sobre
+  // fondo transparente — así el archivo sirve tanto para "print then cut"
+  // como para corte directo de vinil negro.
+  const descargarQRCircular = () => {
+    const qrNegro = qrNegroRef.current?.querySelector('canvas');
+    if (!qrNegro) return;
+
+    const size = 600;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    // fondo transparente (no llenamos nada) — el color real lo pone el
+    // material de tu placa, no el archivo
+
+    const centro = size / 2;
+    const radioCirculo = centro * 0.98;
+
+    // Fondo menta (el tono medio de la paleta)
+    ctx.fillStyle = colores.mint;
+    ctx.beginPath();
+    ctx.arc(centro, centro, radioCirculo, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Círculo blanco interior (zona de silencio del QR)
+    const radioBlanco = radioCirculo * 0.86;
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(centro, centro, radioBlanco, 0, Math.PI * 2);
+    ctx.fill();
+
+    // QR negro, tamaño calculado para que quepa completo sin recortar
+    // ninguna esquina (necesarias para que el código sea legible)
+    const qrSize = radioBlanco * 1.2;
+    ctx.drawImage(qrNegro, centro - qrSize / 2, centro - qrSize / 2, qrSize, qrSize);
+
+    const link = document.createElement('a');
+    link.download = `${pet.curpita}-qr-vinil.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
   };
@@ -300,6 +344,10 @@ const FilaMascota = ({ pet }) => {
       <div ref={qrGrandeRef} style={{ display: 'none' }}>
         <QRCodeCanvas value={url} size={500} bgColor="#ffffff" fgColor="#1C5253" />
       </div>
+      {/* QR negro oculto, para cortar en vinil */}
+      <div ref={qrNegroRef} style={{ display: 'none' }}>
+        <QRCodeCanvas value={url} size={500} bgColor="#ffffff" fgColor="#000000" />
+      </div>
 
       <div className="flex-1 min-w-0">
         <p className="font-mono text-xs font-bold text-[#1C5253]">{pet.curpita}</p>
@@ -328,6 +376,13 @@ const FilaMascota = ({ pet }) => {
         title="Generar tarjeta blíster (8x11cm vertical, frente + reverso)"
       >
         <Tag className="w-4 h-4" />
+      </button>
+      <button
+        onClick={descargarQRCircular}
+        className="p-2.5 bg-[#88D49E] hover:bg-[#78c98e] rounded-xl text-[#1C5253] shrink-0"
+        title="Descargar QR negro para cortar en vinil (placas circulares)"
+      >
+        <Circle className="w-4 h-4" />
       </button>
       <button
         onClick={descargarQR}
