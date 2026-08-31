@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
-import { PawPrint, Plus, Download, ShieldCheck, ShieldOff, Star, Check, X, CreditCard, Tag, Circle } from 'lucide-react';
+import { PawPrint, Plus, Download, ShieldCheck, ShieldOff, Star, Check, X, CreditCard, Tag, Circle, FileSpreadsheet, Ban, RotateCcw } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 
 // Genera un folio nuevo con formato CURPITA + 8 dígitos aleatorios
@@ -106,7 +106,7 @@ const dibujarFolio = (ctx, x, y, w, folio, colores, alto = 90) => {
   ctx.fillText(folio, x + w / 2, y + alto * 0.78);
 };
 
-const FilaMascota = ({ pet }) => {
+const FilaMascota = ({ pet, onUpdated }) => {
   const canvasRef = useRef(null);
   const qrGrandeRef = useRef(null);
   const qrNegroRef = useRef(null);
@@ -335,11 +335,26 @@ const FilaMascota = ({ pet }) => {
     setTimeout(() => generarReverso(BLISTER.w, BLISTER.h, 'blister'), 250);
   };
 
+  const [confirmandoInvalidar, setConfirmandoInvalidar] = useState(false);
+  const [procesandoInvalidar, setProcesandoInvalidar] = useState(false);
+
+  const invalidarFolio = async () => {
+    setProcesandoInvalidar(true);
+    await supabase.from('pets').update({ invalidated: true }).eq('id', pet.id);
+    setProcesandoInvalidar(false);
+    setConfirmandoInvalidar(false);
+    onUpdated?.();
+  };
+
+  const reactivarFolio = async () => {
+    setProcesandoInvalidar(true);
+    await supabase.from('pets').update({ invalidated: false }).eq('id', pet.id);
+    setProcesandoInvalidar(false);
+    onUpdated?.();
+  };
+
   return (
-    <div className="bg-white rounded-2xl border border-emerald-100/80 shadow-sm p-4 flex items-center gap-4">
-      <div ref={canvasRef}>
-        <QRCodeCanvas value={url} size={64} bgColor="#ffffff" fgColor="#1C5253" />
-      </div>
+    <div className="bg-white rounded-2xl border border-emerald-100/80 shadow-sm p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
       {/* QR más grande, oculto, solo para usarlo al generar las tarjetas */}
       <div ref={qrGrandeRef} style={{ display: 'none' }}>
         <QRCodeCanvas value={url} size={500} bgColor="#ffffff" fgColor="#1C5253" />
@@ -349,48 +364,98 @@ const FilaMascota = ({ pet }) => {
         <QRCodeCanvas value={url} size={500} bgColor="#ffffff" fgColor="#000000" />
       </div>
 
-      <div className="flex-1 min-w-0">
-        <p className="font-mono text-xs font-bold text-[#1C5253]">{pet.curpita}</p>
-        <p className="text-xs text-gray-500 truncate">{pet.name || '— sin nombre aún —'}</p>
-        {pet.owner_id ? (
-          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#1C5253] mt-1">
-            <ShieldCheck className="w-3 h-3 text-[#88D49E]" /> Vinculada
-          </span>
-        ) : (
-          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-gray-400 mt-1">
-            <ShieldOff className="w-3 h-3" /> Sin reclamar
-          </span>
-        )}
+      {/* Fila 1 (siempre): miniatura del QR + info */}
+      <div className="flex items-center gap-3">
+        <div ref={canvasRef} className="shrink-0">
+          <QRCodeCanvas value={url} size={48} bgColor="#ffffff" fgColor="#1C5253" />
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <p className="font-mono text-xs font-bold text-[#1C5253]">{pet.curpita}</p>
+          <p className="text-xs text-gray-500 truncate">{pet.name || '— sin nombre aún —'}</p>
+          {pet.invalidated ? (
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-red-600 mt-1">
+              <Ban className="w-3 h-3" /> Invalidada
+            </span>
+          ) : pet.owner_id ? (
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#1C5253] mt-1">
+              <ShieldCheck className="w-3 h-3 text-[#88D49E]" /> Vinculada
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-gray-400 mt-1">
+              <ShieldOff className="w-3 h-3" /> Sin reclamar
+            </span>
+          )}
+        </div>
       </div>
 
-      <button
-        onClick={handlePresentacion}
-        className="p-2.5 bg-[#1C5253] hover:bg-[#164343] rounded-xl text-white shrink-0"
-        title="Generar tarjeta de presentación (CR80 vertical, frente + reverso)"
-      >
-        <CreditCard className="w-4 h-4" />
-      </button>
-      <button
-        onClick={handleBlister}
-        className="p-2.5 bg-[#88D49E] hover:bg-[#78c98e] rounded-xl text-[#1C5253] shrink-0"
-        title="Generar tarjeta blíster (8x11cm vertical, frente + reverso)"
-      >
-        <Tag className="w-4 h-4" />
-      </button>
-      <button
-        onClick={descargarQRCircular}
-        className="p-2.5 bg-[#88D49E] hover:bg-[#78c98e] rounded-xl text-[#1C5253] shrink-0"
-        title="Descargar QR negro para cortar en vinil (placas circulares)"
-      >
-        <Circle className="w-4 h-4" />
-      </button>
-      <button
-        onClick={descargarQR}
-        className="p-2.5 bg-[#F4F9F8] hover:bg-emerald-100 rounded-xl text-[#1C5253] shrink-0"
-        title="Descargar solo el QR"
-      >
-        <Download className="w-4 h-4" />
-      </button>
+      {/* Fila 2 en móvil / resto de la fila en pantallas grandes: botones */}
+      <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap sm:ml-auto">
+        {confirmandoInvalidar ? (
+          <div className="flex items-center gap-1.5 bg-red-50 border border-red-200 rounded-xl px-2 py-1.5 shrink-0">
+            <span className="text-[10px] text-red-700 font-semibold">¿Seguro?</span>
+            <button
+              onClick={invalidarFolio}
+              disabled={procesandoInvalidar}
+              className="text-[10px] font-bold text-white bg-red-500 hover:bg-red-600 rounded-lg px-2 py-1"
+            >
+              Sí
+            </button>
+            <button
+              onClick={() => setConfirmandoInvalidar(false)}
+              className="text-[10px] font-bold text-gray-500 bg-white border border-gray-200 rounded-lg px-2 py-1"
+            >
+              No
+            </button>
+          </div>
+        ) : pet.invalidated ? (
+          <button
+            onClick={reactivarFolio}
+            disabled={procesandoInvalidar}
+            className="p-2.5 bg-[#F4F9F8] hover:bg-emerald-100 rounded-xl text-[#1C5253] shrink-0"
+            title="Reactivar folio"
+          >
+            <RotateCcw className="w-4 h-4" />
+          </button>
+        ) : (
+          <button
+            onClick={() => setConfirmandoInvalidar(true)}
+            className="p-2.5 bg-white border border-red-200 hover:bg-red-50 rounded-xl text-red-500 shrink-0"
+            title="Invalidar folio (por mal uso)"
+          >
+            <Ban className="w-4 h-4" />
+          </button>
+        )}
+
+        <button
+          onClick={handlePresentacion}
+          className="p-2.5 bg-[#1C5253] hover:bg-[#164343] rounded-xl text-white shrink-0"
+          title="Generar tarjeta de presentación (CR80 vertical, frente + reverso)"
+        >
+          <CreditCard className="w-4 h-4" />
+        </button>
+        <button
+          onClick={handleBlister}
+          className="p-2.5 bg-[#88D49E] hover:bg-[#78c98e] rounded-xl text-[#1C5253] shrink-0"
+          title="Generar tarjeta blíster (8x11cm vertical, frente + reverso)"
+        >
+          <Tag className="w-4 h-4" />
+        </button>
+        <button
+          onClick={descargarQRCircular}
+          className="p-2.5 bg-[#88D49E] hover:bg-[#78c98e] rounded-xl text-[#1C5253] shrink-0"
+          title="Descargar QR negro para cortar en vinil (placas circulares)"
+        >
+          <Circle className="w-4 h-4" />
+        </button>
+        <button
+          onClick={descargarQR}
+          className="p-2.5 bg-[#F4F9F8] hover:bg-emerald-100 rounded-xl text-[#1C5253] shrink-0"
+          title="Descargar solo el QR"
+        >
+          <Download className="w-4 h-4" />
+        </button>
+      </div>
     </div>
   );
 };
@@ -450,6 +515,32 @@ export const Admin = () => {
 
   const sinReclamar = pets.filter((p) => !p.owner_id).length;
 
+  // Arma un CSV (se abre directo en Excel) con folio, URL completa,
+  // nombre y estado de cada placa.
+  const exportarCSV = () => {
+    const encabezados = ['Folio', 'URL', 'Nombre', 'Estado', 'Fecha de creación'];
+
+    // Escapa comillas y comas para que Excel no rompa las columnas
+    const escapar = (valor) => `"${String(valor ?? '').replace(/"/g, '""')}"`;
+
+    const filas = pets.map((pet) => [
+      pet.curpita,
+      `${window.location.origin}/mascota/${pet.curpita}`,
+      pet.name || '',
+      pet.owner_id ? 'Vinculada' : 'Sin reclamar',
+      new Date(pet.created_at).toLocaleDateString('es-MX'),
+    ]);
+
+    const csv = [encabezados, ...filas].map((fila) => fila.map(escapar).join(',')).join('\n');
+
+    // El BOM (\ufeff) evita que Excel muestre acentos/ñ como símbolos raros
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `curpitas-folios-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+  };
+
   return (
     <div className="min-h-screen bg-[#E8F3F1] p-4 font-sans antialiased">
       <div className="w-full max-w-lg mx-auto">
@@ -485,15 +576,24 @@ export const Admin = () => {
           </>
         )}
 
-        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 mt-6">
-          Todas las placas
-        </p>
+        <div className="flex items-center justify-between mb-2 mt-6">
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+            Todas las placas
+          </p>
+          <button
+            onClick={exportarCSV}
+            disabled={pets.length === 0}
+            className="flex items-center gap-1.5 text-[11px] font-bold text-[#1C5253] hover:underline disabled:opacity-40"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5" /> Exportar a Excel
+          </button>
+        </div>
 
         {loading && <p className="text-xs text-gray-400">Cargando...</p>}
 
         <div className="space-y-2">
           {pets.map((pet) => (
-            <FilaMascota key={pet.id} pet={pet} />
+            <FilaMascota key={pet.id} pet={pet} onUpdated={cargarMascotas} />
           ))}
         </div>
       </div>
