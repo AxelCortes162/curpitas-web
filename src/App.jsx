@@ -11,7 +11,7 @@ import RutaAdmin from './context/RutaAdmin';
 import Admin from './pages/Admin';
 import AvisoPrivacidad from './pages/AvisoPrivacidad';
 import Mapa from './pages/Mapa';
-import RutaRescatista from './context/Rutarescatista';
+import RutaRescatista from './context/RutaRescatista';
 import MisPerros from './pages/MisPerros';
 import Adopciones from './pages/Adopciones';
 
