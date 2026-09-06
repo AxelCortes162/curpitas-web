@@ -16,6 +16,9 @@ import {
   Star,
   ChevronLeft,
   ChevronRight,
+  MapPin,
+  Heart,
+  ShieldAlert,
 } from 'lucide-react';
 
 // ⚠️ EDITA ESTO cuando tengas tus cuentas y número reales.
@@ -440,6 +443,53 @@ export const Inicio = () => {
                 Siempre visible
               </span>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* COMUNIDAD — mapa de perdidas y adopciones */}
+      <section className="max-w-6xl mx-auto px-6 py-16">
+        <h2 className="text-xs font-bold text-[#88D49E] uppercase tracking-[0.2em] mb-2">
+          Comunidad
+        </h2>
+        <p className="text-2xl font-black text-[#1C5253] mb-8 max-w-lg">
+          Más que una identidad — una red de ayuda entre dueños.
+        </p>
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="bg-white rounded-2xl p-6 border border-emerald-100/70 shadow-sm">
+            <div className="w-11 h-11 rounded-xl bg-red-50 flex items-center justify-center mb-3">
+              <ShieldAlert className="w-5 h-5 text-red-500" />
+            </div>
+            <h3 className="font-black text-[#1C5253] text-base">Mapa de mascotas perdidas</h3>
+            <p className="text-sm text-gray-500 mt-1.5 leading-relaxed">
+              Cuando marcas a tu mascota como perdida, eliges en un mapa dónde se perdió. Aparece
+              con su foto y un radio de búsqueda de 1km, para que cualquiera en la zona esté al
+              pendiente — no dependes solo de que alguien escanee su placa.
+            </p>
+            <Link
+              to="/mapa"
+              className="inline-flex items-center gap-1.5 text-sm font-bold text-[#1C5253] hover:text-[#88D49E] mt-4"
+            >
+              Ver mapa en vivo <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          <div className="bg-white rounded-2xl p-6 border border-emerald-100/70 shadow-sm">
+            <div className="w-11 h-11 rounded-xl bg-[#E8F3F1] flex items-center justify-center mb-3">
+              <Heart className="w-5 h-5 text-[#1C5253]" />
+            </div>
+            <h3 className="font-black text-[#1C5253] text-base">Adopciones</h3>
+            <p className="text-sm text-gray-500 mt-1.5 leading-relaxed">
+              Rescatistas verificados publican perritos buscando hogar. Cada ficha tiene fotos,
+              su historia, y un formulario antes de contactar — para que la adopción sea
+              responsable. Muchos salen de aquí con su propia credencial CURPitas de regalo.
+            </p>
+            <Link
+              to="/adopciones"
+              className="inline-flex items-center gap-1.5 text-sm font-bold text-[#1C5253] hover:text-[#88D49E] mt-4"
+            >
+              Ver perros en adopción <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
         </div>
       </section>

@@ -4,6 +4,16 @@ import { ArrowLeft, MapPin, MessageCircle, X } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import FotoCarrusel3D from '../components/FotoCarrusel3D';
 
+// Sello de "Adoptado" — imagen real (PNG con transparencia). Usa estilos en
+// línea para el posicionamiento (más confiable que clases de Tailwind aquí).
+const SelloAdoptado = ({ size = 76, style = {} }) => (
+  <img
+    src="/sello-adoptado.png"
+    alt="Adoptado"
+    style={{ width: size, height: size, position: 'absolute', zIndex: 10, ...style }}
+  />
+);
+
 // Botón tipo interruptor Sí/No, para las preguntas de filtro
 const BotonSiNo = ({ valor, onChange }) => (
   <div className="flex gap-2">
@@ -200,12 +210,19 @@ const FichaPerro = ({ dog, onCerrar }) => {
         </button>
 
         {fotos.length > 0 ? (
-          <FotoCarrusel3D fotos={fotos} />
+          <div style={{ position: 'relative' }}>
+            <FotoCarrusel3D fotos={fotos} />
+            {dog.status === 'adoptado' && (
+              <SelloAdoptado size={100} style={{ top: -14, left: -14 }} />
+            )}
+          </div>
         ) : (
           <div className="h-40 flex items-center justify-center text-gray-400 text-xs">Sin fotos aún</div>
         )}
 
-        <h2 className="text-xl font-black text-[#1C5253] mt-3">{dog.name || 'Sin nombre'}</h2>
+        <h2 className="text-xl font-black text-[#1C5253] mt-3 flex items-center gap-2">
+          {dog.name || 'Sin nombre'}
+        </h2>
         <p className="text-xs text-gray-500">
           {dog.breed || (dog.species === 'gato' ? 'Gato' : 'Perro')}
           {dog.age_text && ` · ${dog.age_text}`}
@@ -219,18 +236,31 @@ const FichaPerro = ({ dog, onCerrar }) => {
           <p className="text-sm text-gray-600 mt-3 leading-relaxed">{dog.description}</p>
         )}
 
-        <div className="mt-4">
-          {mostrarFormulario ? (
-            <FormularioAdopcion dog={dog} onCancelar={() => setMostrarFormulario(false)} />
-          ) : dog.rescuer_phone ? (
-            <button
-              onClick={() => setMostrarFormulario(true)}
-              className="w-full py-3 bg-[#88D49E] hover:bg-[#78c98e] text-[#1C5253] font-bold rounded-xl flex items-center justify-center gap-2 text-sm"
-            >
-              <MessageCircle className="w-4 h-4" /> Quiero adoptarlo
-            </button>
-          ) : null}
-        </div>
+        {dog.status === 'adoptado' ? (
+          <div className="mt-4 bg-[#F4F9F8] rounded-xl py-3 px-3 text-center space-y-1">
+            <p className="text-xs text-gray-400">
+              {dog.name || 'Este perrito'} ya encontró un hogar 🎉 — gracias a quienes lo hicieron posible.
+            </p>
+            {dog.got_curpita && (
+              <p className="text-xs font-bold text-[#1C5253]">
+                🐾 Se fue a su nuevo hogar con su credencial CURPitas puesta
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className="mt-4">
+            {mostrarFormulario ? (
+              <FormularioAdopcion dog={dog} onCancelar={() => setMostrarFormulario(false)} />
+            ) : dog.rescuer_phone ? (
+              <button
+                onClick={() => setMostrarFormulario(true)}
+                className="w-full py-3 bg-[#88D49E] hover:bg-[#78c98e] text-[#1C5253] font-bold rounded-xl flex items-center justify-center gap-2 text-sm"
+              >
+                <MessageCircle className="w-4 h-4" /> Quiero adoptarlo
+              </button>
+            ) : null}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -238,21 +268,31 @@ const FichaPerro = ({ dog, onCerrar }) => {
 
 const TarjetaPerro = ({ dog, onAbrir }) => {
   const portada = dog.photo_urls?.[0] || dog.photo_url;
+  const adoptado = dog.status === 'adoptado';
   return (
-    <button
-      onClick={onAbrir}
-      className="bg-white rounded-2xl overflow-hidden border border-emerald-100/70 shadow-sm text-left"
-    >
-      <div className="aspect-square bg-[#E8F3F1]">
-        {portada && <img src={portada} alt={dog.name} className="w-full h-full object-cover" />}
+    <button onClick={onAbrir} style={{ position: 'relative' }} className="text-left block w-full">
+      <div className="bg-white rounded-2xl overflow-hidden border border-emerald-100/70 shadow-sm">
+        <div className="aspect-square bg-[#E8F3F1]">
+          {portada && (
+            <img
+              src={portada}
+              alt={dog.name}
+              className={`w-full h-full object-cover ${adoptado ? 'grayscale opacity-70' : ''}`}
+            />
+          )}
+        </div>
+        <div className="p-3">
+          <p className="font-black text-[#1C5253] text-sm">{dog.name || 'Sin nombre'}</p>
+          <p className="text-[11px] text-gray-500">
+            {dog.breed || (dog.species === 'gato' ? 'Gato' : 'Perro')}
+            {dog.age_text && ` · ${dog.age_text}`}
+          </p>
+          {adoptado && dog.got_curpita && (
+            <p className="text-[10px] font-bold text-[#1C5253] mt-1">🐾 Se fue con su CURPitas</p>
+          )}
+        </div>
       </div>
-      <div className="p-3">
-        <p className="font-black text-[#1C5253] text-sm">{dog.name || 'Sin nombre'}</p>
-        <p className="text-[11px] text-gray-500">
-          {dog.breed || (dog.species === 'gato' ? 'Gato' : 'Perro')}
-          {dog.age_text && ` · ${dog.age_text}`}
-        </p>
-      </div>
+      {adoptado && <SelloAdoptado size={64} style={{ top: -8, left: -8 }} />}
     </button>
   );
 };
@@ -264,7 +304,11 @@ export const Adopciones = () => {
 
   useEffect(() => {
     const cargar = async () => {
-      const { data } = await supabase.from('adoptable_dogs_public').select('*').order('name');
+      const { data } = await supabase
+        .from('adoptable_dogs_public')
+        .select('*')
+        .order('status', { ascending: false })
+        .order('name');
       setPerros(data || []);
       setLoading(false);
     };

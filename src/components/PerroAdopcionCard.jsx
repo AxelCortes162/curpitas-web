@@ -14,6 +14,7 @@ export const PerroAdopcionCard = ({ dog, onUpdated, onDeleted }) => {
     photo_urls: dog.photo_urls?.length ? dog.photo_urls : dog.photo_url ? [dog.photo_url] : [],
     city: dog.city || '',
     status: dog.status || 'disponible',
+    got_curpita: dog.got_curpita || false,
   });
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState('');
@@ -171,6 +172,18 @@ export const PerroAdopcionCard = ({ dog, onUpdated, onDeleted }) => {
           className="w-4 h-4 accent-[#88D49E]"
         />
       </label>
+
+      {form.status === 'adoptado' && (
+        <label className="flex items-center justify-between text-xs font-bold text-[#1C5253] bg-[#E8F3F1] rounded-lg px-2.5 py-2">
+          🐾 Se fue con su placa CURPitas
+          <input
+            type="checkbox"
+            checked={form.got_curpita}
+            onChange={(e) => handleChange('got_curpita', e.target.checked)}
+            className="w-4 h-4 accent-[#1C5253]"
+          />
+        </label>
+      )}
 
       <button
         onClick={handleSave}
