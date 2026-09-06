@@ -165,7 +165,10 @@ const TogglePreview = ({ label, on }) => (
 );
 
 const TestimonioCard = ({ name, city, rating, text }) => (
-  <div className="bg-white rounded-2xl p-5 border border-emerald-100/70 shadow-sm">
+  <div
+    className="bg-white rounded-2xl p-6 border border-emerald-100/70 shadow-lg flex flex-col"
+    style={{ width: 260, height: 300 }}
+  >
     <div className="flex gap-0.5 mb-3">
       {[1, 2, 3, 4, 5].map((i) => (
         <Star
@@ -174,22 +177,114 @@ const TestimonioCard = ({ name, city, rating, text }) => (
         />
       ))}
     </div>
-    <p className="text-sm text-gray-600 leading-relaxed">"{text}"</p>
-    <p className="text-xs font-black text-[#1C5253] mt-3">
+    <p className="text-sm text-gray-600 leading-relaxed line-clamp-6">"{text}"</p>
+    <p className="text-xs font-black text-[#1C5253] mt-auto pt-3">
       {name}
       {city && <span className="font-medium text-gray-400"> · {city}</span>}
     </p>
   </div>
 );
 
+// Carrusel 3D tipo "coverflow": la tarjeta activa queda de frente y grande,
+// las de los lados se ven giradas en perspectiva, más chicas y transparentes.
+// Es infinito: después de la última regresa a la primera, y viceversa.
+const CarruselTestimonios3D = ({ testimonios }) => {
+  const [indice, setIndice] = useState(0);
+  const total = testimonios.length;
+  const tocandoRef = useRef(null);
+
+  const avanzar = (direccion) => {
+    setIndice((prev) => (prev + direccion + total) % total);
+  };
+
+  const handleTouchStart = (e) => {
+    tocandoRef.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e) => {
+    if (tocandoRef.current === null) return;
+    const delta = e.changedTouches[0].clientX - tocandoRef.current;
+    if (Math.abs(delta) > 40) {
+      avanzar(delta < 0 ? 1 : -1);
+    }
+    tocandoRef.current = null;
+  };
+
+  return (
+    <div className="relative">
+      <div
+        className="relative h-[340px] flex items-center justify-center overflow-hidden"
+        style={{ perspective: '1300px' }}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
+        {testimonios.map((t, i) => {
+          let offset = i - indice;
+          if (offset > total / 2) offset -= total;
+          if (offset < -total / 2) offset += total;
+
+          const abs = Math.abs(offset);
+          if (abs > 2) return null;
+
+          const translateX = offset * 150;
+          const rotateY = offset * -32;
+          const scale = 1 - abs * 0.16;
+          const opacity = 1 - abs * 0.4;
+
+          return (
+            <div
+              key={t.id}
+              className="absolute transition-all duration-500 ease-out"
+              style={{
+                transform: `translateX(${translateX}px) rotateY(${rotateY}deg) scale(${scale})`,
+                opacity,
+                zIndex: 10 - abs,
+              }}
+            >
+              <TestimonioCard {...t} />
+            </div>
+          );
+        })}
+      </div>
+
+      {total > 1 && (
+        <>
+          <button
+            onClick={() => avanzar(-1)}
+            className="absolute left-0 sm:-left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white border border-emerald-100 shadow-md flex items-center justify-center text-[#1C5253] hover:bg-emerald-50 z-20"
+            aria-label="Anterior"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => avanzar(1)}
+            className="absolute right-0 sm:-right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white border border-emerald-100 shadow-md flex items-center justify-center text-[#1C5253] hover:bg-emerald-50 z-20"
+            aria-label="Siguiente"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+
+          <div className="flex justify-center gap-1.5 mt-4">
+            {testimonios.map((t, i) => (
+              <button
+                key={t.id}
+                onClick={() => setIndice(i)}
+                className={`w-1.5 h-1.5 rounded-full transition-colors ${
+                  i === indice ? 'bg-[#1C5253]' : 'bg-emerald-100'
+                }`}
+                aria-label={`Ir al testimonio ${i + 1}`}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
 export const Inicio = () => {
   const { user } = useAuth();
   const [testimonios, setTestimonios] = useState([]);
-  const carruselRef = useRef(null);
-
-  const desplazarCarrusel = (direccion) => {
-    carruselRef.current?.scrollBy({ left: direccion * 320, behavior: 'smooth' });
-  };
 
   useEffect(() => {
     const cargarTestimonios = async () => {
@@ -349,7 +444,7 @@ export const Inicio = () => {
           <h2 className="text-xs font-bold text-[#88D49E] uppercase tracking-[0.2em] mb-2">
             Testimonios
           </h2>
-          <div className="flex items-center gap-2 mb-6">
+          <div className="flex items-center gap-2 mb-8">
             <p className="text-2xl font-black text-[#1C5253]">Lo que dicen nuestros clientes</p>
             <span className="flex items-center gap-1 text-sm font-bold text-[#1C5253] bg-[#88D49E]/25 px-2.5 py-1 rounded-full">
               <Star className="w-3.5 h-3.5 fill-[#1C5253] text-[#1C5253]" />
@@ -359,36 +454,7 @@ export const Inicio = () => {
             </span>
           </div>
 
-          <div
-            ref={carruselRef}
-            className="flex gap-4 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-2 -mx-6 px-6 sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden"
-            style={{ scrollbarWidth: 'none' }}
-          >
-            {testimonios.map((t) => (
-              <div key={t.id} className="snap-start shrink-0 w-72 sm:w-80">
-                <TestimonioCard {...t} />
-              </div>
-            ))}
-          </div>
-
-          {testimonios.length > 1 && (
-            <div className="hidden sm:flex justify-end gap-2 mt-4">
-              <button
-                onClick={() => desplazarCarrusel(-1)}
-                className="w-9 h-9 rounded-full bg-white border border-emerald-100 flex items-center justify-center text-[#1C5253] hover:bg-emerald-50"
-                aria-label="Anterior"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => desplazarCarrusel(1)}
-                className="w-9 h-9 rounded-full bg-white border border-emerald-100 flex items-center justify-center text-[#1C5253] hover:bg-emerald-50"
-                aria-label="Siguiente"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          )}
+          <CarruselTestimonios3D testimonios={testimonios} />
         </section>
       )}
 
