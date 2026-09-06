@@ -62,13 +62,19 @@ const NavBar = ({ user }) => (
       <img src="/logo.png" alt="CURPitas" className="w-8 h-8 sm:w-12 sm:h-12 object-contain" />
       <span className="font-black text-[#1C5253] tracking-tight text-base sm:text-lg">CURPitas</span>
     </Link>
-    <div className="flex items-center gap-3 sm:gap-5">
+    <div className="flex items-center gap-2.5 sm:gap-5">
       <Link
         to="/mapa"
         className="text-xs sm:text-sm font-bold text-[#1C5253] hover:text-[#88D49E] transition-colors whitespace-nowrap"
       >
         <span className="sm:hidden">Mapa</span>
         <span className="hidden sm:inline">Mapa de perdidas</span>
+      </Link>
+      <Link
+        to="/adopciones"
+        className="text-xs sm:text-sm font-bold text-[#1C5253] hover:text-[#88D49E] transition-colors whitespace-nowrap"
+      >
+        Adopción
       </Link>
       {user ? (
         <Link

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
-import { PawPrint, Plus, Download, ShieldCheck, ShieldOff, Star, Check, X, CreditCard, Tag, Circle, FileSpreadsheet, Ban, RotateCcw } from 'lucide-react';
+import { PawPrint, Plus, Download, ShieldCheck, ShieldOff, Star, Check, X, CreditCard, Tag, Circle, FileSpreadsheet, Ban, RotateCcw, Search, Heart, HeartOff } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 
 // Genera un folio nuevo con formato CURPITA + 8 dígitos aleatorios
@@ -467,6 +467,10 @@ export const Admin = () => {
   const [mensaje, setMensaje] = useState('');
   const [pendientes, setPendientes] = useState([]);
 
+  const [busquedaEmail, setBusquedaEmail] = useState('');
+  const [resultadosBusqueda, setResultadosBusqueda] = useState([]);
+  const [buscando, setBuscando] = useState(false);
+
   const cargarMascotas = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
@@ -491,6 +495,25 @@ export const Admin = () => {
     cargarMascotas();
     cargarPendientes();
   }, [cargarMascotas, cargarPendientes]);
+
+  const buscarPorEmail = async () => {
+    if (!busquedaEmail.trim()) return;
+    setBuscando(true);
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, full_name, email, is_rescuer')
+      .ilike('email', `%${busquedaEmail.trim()}%`)
+      .limit(10);
+    setResultadosBusqueda(data || []);
+    setBuscando(false);
+  };
+
+  const toggleRescatista = async (perfil) => {
+    await supabase.from('profiles').update({ is_rescuer: !perfil.is_rescuer }).eq('id', perfil.id);
+    setResultadosBusqueda((prev) =>
+      prev.map((p) => (p.id === perfil.id ? { ...p, is_rescuer: !p.is_rescuer } : p))
+    );
+  };
 
   const handleCrearFolio = async () => {
     setCreando(true);
@@ -561,6 +584,63 @@ export const Admin = () => {
           {creando ? 'Creando...' : 'Crear folio nuevo'}
         </button>
         {mensaje && <p className="text-center text-xs text-[#1C5253] mb-4">{mensaje}</p>}
+
+        {/* Gestión de rescatistas */}
+        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 mt-6">
+          Rescatistas
+        </p>
+        <div className="bg-white rounded-2xl border border-emerald-100/80 p-3 mb-6">
+          <div className="flex gap-2">
+            <input
+              value={busquedaEmail}
+              onChange={(e) => setBusquedaEmail(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && buscarPorEmail()}
+              placeholder="Buscar por correo..."
+              className="flex-1 py-2 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-xs text-[#1C5253]"
+            />
+            <button
+              onClick={buscarPorEmail}
+              disabled={buscando}
+              className="px-3 py-2 bg-[#1C5253] hover:bg-[#164343] text-white rounded-lg shrink-0"
+            >
+              <Search className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {resultadosBusqueda.length > 0 && (
+            <div className="mt-2 space-y-1.5">
+              {resultadosBusqueda.map((perfil) => (
+                <div
+                  key={perfil.id}
+                  className="flex items-center justify-between bg-[#F4F9F8] rounded-lg px-2.5 py-2"
+                >
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-[#1C5253] truncate">{perfil.full_name || 'Sin nombre'}</p>
+                    <p className="text-[10px] text-gray-400 truncate">{perfil.email}</p>
+                  </div>
+                  <button
+                    onClick={() => toggleRescatista(perfil)}
+                    className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1.5 rounded-lg shrink-0 ${
+                      perfil.is_rescuer
+                        ? 'bg-red-50 text-red-500'
+                        : 'bg-[#88D49E] text-[#1C5253]'
+                    }`}
+                  >
+                    {perfil.is_rescuer ? (
+                      <>
+                        <HeartOff className="w-3 h-3" /> Quitar
+                      </>
+                    ) : (
+                      <>
+                        <Heart className="w-3 h-3" /> Activar
+                      </>
+                    )}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Testimonios pendientes de aprobar */}
         {pendientes.length > 0 && (

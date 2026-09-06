@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { LogOut, Link2 } from 'lucide-react';
+import { LogOut, Link2, Heart } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import PetEditorCard from '../components/PetEditorCard';
@@ -10,6 +10,7 @@ export const MiCuenta = () => {
   const { user, signOut } = useAuth();
   const [pets, setPets] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [esRescatista, setEsRescatista] = useState(false);
 
   const [folio, setFolio] = useState('');
   const [claiming, setClaiming] = useState(false);
@@ -29,7 +30,13 @@ export const MiCuenta = () => {
 
   useEffect(() => {
     cargarMascotas();
-  }, [cargarMascotas]);
+    supabase
+      .from('profiles')
+      .select('is_rescuer')
+      .eq('id', user.id)
+      .single()
+      .then(({ data }) => setEsRescatista(data?.is_rescuer === true));
+  }, [cargarMascotas, user.id]);
 
   const handleClaim = async (e) => {
     e.preventDefault();
@@ -81,6 +88,18 @@ export const MiCuenta = () => {
             <LogOut className="w-3.5 h-3.5" /> Salir
           </button>
         </div>
+
+        {esRescatista && (
+          <Link
+            to="/mis-perros"
+            className="flex items-center justify-between bg-[#1C5253] text-white rounded-2xl px-4 py-3 mb-5"
+          >
+            <span className="flex items-center gap-2 text-sm font-bold">
+              <Heart className="w-4 h-4 text-[#88D49E]" /> Administrar mis perros en adopción
+            </span>
+            <span className="text-[#88D49E]">→</span>
+          </Link>
+        )}
 
         {/* Vincular nueva mascota */}
         <form
