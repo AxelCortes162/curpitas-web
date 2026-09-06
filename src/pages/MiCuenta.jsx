@@ -95,7 +95,7 @@ export const MiCuenta = () => {
             className="flex items-center justify-between bg-[#1C5253] text-white rounded-2xl px-4 py-3 mb-5"
           >
             <span className="flex items-center gap-2 text-sm font-bold">
-              <Heart className="w-4 h-4 text-[#88D49E]" /> Administrar mis perros en adopción
+              <Heart className="w-4 h-4 text-[#88D49E]" /> Administrar mis mascotas en adopción
             </span>
             <span className="text-[#88D49E]">→</span>
           </Link>

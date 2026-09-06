@@ -462,9 +462,9 @@ export const Inicio = () => {
             </div>
             <h3 className="font-black text-[#1C5253] text-base">Mapa de mascotas perdidas</h3>
             <p className="text-sm text-gray-500 mt-1.5 leading-relaxed">
-              Cuando marcas a tu mascota como perdida, eliges en un mapa dónde se perdió. Aparece
-              con su foto y un radio de búsqueda de 1km, para que cualquiera en la zona esté al
-              pendiente — no dependes solo de que alguien escanee su placa.
+              ¿Se te perdió tu mascota? Marca en un mapa el lugar exacto y aparece con su foto en
+              un radio de 1km — así cualquiera cerca de la zona sabe qué buscar, sin depender de
+              que alguien tenga que encontrarla y escanear su placa por casualidad.
             </p>
             <Link
               to="/mapa"
@@ -480,9 +480,10 @@ export const Inicio = () => {
             </div>
             <h3 className="font-black text-[#1C5253] text-base">Adopciones</h3>
             <p className="text-sm text-gray-500 mt-1.5 leading-relaxed">
-              Rescatistas verificados publican perritos buscando hogar. Cada ficha tiene fotos,
-              su historia, y un formulario antes de contactar — para que la adopción sea
-              responsable. Muchos salen de aquí con su propia credencial CURPitas de regalo.
+              Rescatistas verificados publican perros, gatos y otras mascotas buscando hogar. Cada
+              ficha tiene fotos, su historia, y un formulario antes de contactar — para que la
+              adopción sea responsable. Muchas salen de aquí con su propia credencial CURPitas de
+              regalo.
             </p>
             <Link
               to="/adopciones"

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Camera, Loader2, Save, Trash2, CheckCircle2, Plus, X } from 'lucide-react';
+import { Camera, Loader2, Save, Trash2, CheckCircle2, Plus, X, PawPrint } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
+import { IconoGato, IconoOtraMascota } from './IconosMascotas';
 
 export const PerroAdopcionCard = ({ dog, onUpdated, onDeleted }) => {
   const { user } = useAuth();
@@ -77,7 +78,7 @@ export const PerroAdopcionCard = ({ dog, onUpdated, onDeleted }) => {
       <input
         value={form.name}
         onChange={(e) => handleChange('name', e.target.value)}
-        placeholder="Nombre del perro"
+        placeholder="Nombre de la mascota"
         className="w-full font-black text-[#1C5253] bg-transparent border-b border-emerald-100 pb-1 text-sm"
       />
       {form.status === 'adoptado' && (
@@ -125,16 +126,32 @@ export const PerroAdopcionCard = ({ dog, onUpdated, onDeleted }) => {
         )}
       </div>
 
+      <div>
+        <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Especie</p>
+        <div className="flex gap-1.5">
+          {[
+            { valor: 'perro', label: 'Perro', Icon: PawPrint },
+            { valor: 'gato', label: 'Gato', Icon: IconoGato },
+            { valor: 'otro', label: 'Otro', Icon: IconoOtraMascota },
+          ].map(({ valor, label, Icon }) => (
+            <button
+              key={valor}
+              type="button"
+              onClick={() => handleChange('species', valor)}
+              className={`flex-1 flex flex-col items-center gap-0.5 py-2 rounded-lg text-[11px] font-bold border transition-colors ${
+                form.species === valor
+                  ? 'bg-[#1C5253] text-white border-[#1C5253]'
+                  : 'bg-[#F4F9F8] text-[#1C5253] border-emerald-100'
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="grid grid-cols-2 gap-2">
-        <select
-          value={form.species}
-          onChange={(e) => handleChange('species', e.target.value)}
-          className="py-2 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-xs text-[#1C5253]"
-        >
-          <option value="perro">🐶 Perro</option>
-          <option value="gato">🐱 Gato</option>
-          <option value="otro">✨ Otro</option>
-        </select>
         <input
           value={form.breed}
           onChange={(e) => handleChange('breed', e.target.value)}
@@ -175,7 +192,9 @@ export const PerroAdopcionCard = ({ dog, onUpdated, onDeleted }) => {
 
       {form.status === 'adoptado' && (
         <label className="flex items-center justify-between text-xs font-bold text-[#1C5253] bg-[#E8F3F1] rounded-lg px-2.5 py-2">
-          🐾 Se fue con su placa CURPitas
+          <span className="flex items-center gap-1.5">
+            <PawPrint className="w-3.5 h-3.5" /> Se fue con su placa CURPitas
+          </span>
           <input
             type="checkbox"
             checked={form.got_curpita}

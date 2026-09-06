@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { Phone, ShieldAlert, MapPin, AlertCircle, CheckCircle2, Cake, X, Loader2 } from 'lucide-react';
+import { Phone, ShieldAlert, MapPin, AlertCircle, CheckCircle2, Cake, X, Loader2, PawPrint } from 'lucide-react';
+import { IconoGato, IconoOtraMascota } from './IconosMascotas';
+
+// Elige el ícono correcto según la especie de la mascota
+const IconoEspecie = ({ species, className }) => {
+  if (species === 'gato') return <IconoGato className={className} />;
+  if (species === 'otro') return <IconoOtraMascota className={className} />;
+  return <PawPrint className={className} />;
+};
 
 // Calcula la edad a partir de una fecha en formato ISO (YYYY-MM-DD, como la
 // devuelve Postgres/Supabase).
@@ -205,8 +213,9 @@ export const PetProfile = ({ pet }) => {
             {pet.breed && (
               <div className="flex justify-between items-center border-b border-emerald-100 pb-1.5">
                 <span className="text-gray-400 font-bold text-[10px] tracking-wider uppercase">Raza</span>
-                <span className="font-bold text-gray-700">
-                  {pet.species === 'gato' ? '🐱' : pet.species === 'otro' ? '✨' : '🐶'} {pet.breed}
+                <span className="font-bold text-gray-700 flex items-center gap-1.5">
+                  <IconoEspecie species={pet.species} className="w-3.5 h-3.5 text-[#1C5253]" />
+                  {pet.breed}
                 </span>
               </div>
             )}

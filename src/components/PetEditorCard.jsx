@@ -8,11 +8,13 @@ import {
   ExternalLink,
   Trash2,
   X,
+  PawPrint,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import BreedSelect from './BreedSelect';
+import { IconoGato, IconoOtraMascota } from './IconosMascotas';
 import SelectorUbicacionPerdida from './SelectorUbicacionPerdida';
 
 export const PetEditorCard = ({ pet, onUpdated, onDeleted }) => {
@@ -208,21 +210,22 @@ export const PetEditorCard = ({ pet, onUpdated, onDeleted }) => {
             <label className="text-[10px] font-bold text-gray-400 uppercase">Especie</label>
             <div className="flex gap-1.5 mt-0.5">
               {[
-                { valor: 'perro', label: '🐶 Perro' },
-                { valor: 'gato', label: '🐱 Gato' },
-                { valor: 'otro', label: '✨ Otro' },
-              ].map((op) => (
+                { valor: 'perro', label: 'Perro', Icon: PawPrint },
+                { valor: 'gato', label: 'Gato', Icon: IconoGato },
+                { valor: 'otro', label: 'Otro', Icon: IconoOtraMascota },
+              ].map(({ valor, label, Icon }) => (
                 <button
-                  key={op.valor}
+                  key={valor}
                   type="button"
-                  onClick={() => handleEspecieChange(op.valor)}
-                  className={`flex-1 py-2 rounded-lg text-xs font-bold border transition-colors ${
-                    form.species === op.valor
+                  onClick={() => handleEspecieChange(valor)}
+                  className={`flex-1 flex flex-col items-center gap-0.5 py-2 rounded-lg text-xs font-bold border transition-colors ${
+                    form.species === valor
                       ? 'bg-[#1C5253] text-white border-[#1C5253]'
                       : 'bg-[#F4F9F8] text-[#1C5253] border-emerald-100'
                   }`}
                 >
-                  {op.label}
+                  <Icon className="w-4 h-4" />
+                  {label}
                 </button>
               ))}
             </div>

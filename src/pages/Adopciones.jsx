@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, MapPin, MessageCircle, X } from 'lucide-react';
+import { ArrowLeft, MapPin, MessageCircle, X, PawPrint } from 'lucide-react';
+import { IconoGato, IconoOtraMascota } from '../components/IconosMascotas';
 import { supabase } from '../supabaseClient';
 import FotoCarrusel3D from '../components/FotoCarrusel3D';
 
@@ -57,7 +58,7 @@ const FormularioAdopcion = ({ dog, onCancelar }) => {
   const enviar = (e) => {
     e.preventDefault();
     const mensaje =
-      `¡Hola! Me interesa adoptar a ${dog.name || 'tu perrito'} 🐾 (visto en CURPitas).\n\n` +
+      `¡Hola! Me interesa adoptar a ${dog.name || 'tu mascota'} 🐾 (visto en CURPitas).\n\n` +
       `*Nombre:* ${nombre}\n` +
       `*Edad:* ${edad}\n` +
       `*Colonia/Ciudad donde vivo:* ${ubicacion}\n` +
@@ -239,11 +240,11 @@ const FichaPerro = ({ dog, onCerrar }) => {
         {dog.status === 'adoptado' ? (
           <div className="mt-4 bg-[#F4F9F8] rounded-xl py-3 px-3 text-center space-y-1">
             <p className="text-xs text-gray-400">
-              {dog.name || 'Este perrito'} ya encontró un hogar 🎉 — gracias a quienes lo hicieron posible.
+              {dog.name || 'Esta mascota'} ya encontró un hogar — gracias a quienes lo hicieron posible.
             </p>
             {dog.got_curpita && (
-              <p className="text-xs font-bold text-[#1C5253]">
-                🐾 Se fue a su nuevo hogar con su credencial CURPitas puesta
+              <p className="text-xs font-bold text-[#1C5253] flex items-center justify-center gap-1.5">
+                <PawPrint className="w-3.5 h-3.5" /> Se fue a su nuevo hogar con su credencial CURPitas puesta
               </p>
             )}
           </div>
@@ -288,7 +289,9 @@ const TarjetaPerro = ({ dog, onAbrir }) => {
             {dog.age_text && ` · ${dog.age_text}`}
           </p>
           {adoptado && dog.got_curpita && (
-            <p className="text-[10px] font-bold text-[#1C5253] mt-1">🐾 Se fue con su CURPitas</p>
+            <p className="text-[10px] font-bold text-[#1C5253] mt-1 flex items-center gap-1">
+            <PawPrint className="w-3 h-3" /> Se fue con su CURPitas
+          </p>
           )}
         </div>
       </div>
@@ -301,6 +304,7 @@ export const Adopciones = () => {
   const [perros, setPerros] = useState([]);
   const [loading, setLoading] = useState(true);
   const [perroAbierto, setPerroAbierto] = useState(null);
+  const [filtro, setFiltro] = useState('todos');
 
   useEffect(() => {
     const cargar = async () => {
@@ -315,6 +319,15 @@ export const Adopciones = () => {
     cargar();
   }, []);
 
+  const perrosFiltrados = filtro === 'todos' ? perros : perros.filter((p) => p.species === filtro);
+
+  const opcionesFiltro = [
+    { valor: 'todos', label: 'Todos', icon: null },
+    { valor: 'perro', label: 'Perros', icon: PawPrint },
+    { valor: 'gato', label: 'Gatos', icon: IconoGato },
+    { valor: 'otro', label: 'Otros', icon: IconoOtraMascota },
+  ];
+
   return (
     <div className="min-h-screen bg-[#E8F3F1] font-sans antialiased">
       <div className="max-w-4xl mx-auto p-4">
@@ -322,21 +335,40 @@ export const Adopciones = () => {
           <ArrowLeft className="w-4 h-4" /> Inicio
         </Link>
 
-        <h1 className="text-xl font-black text-[#1C5253] mb-1">Perros en adopción</h1>
-        <p className="text-xs text-gray-500 mb-5">
-          Cada perro fue publicado por un rescatista verificado. Toca uno para ver más fotos y contactarlo.
+        <h1 className="text-xl font-black text-[#1C5253] mb-1">Mascotas en adopción</h1>
+        <p className="text-xs text-gray-500 mb-4">
+          Cada mascota fue publicada por un rescatista verificado. Toca una para ver más fotos y contactarlo.
         </p>
+
+        <div className="flex gap-2 mb-5 overflow-x-auto pb-1">
+          {opcionesFiltro.map((op) => (
+            <button
+              key={op.valor}
+              onClick={() => setFiltro(op.valor)}
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold whitespace-nowrap border transition-colors ${
+                filtro === op.valor
+                  ? 'bg-[#1C5253] text-white border-[#1C5253]'
+                  : 'bg-white text-[#1C5253] border-emerald-100'
+              }`}
+            >
+              {op.icon && <op.icon className="w-3.5 h-3.5" />}
+              {op.label}
+            </button>
+          ))}
+        </div>
 
         {loading && <p className="text-sm text-gray-400">Cargando...</p>}
 
-        {!loading && perros.length === 0 && (
+        {!loading && perrosFiltrados.length === 0 && (
           <p className="text-sm text-gray-400 text-center mt-10">
-            No hay perros disponibles en este momento. Vuelve pronto 🐾
+            {perros.length === 0
+              ? 'No hay mascotas disponibles en este momento. Vuelve pronto.'
+              : 'No hay mascotas en esta categoría por ahora.'}
           </p>
         )}
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {perros.map((dog) => (
+          {perrosFiltrados.map((dog) => (
             <TarjetaPerro key={dog.id} dog={dog} onAbrir={() => setPerroAbierto(dog)} />
           ))}
         </div>

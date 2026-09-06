@@ -43,7 +43,7 @@ export const MisPerros = () => {
           <Link to="/" className="flex items-center gap-2">
             <img src="/logo.png" alt="CURPitas" className="w-9 h-9 object-contain" />
             <div>
-              <h1 className="text-xl font-black text-[#1C5253] leading-none">Mis perros</h1>
+              <h1 className="text-xl font-black text-[#1C5253] leading-none">Mis mascotas</h1>
               <p className="text-xs text-gray-400 mt-0.5">en adopción</p>
             </div>
           </Link>
@@ -68,13 +68,13 @@ export const MisPerros = () => {
           className="w-full py-3.5 bg-[#1C5253] hover:bg-[#164343] text-white font-black rounded-2xl flex items-center justify-center gap-2 text-sm disabled:opacity-60 mb-4"
         >
           <Plus className="w-4 h-4" />
-          {creando ? 'Agregando...' : 'Agregar perro en adopción'}
+          {creando ? 'Agregando...' : 'Agregar mascota en adopción'}
         </button>
 
         {loading && <p className="text-xs text-gray-400">Cargando...</p>}
         {!loading && perros.length === 0 && (
           <p className="text-xs text-gray-400 text-center mt-8">
-            Aún no tienes perros publicados. Usa el botón de arriba para agregar el primero.
+            Aún no tienes mascotas publicadas. Usa el botón de arriba para agregar la primera.
           </p>
         )}
 
