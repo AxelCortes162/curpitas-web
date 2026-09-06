@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabaseClient';
@@ -14,6 +14,8 @@ import {
   ArrowRight,
   User,
   Star,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 
 // ⚠️ EDITA ESTO cuando tengas tus cuentas y número reales.
@@ -183,6 +185,11 @@ const TestimonioCard = ({ name, city, rating, text }) => (
 export const Inicio = () => {
   const { user } = useAuth();
   const [testimonios, setTestimonios] = useState([]);
+  const carruselRef = useRef(null);
+
+  const desplazarCarrusel = (direccion) => {
+    carruselRef.current?.scrollBy({ left: direccion * 320, behavior: 'smooth' });
+  };
 
   useEffect(() => {
     const cargarTestimonios = async () => {
@@ -342,7 +349,7 @@ export const Inicio = () => {
           <h2 className="text-xs font-bold text-[#88D49E] uppercase tracking-[0.2em] mb-2">
             Testimonios
           </h2>
-          <div className="flex items-center gap-2 mb-8">
+          <div className="flex items-center gap-2 mb-6">
             <p className="text-2xl font-black text-[#1C5253]">Lo que dicen nuestros clientes</p>
             <span className="flex items-center gap-1 text-sm font-bold text-[#1C5253] bg-[#88D49E]/25 px-2.5 py-1 rounded-full">
               <Star className="w-3.5 h-3.5 fill-[#1C5253] text-[#1C5253]" />
@@ -351,11 +358,37 @@ export const Inicio = () => {
               ).toFixed(1)}
             </span>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+
+          <div
+            ref={carruselRef}
+            className="flex gap-4 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-2 -mx-6 px-6 sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden"
+            style={{ scrollbarWidth: 'none' }}
+          >
             {testimonios.map((t) => (
-              <TestimonioCard key={t.id} {...t} />
+              <div key={t.id} className="snap-start shrink-0 w-72 sm:w-80">
+                <TestimonioCard {...t} />
+              </div>
             ))}
           </div>
+
+          {testimonios.length > 1 && (
+            <div className="hidden sm:flex justify-end gap-2 mt-4">
+              <button
+                onClick={() => desplazarCarrusel(-1)}
+                className="w-9 h-9 rounded-full bg-white border border-emerald-100 flex items-center justify-center text-[#1C5253] hover:bg-emerald-50"
+                aria-label="Anterior"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => desplazarCarrusel(1)}
+                className="w-9 h-9 rounded-full bg-white border border-emerald-100 flex items-center justify-center text-[#1C5253] hover:bg-emerald-50"
+                aria-label="Siguiente"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
         </section>
       )}
 
