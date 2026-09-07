@@ -25,19 +25,26 @@ export const AuthProvider = ({ children }) => {
   // Registra un nuevo dueño. El nombre y teléfono viajan como "metadata" del
   // usuario; un trigger en la base de datos crea automáticamente su fila en
   // "profiles" apenas se crea el usuario (ver supabase_trigger_profiles.sql).
-  const signUp = async ({ email, password, fullName, phone }) => {
+  // captchaToken viene de <CaptchaBox />. Con la protección de captcha
+  // encendida en Supabase, sin ese token la llamada se rechaza.
+  const signUp = async ({ email, password, fullName, phone, captchaToken }) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: { full_name: fullName, phone },
+        captchaToken,
       },
     });
     return { data, error };
   };
 
-  const signIn = async ({ email, password }) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  const signIn = async ({ email, password, captchaToken }) => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+      options: { captchaToken },
+    });
     return { data, error };
   };
 

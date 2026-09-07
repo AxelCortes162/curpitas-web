@@ -20,9 +20,7 @@ export const PerfilMascota = () => {
       // invalidado, o ya fue reclamado) — esto funciona incluso para
       // folios sin dueño todavía, a diferencia de la vista de perfil.
       const { data: status } = await supabase
-        .from('pet_status_public')
-        .select('*')
-        .eq('curpita', curpita)
+        .rpc('get_pet_status', { p_curpita: curpita })
         .maybeSingle();
 
       if (!activo) return;
@@ -47,9 +45,7 @@ export const PerfilMascota = () => {
 
       // Folio válido y reclamado: ahora sí traemos el perfil público completo
       const { data, error } = await supabase
-        .from('pet_public_profile')
-        .select('*')
-        .eq('curpita', curpita)
+        .rpc('get_pet_public', { p_curpita: curpita })
         .maybeSingle();
 
       if (!activo) return;

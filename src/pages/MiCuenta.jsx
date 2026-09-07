@@ -43,24 +43,17 @@ export const MiCuenta = () => {
     setClaimMsg('');
     setClaiming(true);
 
-    // Solo se puede reclamar una mascota que exista y no tenga dueño todavía
-    // (la política de UPDATE en Supabase es la que realmente lo garantiza).
-    const { data, error } = await supabase
-      .from('pets')
-      .update({ owner_id: user.id })
-      .eq('curpita', folio.trim())
-      .is('owner_id', null)
-      .select();
+    // El reclamo pasa por una función en Supabase que exige conocer el folio.
+    // Antes se hacía con un UPDATE directo, y eso permitía que cualquier
+    // usuario registrado listara las placas libres y se las quedara.
+    const { error } = await supabase.rpc('reclamar_placa', {
+      p_curpita: folio.trim(),
+    });
 
     setClaiming(false);
 
     if (error) {
-      setClaimMsg('Error: ' + error.message);
-      return;
-    }
-
-    if (!data || data.length === 0) {
-      setClaimMsg('Ese folio no existe o ya fue vinculado a otra cuenta.');
+      setClaimMsg(error.message || 'Ese folio no existe o ya fue vinculado a otra cuenta.');
       return;
     }
 

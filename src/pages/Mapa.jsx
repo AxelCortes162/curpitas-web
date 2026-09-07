@@ -41,12 +41,9 @@ export const Mapa = () => {
 
   useEffect(() => {
     const cargar = async () => {
-      const { data } = await supabase
-        .from('pet_public_profile')
-        .select('curpita, name, photo_url, is_lost, lost_lat, lost_lng')
-        .eq('is_lost', true)
-        .not('lost_lat', 'is', null)
-        .not('lost_lng', 'is', null);
+      // Esta función solo devuelve los campos inocuos de las mascotas
+      // perdidas: nada de teléfono, info médica ni nombre del tutor.
+      const { data } = await supabase.rpc('get_lost_pets_map');
       setMascotas(data || []);
       setLoading(false);
     };

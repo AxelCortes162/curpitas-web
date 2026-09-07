@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { MailCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabaseClient';
 import BrandHeader from '../components/BrandHeader';
+import CaptchaBox from '../components/CaptchaBox';
 
 export const IniciarSesion = () => {
   const { signIn } = useAuth();
@@ -16,16 +17,28 @@ export const IniciarSesion = () => {
   const [correoSinConfirmar, setCorreoSinConfirmar] = useState(false);
   const [reenviando, setReenviando] = useState(false);
   const [reenviado, setReenviado] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState('');
+  const captchaRef = useRef(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setCorreoSinConfirmar(false);
     setReenviado(false);
-    setLoading(true);
 
-    const { error } = await signIn({ email, password });
+    if (!captchaToken) {
+      setError('Completa la verificación de seguridad para continuar.');
+      return;
+    }
+
+    setLoading(true);
+    const { error } = await signIn({ email, password, captchaToken });
     setLoading(false);
+
+    // El token es de un solo uso: hay que pedir uno nuevo para el
+    // siguiente intento, salga bien o mal.
+    captchaRef.current?.resetCaptcha();
+    setCaptchaToken('');
 
     if (error) {
       if (error.message.toLowerCase().includes('email not confirmed')) {
@@ -43,9 +56,23 @@ export const IniciarSesion = () => {
   };
 
   const handleReenviar = async () => {
+    // El reenvío de confirmación también pasa por el captcha.
+    if (!captchaToken) {
+      setError('Completa la verificación de seguridad para reenviar el correo.');
+      return;
+    }
+
     setReenviando(true);
-    const { error } = await supabase.auth.resend({ type: 'signup', email });
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+      options: { captchaToken },
+    });
     setReenviando(false);
+
+    captchaRef.current?.resetCaptcha();
+    setCaptchaToken('');
+
     if (!error) setReenviado(true);
   };
 
@@ -105,6 +132,8 @@ export const IniciarSesion = () => {
               )}
             </div>
           )}
+
+          <CaptchaBox ref={captchaRef} onToken={setCaptchaToken} />
 
           <button
             type="submit"

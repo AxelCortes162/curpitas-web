@@ -53,10 +53,17 @@ const FormularioAdopcion = ({ dog, onCancelar }) => {
   const [dispuestoVisita, setDispuestoVisita] = useState('');
   const [dispuestoEsterilizar, setDispuestoEsterilizar] = useState('');
 
-  const telefono = dog.rescuer_phone?.replace(/\D/g, '');
-
-  const enviar = (e) => {
+  const enviar = async (e) => {
     e.preventDefault();
+
+    // El teléfono del rescatista se pide de uno en uno, hasta este momento.
+    // Así el directorio de adopción no expone todos los números de golpe.
+    const { data: rescuerPhone } = await supabase.rpc('get_adoptable_contact', {
+      p_dog_id: dog.id,
+    });
+    const telefono = rescuerPhone?.replace(/\D/g, '');
+    if (!telefono) return;
+
     const mensaje =
       `¡Hola! Me interesa adoptar a ${dog.name || 'tu mascota'} 🐾 (visto en CURPitas).\n\n` +
       `*Nombre:* ${nombre}\n` +
@@ -252,7 +259,7 @@ const FichaPerro = ({ dog, onCerrar }) => {
           <div className="mt-4">
             {mostrarFormulario ? (
               <FormularioAdopcion dog={dog} onCancelar={() => setMostrarFormulario(false)} />
-            ) : dog.rescuer_phone ? (
+            ) : dog.has_contact ? (
               <button
                 onClick={() => setMostrarFormulario(true)}
                 className="w-full py-3 bg-[#88D49E] hover:bg-[#78c98e] text-[#1C5253] font-bold rounded-xl flex items-center justify-center gap-2 text-sm"
@@ -309,8 +316,7 @@ export const Adopciones = () => {
   useEffect(() => {
     const cargar = async () => {
       const { data } = await supabase
-        .from('adoptable_dogs_public')
-        .select('*')
+        .rpc('get_adoptable_dogs')
         .order('status', { ascending: false })
         .order('name');
       setPerros(data || []);

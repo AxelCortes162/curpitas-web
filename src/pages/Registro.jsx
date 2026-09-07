@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { MailCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import BrandHeader from '../components/BrandHeader';
+import CaptchaBox from '../components/CaptchaBox';
 
 // Calcula qué tan fuerte es una contraseña, además del mínimo obligatorio
 const calcularFuerza = (pwd) => {
@@ -34,6 +35,8 @@ export const Registro = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [registroExitoso, setRegistroExitoso] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState('');
+  const captchaRef = useRef(null);
 
   const fuerza = calcularFuerza(password);
 
@@ -72,9 +75,18 @@ export const Registro = () => {
       return;
     }
 
+    if (!captchaToken) {
+      setError('Completa la verificación de seguridad para continuar.');
+      return;
+    }
+
     setLoading(true);
-    const { data, error } = await signUp({ email, password, fullName, phone });
+    const { data, error } = await signUp({ email, password, fullName, phone, captchaToken });
     setLoading(false);
+
+    // El token es de un solo uso: se pide uno nuevo para el siguiente intento.
+    captchaRef.current?.resetCaptcha();
+    setCaptchaToken('');
 
     if (error) {
       setError(error.message);
@@ -217,6 +229,8 @@ export const Registro = () => {
           </label>
 
           {error && <p className="text-red-500 text-xs font-semibold">{error}</p>}
+
+          <CaptchaBox ref={captchaRef} onToken={setCaptchaToken} />
 
           <button
             type="submit"
