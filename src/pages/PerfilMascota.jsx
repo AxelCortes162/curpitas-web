@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Ban } from 'lucide-react';
 import { supabase } from '../supabaseClient';
@@ -9,6 +9,10 @@ export const PerfilMascota = () => {
   const [pet, setPet] = useState(null);
   const [loading, setLoading] = useState(true);
   const [estado, setEstado] = useState('cargando'); // cargando | ok | no_existe | invalidado | sin_reclamar
+
+  // En desarrollo React monta el efecto dos veces; sin esto quedarían dos
+  // escaneos registrados por cada visita.
+  const yaRegistrado = useRef(false);
 
   useEffect(() => {
     let activo = true;
@@ -55,6 +59,21 @@ export const PerfilMascota = () => {
       } else {
         setPet(data);
         setEstado('ok');
+
+        // Deja constancia de que alguien abrió esta placa. Si la mascota está
+        // marcada como perdida, esto dispara el aviso por correo al tutor
+        // (máximo uno cada 10 minutos, y nunca si quien mira es él mismo).
+        // Va sin await a propósito: el perfil no debe esperar a esto.
+        // Ojo: en supabase-js la petición solo se dispara cuando se encadena
+        // un .then() (o un await). Sin esto, la llamada nunca sale.
+        if (!yaRegistrado.current) {
+          yaRegistrado.current = true;
+          supabase
+            .rpc('registrar_escaneo', { p_curpita: curpita })
+            .then(({ error: errEscaneo }) => {
+              if (errEscaneo) console.warn('No se registró el escaneo:', errEscaneo.message);
+            });
+        }
       }
       setLoading(false);
     };

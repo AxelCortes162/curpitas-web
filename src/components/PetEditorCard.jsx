@@ -16,6 +16,7 @@ import { useAuth } from '../context/AuthContext';
 import BreedSelect from './BreedSelect';
 import { IconoGato, IconoOtraMascota } from './IconosMascotas';
 import SelectorUbicacionPerdida from './SelectorUbicacionPerdida';
+import HistorialEscaneos from './HistorialEscaneos';
 
 export const PetEditorCard = ({ pet, onUpdated, onDeleted }) => {
   const { user } = useAuth();
@@ -326,6 +327,8 @@ export const PetEditorCard = ({ pet, onUpdated, onDeleted }) => {
             }}
           />
         )}
+
+        <HistorialEscaneos petId={pet.id} />
 
         <div className="border-t border-emerald-100 pt-2 space-y-1.5">
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">

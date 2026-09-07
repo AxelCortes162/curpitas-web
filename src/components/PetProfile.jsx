@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Phone, ShieldAlert, MapPin, AlertCircle, CheckCircle2, Cake, X, Loader2, PawPrint } from 'lucide-react';
 import { IconoGato, IconoOtraMascota } from './IconosMascotas';
+import { supabase } from '../supabaseClient';
 
 // Elige el ícono correcto según la especie de la mascota
 const IconoEspecie = ({ species, className }) => {
@@ -79,7 +80,25 @@ export const PetProfile = ({ pet }) => {
 
     navigator.geolocation.getCurrentPosition(
       (posicion) => {
-        const { latitude, longitude } = posicion.coords;
+        const { latitude, longitude, accuracy } = posicion.coords;
+
+        // Además de abrir WhatsApp, mandamos las coordenadas al servidor: así
+        // el tutor recibe el punto en su correo de alerta, le queda en el
+        // historial de la placa, y la mascota se ubica en el mapa de perdidos
+        // aunque quien la encontró nunca llegue a enviar el WhatsApp.
+        // El .then() no es decorativo: sin él supabase-js nunca manda la
+        // petición.
+        supabase
+          .rpc('registrar_escaneo', {
+            p_curpita: pet.curpita,
+            p_lat: latitude,
+            p_lng: longitude,
+            p_accuracy: accuracy ?? null,
+          })
+          .then(({ error: errEscaneo }) => {
+            if (errEscaneo) console.warn('No se registró la ubicación:', errEscaneo.message);
+          });
+
         const linkMapa = `https://www.google.com/maps?q=${latitude},${longitude}`;
         const mensaje = `¡Hola! Encontré a ${pet.name} 🐾 (folio ${pet.curpita}). Esta es mi ubicación actual: ${linkMapa}`;
         window.open(construirLinkWhatsApp(mensaje), '_blank');
