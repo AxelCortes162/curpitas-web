@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabaseClient';
+import CarruselPlacas from '../components/CarruselPlacas';
 import {
   PawPrint,
   ShieldCheck,
@@ -375,6 +376,41 @@ export const Inicio = () => {
               titulo="Si se pierde, la encuentran"
               texto="Cualquier persona acerca su celular al chip o escanea el QR, y llega directo a su perfil — con tu teléfono a la vista."
             />
+          </div>
+        </div>
+      </section>
+
+      {/* ASÍ SE VEN — fotos reales del producto */}
+      <section className="max-w-6xl mx-auto px-6 py-16">
+        <h2 className="text-xs font-bold text-[#88D49E] uppercase tracking-[0.2em] mb-2">
+          Así se ven
+        </h2>
+        <p className="text-2xl font-black text-[#1C5253] mb-8 max-w-lg">
+          Elige la forma, el color y el nombre.
+        </p>
+
+        <div className="grid md:grid-cols-[minmax(0,1fr)_280px] gap-10 items-center">
+          <CarruselPlacas />
+
+          <div>
+            {/* El QR y el chip NFC ya se explican completos en "Cómo funciona",
+                tres párrafos arriba. Repetirlo aquí no agregaba nada; lo que sí
+                es información nueva es que se hace por pedido y que se elige. */}
+            <p className="text-sm text-gray-600 leading-relaxed">
+              Seis colores. Cada placa se hace por pedido, a mano — no hay dos
+              iguales.
+            </p>
+            <a
+              href={`${REDES.whatsapp}?text=${encodeURIComponent(
+                '¡Hola! Quiero pedir una CURPita para mi mascota 🐾'
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 mt-5 px-6 py-3.5 bg-[#88D49E] hover:bg-[#78c98e] text-[#1C5253] font-black rounded-2xl text-sm transition-colors"
+            >
+              Pedir la mía
+              <ArrowRight className="w-4 h-4" />
+            </a>
           </div>
         </div>
       </section>
