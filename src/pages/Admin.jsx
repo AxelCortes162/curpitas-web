@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
-import { PawPrint, Plus, Download, ShieldCheck, ShieldOff, Star, Check, X, CreditCard, Tag, Circle, FileSpreadsheet, Ban, RotateCcw, Search, Heart, HeartOff } from 'lucide-react';
+import { PawPrint, Plus, Download, ShieldCheck, ShieldOff, Star, Check, X, CreditCard, Tag, Circle, FileSpreadsheet, Ban, RotateCcw, Search, Heart, HeartOff, Calculator, ChevronRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 
 // Genera un folio nuevo con formato CURPITA + 8 dígitos aleatorios
@@ -571,9 +572,27 @@ export const Admin = () => {
           <img src="/logo.png" alt="CURPitas" className="w-8 h-8 object-contain" />
           <h1 className="text-xl font-black text-[#1C5253]">Panel de administrador</h1>
         </div>
-        <p className="text-xs text-gray-400 mb-5">
+        <p className="text-xs text-gray-400 mb-3">
           {pets.length} folios totales · {sinReclamar} sin reclamar
         </p>
+
+        <Link
+          to="/admin/calculadora"
+          className="flex items-center justify-between gap-2 mb-5 px-4 py-3 bg-white rounded-2xl border border-emerald-100 hover:border-[#1C5253] group"
+        >
+          <span className="flex items-center gap-2.5 min-w-0">
+            <Calculator className="w-4 h-4 text-[#1C5253] shrink-0" />
+            <span className="min-w-0">
+              <span className="block text-sm font-bold text-[#1C5253] leading-tight">
+                Números de CURPitas
+              </span>
+              <span className="block text-[11px] text-gray-400 leading-tight">
+                Costos, precios y reparto — los mismos para los cuatro
+              </span>
+            </span>
+          </span>
+          <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#1C5253] shrink-0" />
+        </Link>
 
         <button
           onClick={handleCrearFolio}

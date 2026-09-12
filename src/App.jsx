@@ -14,6 +14,9 @@ import Mapa from './pages/Mapa';
 import RutaRescatista from './context/RutaRescatista';
 import MisPerros from './pages/MisPerros';
 import Adopciones from './pages/Adopciones';
+import OlvideContrasena from './pages/OlvideContrasena';
+import RestablecerContrasena from './pages/RestablecerContrasena';
+import AdminCalculadora from './pages/AdminCalculadora';
 
 function App() {
   return (
@@ -38,6 +41,8 @@ function App() {
           <Route path="/mascota/:curpita" element={<PerfilMascota />} />
           <Route path="/registro" element={<Registro />} />
           <Route path="/iniciar-sesion" element={<IniciarSesion />} />
+          <Route path="/olvide-mi-contrasena" element={<OlvideContrasena />} />
+          <Route path="/restablecer-contrasena" element={<RestablecerContrasena />} />
           <Route
             path="/mi-cuenta"
             element={
@@ -52,6 +57,16 @@ function App() {
               <RutaProtegida>
                 <RutaAdmin>
                   <Admin />
+                </RutaAdmin>
+              </RutaProtegida>
+            }
+          />
+          <Route
+            path="/admin/calculadora"
+            element={
+              <RutaProtegida>
+                <RutaAdmin>
+                  <AdminCalculadora />
                 </RutaAdmin>
               </RutaProtegida>
             }

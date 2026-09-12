@@ -133,6 +133,15 @@ export const IniciarSesion = () => {
             </div>
           )}
 
+          <div className="text-right">
+            <Link
+              to="/olvide-mi-contrasena"
+              className="text-[11px] font-bold text-[#1C5253] hover:underline"
+            >
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </div>
+
           <CaptchaBox ref={captchaRef} onToken={setCaptchaToken} />
 
           <button
