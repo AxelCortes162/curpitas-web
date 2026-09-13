@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
-import { PawPrint, Plus, Download, ShieldCheck, ShieldOff, Star, Check, X, CreditCard, Tag, Circle, FileSpreadsheet, Ban, RotateCcw, Search, Heart, HeartOff, Calculator, ChevronRight } from 'lucide-react';
+import { PawPrint, Plus, Download, ShieldCheck, ShieldOff, Star, Check, X, Tag, Circle, FileSpreadsheet, Ban, RotateCcw, Search, Heart, HeartOff, Calculator, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 
@@ -9,6 +9,8 @@ const generarFolio = () => {
   const numero = Math.floor(10000000 + Math.random() * 90000000);
   return `CURPITA${numero}`;
 };
+
+const REGISTROS_POR_PAGINA = 20;
 
 const FilaTestimonioPendiente = ({ testimonio, onResuelto }) => {
   const [procesando, setProcesando] = useState(false);
@@ -123,8 +125,7 @@ const FilaMascota = ({ pet, onUpdated }) => {
   // Convierte milímetros a píxeles a 300dpi (estándar de impresión)
   const mmAPx = (mm) => Math.round((mm / 25.4) * 300);
 
-  // Tamaños en VERTICAL (se invierten ancho/alto respecto a la medida "acostada")
-  const CR80 = { w: mmAPx(54), h: mmAPx(85.6) }; // 638 x 1011 px
+  // Tamaño del blíster en vertical
   const BLISTER = { w: mmAPx(80), h: mmAPx(110) }; // 945 x 1300 px
 
   const descargarQR = () => {
@@ -197,20 +198,18 @@ const FilaMascota = ({ pet, onUpdated }) => {
   };
 
   // ============================================
-  // Distribución original — la misma para presentación y blíster,
-  // solo cambia el tamaño final. El espaciado entre elementos se calcula
-  // dinámicamente según el tamaño real de cada texto (no porcentajes fijos),
-  // para que nunca se amontone sin importar la proporción de la tarjeta.
+  // Diseño del frente del blíster. El espacio superior queda libre para
+  // hacer la perforación sin tocar el título, el QR ni el folio.
   // ============================================
-  const generarFrente = (w, h, sufijo) => {
+  const generarFrente = (w, h, sufijo, espacioSuperior = 0) => {
     const qrCanvas = qrGrandeRef.current?.querySelector('canvas');
     if (!qrCanvas) return;
     const { teal, mint, white } = colores;
     const { canvas, ctx } = crearCanvas(w, h, teal);
 
     const pad = w * 0.08;
-    const base = Math.min(w, h); // referencia única para escalar todo el texto
-    let cursorY = h * 0.075;
+    const base = Math.min(w, h);
+    let cursorY = espacioSuperior + h * 0.035;
 
     ctx.fillStyle = white;
     ctx.textAlign = 'left';
@@ -218,21 +217,20 @@ const FilaMascota = ({ pet, onUpdated }) => {
     ctx.font = `bold ${Math.round(tituloSize)}px sans-serif`;
     cursorY += tituloSize * 0.8;
     ctx.fillText('CURPitas', pad, cursorY);
-    cursorY += tituloSize * 0.35;
+    cursorY += tituloSize * 0.55;
 
     ctx.fillStyle = mint;
-    const subSize = base * 0.036;
-    ctx.font = `bold ${Math.round(subSize)}px sans-serif`;
-    cursorY += subSize * 1.15;
-    ctx.fillText('CREDENCIAL OFICIAL', pad, cursorY);
-    cursorY += subSize * 1.3;
-    ctx.fillText('DE MASCOTA', pad, cursorY);
+    const subtituloSize = base * 0.036;
+    ctx.font = `bold ${Math.round(subtituloSize)}px sans-serif`;
+    cursorY += subtituloSize * 1.15;
+    ctx.fillText('CREDENCIAL DE MASCOTAS', pad, cursorY);
+    cursorY += subtituloSize * 0.6;
 
     // Centrado del bloque QR en el espacio restante entre el texto y el folio
     const qrR = base * 0.22;
     const folioAlto = base * 0.11;
     const espacioInferior = folioAlto + base * 0.16; // folio + margen + dominio
-    const espacioDisponibleTop = cursorY + subSize;
+    const espacioDisponibleTop = cursorY + base * 0.03;
     const centroQRY = espacioDisponibleTop + (h - espacioInferior - espacioDisponibleTop) / 2;
 
     dibujarQRConAnillo(ctx, qrCanvas, w / 2, centroQRY, qrR * 1.3, qrR, qrR * 1.3, colores);
@@ -250,12 +248,12 @@ const FilaMascota = ({ pet, onUpdated }) => {
     descargarCanvas(canvas, `${sufijo}-frente`);
   };
 
-  const generarReverso = (w, h, sufijo) => {
+  const generarReverso = (w, h, sufijo, espacioSuperior = 0) => {
     const { teal, cream } = colores;
     const { canvas, ctx } = crearCanvas(w, h, cream);
     const pad = w * 0.08;
     const base = Math.min(w, h);
-    let cursorY = h * 0.075;
+    let cursorY = espacioSuperior + h * 0.035;
 
     ctx.fillStyle = teal;
     ctx.textAlign = 'left';
@@ -326,14 +324,14 @@ const FilaMascota = ({ pet, onUpdated }) => {
     descargarCanvas(canvas, `${sufijo}-reverso`);
   };
 
-  const handlePresentacion = () => {
-    generarFrente(CR80.w, CR80.h, 'presentacion');
-    setTimeout(() => generarReverso(CR80.w, CR80.h, 'presentacion'), 250);
-  };
-
   const handleBlister = () => {
-    generarFrente(BLISTER.w, BLISTER.h, 'blister');
-    setTimeout(() => generarReverso(BLISTER.w, BLISTER.h, 'blister'), 250);
+    const espacioPerforacion = mmAPx(10);
+
+    generarFrente(BLISTER.w, BLISTER.h, 'blister', espacioPerforacion);
+    setTimeout(
+      () => generarReverso(BLISTER.w, BLISTER.h, 'blister', espacioPerforacion),
+      250
+    );
   };
 
   const [confirmandoInvalidar, setConfirmandoInvalidar] = useState(false);
@@ -356,7 +354,7 @@ const FilaMascota = ({ pet, onUpdated }) => {
 
   return (
     <div className="bg-white rounded-2xl border border-emerald-100/80 shadow-sm p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-      {/* QR más grande, oculto, solo para usarlo al generar las tarjetas */}
+      {/* QR más grande, oculto, solo para generar el blíster */}
       <div ref={qrGrandeRef} style={{ display: 'none' }}>
         <QRCodeCanvas value={url} size={500} bgColor="#ffffff" fgColor="#1C5253" />
       </div>
@@ -429,16 +427,9 @@ const FilaMascota = ({ pet, onUpdated }) => {
         )}
 
         <button
-          onClick={handlePresentacion}
-          className="p-2.5 bg-[#1C5253] hover:bg-[#164343] rounded-xl text-white shrink-0"
-          title="Generar tarjeta de presentación (CR80 vertical, frente + reverso)"
-        >
-          <CreditCard className="w-4 h-4" />
-        </button>
-        <button
           onClick={handleBlister}
           className="p-2.5 bg-[#88D49E] hover:bg-[#78c98e] rounded-xl text-[#1C5253] shrink-0"
-          title="Generar tarjeta blíster (8x11cm vertical, frente + reverso)"
+          title="Generar blíster (8x11 cm vertical, frente + reverso)"
         >
           <Tag className="w-4 h-4" />
         </button>
@@ -465,8 +456,21 @@ export const Admin = () => {
   const [pets, setPets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [creando, setCreando] = useState(false);
+  const [exportando, setExportando] = useState(false);
   const [mensaje, setMensaje] = useState('');
   const [pendientes, setPendientes] = useState([]);
+
+  const [paginaActual, setPaginaActual] = useState(1);
+  const [totalResultados, setTotalResultados] = useState(0);
+  const [busquedaMascota, setBusquedaMascota] = useState('');
+  const [busquedaAplicada, setBusquedaAplicada] = useState('');
+  const [filtroEstado, setFiltroEstado] = useState('todas');
+  const [totalesEstado, setTotalesEstado] = useState({
+    todas: 0,
+    vinculadas: 0,
+    sinReclamar: 0,
+    invalidadas: 0,
+  });
 
   const [busquedaEmail, setBusquedaEmail] = useState('');
   const [resultadosBusqueda, setResultadosBusqueda] = useState([]);
@@ -474,13 +478,66 @@ export const Admin = () => {
 
   const cargarMascotas = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('pets')
-      .select('*')
-      .order('created_at', { ascending: false });
+    const desde = (paginaActual - 1) * REGISTROS_POR_PAGINA;
+    const hasta = desde + REGISTROS_POR_PAGINA - 1;
 
-    if (!error) setPets(data);
+    let consulta = supabase
+      .from('pets')
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(desde, hasta);
+
+    if (filtroEstado === 'vinculadas') {
+      consulta = consulta.not('owner_id', 'is', null).eq('invalidated', false);
+    } else if (filtroEstado === 'sinReclamar') {
+      consulta = consulta.is('owner_id', null).eq('invalidated', false);
+    } else if (filtroEstado === 'invalidadas') {
+      consulta = consulta.eq('invalidated', true);
+    }
+
+    if (busquedaAplicada) {
+      // Evita que los caracteres reservados rompan el filtro OR de PostgREST.
+      const textoSeguro = busquedaAplicada.replace(/[,%()]/g, ' ').trim();
+      if (textoSeguro) {
+        consulta = consulta.or(`curpita.ilike.%${textoSeguro}%,name.ilike.%${textoSeguro}%`);
+      }
+    }
+
+    const { data, error, count } = await consulta;
+
+    if (!error) {
+      setPets(data || []);
+      setTotalResultados(count || 0);
+    } else {
+      setPets([]);
+      setTotalResultados(0);
+      setMensaje('Error al cargar las CURPitas: ' + error.message);
+    }
     setLoading(false);
+  }, [paginaActual, filtroEstado, busquedaAplicada]);
+
+  const cargarTotales = useCallback(async () => {
+    const [todas, vinculadas, sinReclamar, invalidadas] = await Promise.all([
+      supabase.from('pets').select('id', { count: 'exact', head: true }),
+      supabase
+        .from('pets')
+        .select('id', { count: 'exact', head: true })
+        .not('owner_id', 'is', null)
+        .eq('invalidated', false),
+      supabase
+        .from('pets')
+        .select('id', { count: 'exact', head: true })
+        .is('owner_id', null)
+        .eq('invalidated', false),
+      supabase.from('pets').select('id', { count: 'exact', head: true }).eq('invalidated', true),
+    ]);
+
+    setTotalesEstado({
+      todas: todas.count || 0,
+      vinculadas: vinculadas.count || 0,
+      sinReclamar: sinReclamar.count || 0,
+      invalidadas: invalidadas.count || 0,
+    });
   }, []);
 
   const cargarPendientes = useCallback(async () => {
@@ -494,8 +551,16 @@ export const Admin = () => {
 
   useEffect(() => {
     cargarMascotas();
+  }, [cargarMascotas]);
+
+  useEffect(() => {
+    cargarTotales();
     cargarPendientes();
-  }, [cargarMascotas, cargarPendientes]);
+  }, [cargarTotales, cargarPendientes]);
+
+  const refrescarPanel = useCallback(async () => {
+    await Promise.all([cargarMascotas(), cargarTotales()]);
+  }, [cargarMascotas, cargarTotales]);
 
   const buscarPorEmail = async () => {
     if (!busquedaEmail.trim()) return;
@@ -534,24 +599,49 @@ export const Admin = () => {
     }
 
     setMensaje(`Folio ${folio} creado ✓`);
-    cargarMascotas();
+    await refrescarPanel();
   };
-
-  const sinReclamar = pets.filter((p) => !p.owner_id).length;
 
   // Arma un CSV (se abre directo en Excel) con folio, URL completa,
   // nombre y estado de cada placa.
-  const exportarCSV = () => {
+  const exportarCSV = async () => {
+    setExportando(true);
+    setMensaje('');
+
+    const todosLosRegistros = [];
+    const tamanoLote = 1000;
+    let desde = 0;
+
+    while (true) {
+      const { data, error } = await supabase
+        .from('pets')
+        .select('curpita, name, owner_id, invalidated, created_at')
+        .order('created_at', { ascending: false })
+        .range(desde, desde + tamanoLote - 1);
+
+      if (error) {
+        setMensaje('Error al exportar: ' + error.message);
+        setExportando(false);
+        return;
+      }
+
+      const lote = data || [];
+      todosLosRegistros.push(...lote);
+
+      if (lote.length < tamanoLote) break;
+      desde += tamanoLote;
+    }
+
     const encabezados = ['Folio', 'URL', 'Nombre', 'Estado', 'Fecha de creación'];
 
     // Escapa comillas y comas para que Excel no rompa las columnas
     const escapar = (valor) => `"${String(valor ?? '').replace(/"/g, '""')}"`;
 
-    const filas = pets.map((pet) => [
+    const filas = todosLosRegistros.map((pet) => [
       pet.curpita,
       `${window.location.origin}/mascota/${pet.curpita}`,
       pet.name || '',
-      pet.owner_id ? 'Vinculada' : 'Sin reclamar',
+      pet.invalidated ? 'Invalidada' : pet.owner_id ? 'Vinculada' : 'Sin reclamar',
       new Date(pet.created_at).toLocaleDateString('es-MX'),
     ]);
 
@@ -560,10 +650,41 @@ export const Admin = () => {
     // El BOM (\ufeff) evita que Excel muestre acentos/ñ como símbolos raros
     const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
+    const urlArchivo = URL.createObjectURL(blob);
+    link.href = urlArchivo;
     link.download = `curpitas-folios-${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
+    setTimeout(() => URL.revokeObjectURL(urlArchivo), 0);
+    setExportando(false);
   };
+
+  const aplicarBusquedaMascotas = () => {
+    setPaginaActual(1);
+    setBusquedaAplicada(busquedaMascota.trim());
+  };
+
+  const limpiarBusquedaMascotas = () => {
+    setBusquedaMascota('');
+    setBusquedaAplicada('');
+    setPaginaActual(1);
+  };
+
+  const cambiarFiltroEstado = (nuevoFiltro) => {
+    setFiltroEstado(nuevoFiltro);
+    setPaginaActual(1);
+  };
+
+  const totalPaginas = Math.max(1, Math.ceil(totalResultados / REGISTROS_POR_PAGINA));
+  const primerRegistro = totalResultados === 0
+    ? 0
+    : (paginaActual - 1) * REGISTROS_POR_PAGINA + 1;
+  const ultimoRegistro = Math.min(paginaActual * REGISTROS_POR_PAGINA, totalResultados);
+
+  useEffect(() => {
+    if (paginaActual > totalPaginas) {
+      setPaginaActual(totalPaginas);
+    }
+  }, [paginaActual, totalPaginas]);
 
   return (
     <div className="min-h-screen bg-[#E8F3F1] p-4 font-sans antialiased">
@@ -573,7 +694,7 @@ export const Admin = () => {
           <h1 className="text-xl font-black text-[#1C5253]">Panel de administrador</h1>
         </div>
         <p className="text-xs text-gray-400 mb-3">
-          {pets.length} folios totales · {sinReclamar} sin reclamar
+          {totalesEstado.todas} folios totales · {totalesEstado.sinReclamar} sin reclamar
         </p>
 
         <Link
@@ -677,24 +798,116 @@ export const Admin = () => {
 
         <div className="flex items-center justify-between mb-2 mt-6">
           <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-            Todas las placas
+            CURPitas
           </p>
           <button
             onClick={exportarCSV}
-            disabled={pets.length === 0}
+            disabled={totalesEstado.todas === 0 || exportando}
             className="flex items-center gap-1.5 text-[11px] font-bold text-[#1C5253] hover:underline disabled:opacity-40"
           >
-            <FileSpreadsheet className="w-3.5 h-3.5" /> Exportar a Excel
+            <FileSpreadsheet className="w-3.5 h-3.5" />
+            {exportando ? 'Exportando...' : 'Exportar todo a Excel'}
           </button>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-emerald-100/80 p-3 mb-3">
+          <div className="flex gap-2">
+            <div className="relative flex-1 min-w-0">
+              <input
+                value={busquedaMascota}
+                onChange={(e) => setBusquedaMascota(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && aplicarBusquedaMascotas()}
+                placeholder="Buscar folio o mascota..."
+                className="w-full py-2.5 pl-3 pr-9 rounded-xl border border-emerald-100 bg-[#F4F9F8] text-xs text-[#1C5253] outline-none focus:border-[#1C5253]"
+              />
+              {(busquedaMascota || busquedaAplicada) && (
+                <button
+                  onClick={limpiarBusquedaMascotas}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-[#1C5253]"
+                  title="Limpiar búsqueda"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+            <button
+              onClick={aplicarBusquedaMascotas}
+              className="px-3 py-2.5 bg-[#1C5253] hover:bg-[#164343] text-white rounded-xl shrink-0"
+              title="Buscar CURPita"
+            >
+              <Search className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="flex gap-1.5 mt-3 overflow-x-auto pb-1">
+            {[
+              { id: 'todas', texto: 'Todas', total: totalesEstado.todas },
+              { id: 'vinculadas', texto: 'Vinculadas', total: totalesEstado.vinculadas },
+              { id: 'sinReclamar', texto: 'Sin reclamar', total: totalesEstado.sinReclamar },
+              { id: 'invalidadas', texto: 'Invalidadas', total: totalesEstado.invalidadas },
+            ].map((filtro) => (
+              <button
+                key={filtro.id}
+                onClick={() => cambiarFiltroEstado(filtro.id)}
+                className={`whitespace-nowrap px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-colors ${
+                  filtroEstado === filtro.id
+                    ? 'bg-[#1C5253] text-white'
+                    : 'bg-[#F4F9F8] text-[#1C5253] hover:bg-emerald-100'
+                }`}
+              >
+                {filtro.texto} ({filtro.total})
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between mb-2 px-1">
+          <p className="text-[11px] text-gray-500">
+            Mostrando {primerRegistro}–{ultimoRegistro} de {totalResultados}
+          </p>
+          {busquedaAplicada && (
+            <p className="text-[10px] text-[#1C5253] truncate ml-3">
+              Búsqueda: <span className="font-bold">{busquedaAplicada}</span>
+            </p>
+          )}
         </div>
 
         {loading && <p className="text-xs text-gray-400">Cargando...</p>}
 
+        {!loading && pets.length === 0 && (
+          <div className="bg-white rounded-2xl border border-emerald-100/80 p-6 text-center">
+            <p className="text-sm font-bold text-[#1C5253]">No se encontraron CURPitas</p>
+            <p className="text-xs text-gray-400 mt-1">Prueba otra búsqueda o cambia el filtro.</p>
+          </div>
+        )}
+
         <div className="space-y-2">
           {pets.map((pet) => (
-            <FilaMascota key={pet.id} pet={pet} onUpdated={cargarMascotas} />
+            <FilaMascota key={pet.id} pet={pet} onUpdated={refrescarPanel} />
           ))}
         </div>
+
+        {totalResultados > 0 && (
+          <div className="flex items-center justify-between gap-3 mt-4 mb-6">
+            <button
+              onClick={() => setPaginaActual((pagina) => Math.max(1, pagina - 1))}
+              disabled={paginaActual === 1 || loading}
+              className="px-3 py-2 bg-white border border-emerald-100 rounded-xl text-xs font-bold text-[#1C5253] disabled:opacity-40"
+            >
+              ← Anterior
+            </button>
+            <span className="text-xs font-bold text-[#1C5253] text-center">
+              Página {paginaActual} de {totalPaginas}
+            </span>
+            <button
+              onClick={() => setPaginaActual((pagina) => Math.min(totalPaginas, pagina + 1))}
+              disabled={paginaActual === totalPaginas || loading}
+              className="px-3 py-2 bg-white border border-emerald-100 rounded-xl text-xs font-bold text-[#1C5253] disabled:opacity-40"
+            >
+              Siguiente →
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
