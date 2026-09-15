@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabaseClient';
 import CarruselPlacas from '../components/CarruselPlacas';
+import SeccionPrecios from '../components/SeccionPrecios';
 import {
   PawPrint,
   ShieldCheck,
@@ -400,20 +401,25 @@ export const Inicio = () => {
               Seis colores. Cada placa se hace por pedido, a mano — no hay dos
               iguales.
             </p>
-            <a
-              href={`${REDES.whatsapp}?text=${encodeURIComponent(
-                '¡Hola! Quiero pedir una CURPita para mi mascota 🐾'
-              )}`}
-              target="_blank"
-              rel="noopener noreferrer"
+            {/* Sin target="_blank": esto ya no sale a WhatsApp, es una página
+                nuestra. Abrirla en otra pestaña rompe el botón de "atrás" y
+                deja al cliente con dos pestañas del mismo sitio. */}
+            <Link
+              to="/pedir"
               className="inline-flex items-center gap-2 mt-5 px-6 py-3.5 bg-[#88D49E] hover:bg-[#78c98e] text-[#1C5253] font-black rounded-2xl text-sm transition-colors"
             >
               Pedir la mía
               <ArrowRight className="w-4 h-4" />
-            </a>
+            </Link>
           </div>
         </div>
       </section>
+
+      {/* PRECIOS — justo después de ver las placas.
+          Es el orden en que la gente pregunta: primero le gusta, luego quiere
+          saber cuánto. Los montos no están escritos aquí ni en el componente:
+          se leen del servidor, de la misma lista con la que cobra la pasarela. */}
+      <SeccionPrecios />
 
       {/* FEATURES */}
       <section className="max-w-6xl mx-auto px-6 py-16">

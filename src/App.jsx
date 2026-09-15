@@ -17,6 +17,9 @@ import Adopciones from './pages/Adopciones';
 import OlvideContrasena from './pages/OlvideContrasena';
 import RestablecerContrasena from './pages/RestablecerContrasena';
 import AdminCalculadora from './pages/AdminCalculadora';
+import Pedir from './pages/Pedir';
+import Gracias from './pages/Gracias';
+import PagoFallido from './pages/PagoFallido';
 
 function App() {
   return (
@@ -27,6 +30,9 @@ function App() {
           <Route path="/aviso-de-privacidad" element={<AvisoPrivacidad />} />
           <Route path="/mapa" element={<Mapa />} />
           <Route path="/adopciones" element={<Adopciones />} />
+          <Route path="/pedir" element={<Pedir />} />
+          <Route path="/gracias" element={<Gracias />} />
+          <Route path="/pago-fallido" element={<PagoFallido />} />
           <Route
             path="/mis-perros"
             element={
