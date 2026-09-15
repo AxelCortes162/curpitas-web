@@ -21,21 +21,38 @@ const FOTOS = [
     id: 'hueso-verde',
     src: '/placas/hueso-verde.webp',
     ancho: 1000,
-    alto: 567,
+    alto: 1129,
     // El alt lo lee quien no ve la imagen, y también Google.
-    alt: 'Placa de hueso en resina verde con glitter, por el frente con el nombre '
-       + 'Bebo grabado y el escudo de CURPitas, y por el reverso con el código QR '
-       + 'que lleva a curpitas.com.',
-    pie: 'Hueso verde glitter — frente y reverso',
+    alt: 'Placa de hueso en resina verde con glitter, con flores secas, el nombre '
+       + 'Bebo grabado y el escudo de CURPitas, colgando de su argolla.',
+    pie: 'Hueso verde glitter, con flores secas',
   },
   {
     id: 'circulo-menta',
     src: '/placas/circulo-menta.webp',
-    ancho: 900,
-    alto: 772,
-    alt: 'Placa redonda en resina verde menta con glitter, por el frente con el '
-       + 'escudo de CURPitas y por el reverso con el código QR.',
-    pie: 'Círculo menta glitter — frente y reverso',
+    ancho: 1000,
+    alto: 1993,
+    alt: 'Placa redonda en resina verde con glitter y el escudo de CURPitas, '
+       + 'colgando de su argolla.',
+    pie: 'Círculo verde glitter',
+  },
+  {
+    id: 'cuadrado-verde',
+    src: '/placas/cuadrado-verde.webp',
+    ancho: 1000,
+    alto: 1867,
+    alt: 'Placa cuadrada en resina verde con glitter y el escudo de CURPitas, '
+       + 'colgando de su argolla.',
+    pie: 'Cuadrada verde glitter',
+  },
+  {
+    id: 'rect-verde',
+    src: '/placas/rect-verde.webp',
+    ancho: 1000,
+    alto: 2120,
+    alt: 'Placa rectangular en resina verde con glitter y el escudo de CURPitas, '
+       + 'colgando de su argolla.',
+    pie: 'Rectangular verde glitter',
   },
 ];
 
@@ -81,12 +98,13 @@ export default function CarruselPlacas({ fotos = FOTOS }) {
 
   return (
     <div className="relative">
-      {/* Se muestra UNA placa a la vez, lo más grande que quepa.
-          Antes se veía también la de al lado, girada en perspectiva, copiando
-          el carrusel de testimonios. Con la placa grande esa vecina quedaba
-          cortada por el borde de la columna y se leía como algo roto, no como
-          "la siguiente". Y con solo dos fotos la perspectiva no aportaba nada:
-          para eso están las flechas y los puntos. */}
+      {/* Una placa a la vez, de frente, sin efecto de perspectiva.
+          Se probó el efecto 3D del carrusel de adopción (vecinas giradas y
+          asomando a los lados) y, con placas grandes y sin tarjeta detrás,
+          se veía amontonado — las de atrás se sentían encimadas con la de
+          enfrente en vez de leerse como "ahí sigue la siguiente". Vuelta a
+          la versión simple: la activa se ve entera y sola, las demás quedan
+          invisibles (opacity 0, sin click) hasta que les toca. */}
       <div
         className="relative h-[260px] sm:h-[340px] overflow-hidden"
         onTouchStart={handleTouchStart}
@@ -152,20 +170,20 @@ export default function CarruselPlacas({ fotos = FOTOS }) {
 
       <button
         onClick={() => avanzar(-1)}
-        className="absolute left-0 sm:-left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white border border-emerald-100 shadow-md flex items-center justify-center text-[#1C5253] hover:bg-emerald-50 z-20"
+        className="absolute left-0 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 shadow-md flex items-center justify-center text-[#1C5253] hover:bg-white z-20"
         aria-label="Foto anterior"
       >
-        <ChevronLeft className="w-5 h-5" />
+        <ChevronLeft className="w-4 h-4" />
       </button>
       <button
         onClick={() => avanzar(1)}
-        className="absolute right-0 sm:-right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white border border-emerald-100 shadow-md flex items-center justify-center text-[#1C5253] hover:bg-emerald-50 z-20"
+        className="absolute right-0 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 shadow-md flex items-center justify-center text-[#1C5253] hover:bg-white z-20"
         aria-label="Foto siguiente"
       >
-        <ChevronRight className="w-5 h-5" />
+        <ChevronRight className="w-4 h-4" />
       </button>
 
-      <div className="flex justify-center gap-1.5 mt-4">
+      <div className="flex justify-center gap-1.5 mt-2">
         {fotos.map((f, i) => (
           <button
             key={f.id}

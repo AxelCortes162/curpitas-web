@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Loader2, RotateCw } from 'lucide-react';
+import {
+  Loader2, RotateCw, ZoomIn, ZoomOut,
+} from 'lucide-react';
 import { COLORES, construirForma, dibujarQR, formaPorId } from '../lib/placa';
 
 // ---------------------------------------------------------------------------
@@ -28,6 +30,8 @@ import { COLORES, construirForma, dibujarQR, formaPorId } from '../lib/placa';
 const FOTOS_RESPALDO = {
   hueso: '/placas/hueso-verde.webp',
   circulo: '/placas/circulo-menta.webp',
+  cuadrado: '/placas/cuadrado-verde.webp',
+  rect: '/placas/rect-verde.webp',
 };
 
 /* =========================================================================
@@ -295,7 +299,8 @@ function crearEscena(THREE, lienzo, inicial) {
     const centro = caja.getCenter(new THREE.Vector3());
     const tam = caja.getSize(new THREE.Vector3());
     conjunto.position.set(-centro.x, -centro.y, -centro.z);
-    pivote.scale.setScalar(2.45 / Math.max(tam.x, tam.y));
+    escalaBase = 2.45 / Math.max(tam.x, tam.y);
+    aplicarEscala();
   }
 
   // Solo la cara de enfrente: es lo único que depende del nombre.
@@ -307,28 +312,92 @@ function crearEscena(THREE, lienzo, inicial) {
     if (vieja) vieja.dispose();
   }
 
-  /* ---- giro ---- */
+  /* ---- zoom ----
+     `escalaBase` es la que encuadra la placa (se recalcula en reconstruir(),
+     cambia de forma a forma); `zoom` es lo que el cliente pide con la rueda,
+     el pellizco o los botones. Van multiplicadas: cambiar de forma no debe
+     resetear cuánto se había acercado. */
+  let escalaBase = 1, zoom = 1;
+  const ZOOM_MIN = 0.6, ZOOM_MAX = 2.2;
+
+  function aplicarEscala() {
+    pivote.scale.setScalar(escalaBase * zoom);
+  }
+  function setZoom(z) {
+    zoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, z));
+    aplicarEscala();
+  }
+
+  /* ---- giro (y pellizco para el zoom) ---- */
   let rotX = -0.12, rotY = -0.45, objX = rotX, objY = rotY;
   let arrastrando = false, ultX = 0, ultY = 0, ultMov = Date.now();
 
+  // Un dedo gira, dos pellizcan. Se llevan en un mapa porque el segundo dedo
+  // puede bajar antes de que el primero se suelte.
+  const punteros = new Map();
+  let distanciaPellizco = null;
+  const distEntrePunteros = () => {
+    const [a, b] = [...punteros.values()];
+    return Math.hypot(a.x - b.x, a.y - b.y);
+  };
+
   const alBajar = (e) => {
-    arrastrando = true;
-    ultX = e.clientX; ultY = e.clientY;
+    punteros.set(e.pointerId, { x: e.clientX, y: e.clientY });
     try { lienzo.setPointerCapture(e.pointerId); } catch { /* da igual */ }
+    if (punteros.size === 2) {
+      arrastrando = false;
+      distanciaPellizco = distEntrePunteros();
+    } else if (punteros.size === 1) {
+      arrastrando = true;
+      ultX = e.clientX; ultY = e.clientY;
+    }
   };
   const alMover = (e) => {
+    if (!punteros.has(e.pointerId)) return;
+    punteros.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    if (punteros.size === 2) {
+      const d = distEntrePunteros();
+      if (distanciaPellizco) {
+        setZoom(zoom * (d / distanciaPellizco));
+        ultMov = Date.now();
+      }
+      distanciaPellizco = d;
+      return;
+    }
+
     if (!arrastrando) return;
     objY += (e.clientX - ultX) * 0.009;
     objX += (e.clientY - ultY) * 0.007;
     objX = Math.max(-1.15, Math.min(1.15, objX));
     ultX = e.clientX; ultY = e.clientY; ultMov = Date.now();
   };
-  const alSoltar = () => { arrastrando = false; };
+  const alSoltar = (e) => {
+    punteros.delete(e.pointerId);
+    if (punteros.size < 2) distanciaPellizco = null;
+    if (punteros.size === 1) {
+      // Queda un dedo puesto: sigue girando desde donde está, sin saltar.
+      const [p] = [...punteros.values()];
+      arrastrando = true;
+      ultX = p.x; ultY = p.y;
+    } else if (punteros.size === 0) {
+      arrastrando = false;
+    }
+  };
+
+  // Rueda del mouse: acerca/aleja sin necesidad de botones. preventDefault
+  // evita que la página se desplace mientras el cursor está sobre la placa.
+  const alRueda = (e) => {
+    e.preventDefault();
+    setZoom(zoom * (1 - e.deltaY * 0.0012));
+    ultMov = Date.now();
+  };
 
   lienzo.addEventListener('pointerdown', alBajar);
   lienzo.addEventListener('pointermove', alMover);
   ['pointerup', 'pointercancel', 'pointerleave'].forEach((ev) =>
     lienzo.addEventListener(ev, alSoltar));
+  lienzo.addEventListener('wheel', alRueda, { passive: false });
 
   function medir() {
     const r = lienzo.getBoundingClientRect();
@@ -387,12 +456,15 @@ function crearEscena(THREE, lienzo, inicial) {
       repintarFrente();
     },
     voltear() { objY += Math.PI; ultMov = Date.now(); },
+    zoomIn() { setZoom(zoom * 1.2); ultMov = Date.now(); },
+    zoomOut() { setZoom(zoom / 1.2); ultMov = Date.now(); },
     destruir() {
       cancelAnimationFrame(anim);
       lienzo.removeEventListener('pointerdown', alBajar);
       lienzo.removeEventListener('pointermove', alMover);
       ['pointerup', 'pointercancel', 'pointerleave'].forEach((ev) =>
         lienzo.removeEventListener(ev, alSoltar));
+      lienzo.removeEventListener('wheel', alRueda);
       limpiarPiezas();
       matResina.dispose();
       matMetal.dispose();
@@ -543,14 +615,39 @@ export const Placa3D = ({ forma, color, nombre, className = '', alto = 300 }) =>
         )}
 
         {fase === 'listo' && (
-          <button
-            type="button"
-            onClick={() => apiRef.current?.voltear()}
-            className="absolute bottom-2 right-2 rounded-full bg-white/90 border border-emerald-100 shadow-sm px-3 py-1.5 text-xs font-bold text-[#1C5253] flex items-center gap-1.5 hover:bg-white"
-          >
-            <RotateCw className="w-3.5 h-3.5" />
-            Voltear
-          </button>
+          <>
+            <button
+              type="button"
+              onClick={() => apiRef.current?.voltear()}
+              className="absolute bottom-2 right-2 rounded-full bg-white/90 border border-emerald-100 shadow-sm px-3 py-1.5 text-xs font-bold text-[#1C5253] flex items-center gap-1.5 hover:bg-white"
+            >
+              <RotateCw className="w-3.5 h-3.5" />
+              Voltear
+            </button>
+
+            {/* Acercar/alejar: también funciona con la rueda del mouse y con
+                el pellizco de dos dedos directo sobre el modelo. Los botones
+                son para quien no sabe que eso se puede, o no tiene ninguno
+                de los dos a la mano. */}
+            <div className="absolute bottom-2 left-2 flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => apiRef.current?.zoomOut()}
+                className="rounded-full bg-white/90 border border-emerald-100 shadow-sm w-7 h-7 grid place-items-center text-[#1C5253] hover:bg-white"
+                aria-label="Alejar el modelo"
+              >
+                <ZoomOut className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => apiRef.current?.zoomIn()}
+                className="rounded-full bg-white/90 border border-emerald-100 shadow-sm w-7 h-7 grid place-items-center text-[#1C5253] hover:bg-white"
+                aria-label="Acercar el modelo"
+              >
+                <ZoomIn className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </>
         )}
       </div>
 

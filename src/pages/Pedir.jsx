@@ -255,9 +255,17 @@ export const Pedir = () => {
               )}
               className="w-24 rounded-xl border border-gray-200 px-3 py-2.5 text-[#1C5253] focus:outline-none focus:border-[#1C5253]"
             />
-            {precios && !cuenta?.esMayoreo && (
+            {precios && !cuenta?.esMayoreo && !cuenta?.esPersonalizada && (
               <p className="text-xs text-gray-400 mt-1">
                 Desde {precios.mayoreo_desde} piezas bajan a {pesos(precios.mayoreo)} cada una.
+              </p>
+            )}
+            {/* La personalizada no baja de precio por cantidad: cada placa
+                lleva su propio nombre grabado a mano. */}
+            {precios && cuenta?.esPersonalizada && (
+              <p className="text-xs text-gray-400 mt-1">
+                El nombre grabado no entra en precio de mayoreo: cada placa se cobra a{' '}
+                {pesos(precios.personalizada)}, sin importar cuántas pidas.
               </p>
             )}
           </div>

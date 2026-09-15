@@ -141,6 +141,7 @@ export const SeccionPrecios = () => {
               'Para veterinarias y refugios',
               'Mismos materiales',
               'Se puede combinar formas y colores',
+              'No incluye nombre grabado',
             ]}
             linkPedir={`/pedir?cantidad=${precios?.mayoreo_desde ?? 10}`}
             textoWhats="Hola, quiero cotizar CURPitas en mayoreo."

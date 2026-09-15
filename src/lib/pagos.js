@@ -44,18 +44,27 @@ export async function obtenerPrecios() {
 // coinciden, manda el servidor: el cliente vería un monto distinto al llegar a
 // Mercado Pago, así que cualquier cambio en los tiers hay que reflejarlo en
 // los dos lados.
+//
+// La personalizada (hueso con nombre grabado) NUNCA entra al precio de
+// mayoreo, sin importar la cantidad: cada placa lleva su propio grabado a
+// mano, así que el trabajo no baja por pedir más. Antes se revisaba primero
+// la cantidad, así que un pedido grande de placas con nombre se cobraba al
+// precio de mayoreo por error — se perdía el costo del grabado en cada una.
 export function calcularTotal(precios, { forma, cantidad, nombreMascota }) {
   if (!precios) return null;
   const n = Math.max(1, Math.min(100, parseInt(cantidad, 10) || 1));
+  const esPersonalizada = forma === 'hueso' && !!String(nombreMascota || '').trim();
+  const esMayoreo = !esPersonalizada && n >= precios.mayoreo_desde;
   let unitario;
-  if (n >= precios.mayoreo_desde) unitario = precios.mayoreo;
-  else if (forma === 'hueso' && String(nombreMascota || '').trim()) unitario = precios.personalizada;
+  if (esPersonalizada) unitario = precios.personalizada;
+  else if (esMayoreo) unitario = precios.mayoreo;
   else unitario = precios.sencilla;
   return {
     unitario,
     cantidad: n,
     total: Math.round(unitario * n * 100) / 100,
-    esMayoreo: n >= precios.mayoreo_desde,
+    esMayoreo,
+    esPersonalizada,
   };
 }
 
