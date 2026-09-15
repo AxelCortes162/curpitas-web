@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { supabase } from '../supabaseClient';
+import { supabase, conReintentoDeSesion } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 
 // Igual que RutaProtegida, pero además verifica que el usuario tenga
@@ -12,11 +12,14 @@ export const RutaAdmin = ({ children }) => {
 
   useEffect(() => {
     const verificar = async () => {
-      const { data } = await supabase
+      // conReintentoDeSesion: si el token ya venció justo al entrar (pestaña
+      // dejada abierta mucho tiempo), esto renueva y reintenta en vez de
+      // sacar a un admin de verdad por un 401 pasajero.
+      const { data } = await conReintentoDeSesion(() => supabase
         .from('profiles')
         .select('is_admin')
         .eq('id', user.id)
-        .single();
+        .single());
 
       setEsAdmin(data?.is_admin === true);
       setChecking(false);

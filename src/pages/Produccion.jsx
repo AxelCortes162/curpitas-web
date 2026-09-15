@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   Package, Factory, CheckCircle2, Truck, PartyPopper, ChevronLeft, Loader2, Phone, Mail,
 } from 'lucide-react';
-import { supabase } from '../supabaseClient';
+import { supabase, conReintentoDeSesion, esErrorDeSesionVencida } from '../supabaseClient';
 import { FORMAS, COLORES, formaPorId, colorPorId } from '../lib/placa';
 
 // ---------------------------------------------------------------------------
@@ -48,14 +48,16 @@ const FilaPedido = ({ pedido, onCambio }) => {
     if (!etapa.siguiente) return;
     setProcesando(true);
     setError('');
-    const { error: err } = await supabase.rpc('avanzar_pedido_estado', {
+    const { error: err } = await conReintentoDeSesion(() => supabase.rpc('avanzar_pedido_estado', {
       p_pedido_id: pedido.id,
       p_estado: etapa.siguiente,
       p_nota: nota.trim() || null,
-    });
+    }));
     setProcesando(false);
     if (err) {
-      setError(err.message);
+      setError(esErrorDeSesionVencida(err)
+        ? 'Tu sesión expiró (por dejar la pestaña abierta mucho tiempo). Recarga la página e intenta de nuevo.'
+        : err.message);
       return;
     }
     setNota('');
@@ -169,17 +171,17 @@ export const Produccion = () => {
 
   const cargarPedidos = useCallback(async () => {
     setCargando(true);
-    const { data, error } = await supabase
+    const { data, error } = await conReintentoDeSesion(() => supabase
       .from('pedidos')
       .select('id, forma, color, nombre_mascota, cantidad, nombre_cliente, telefono, email, estado, pagado_en, creado_en')
       .in('estado', ['pagado', 'en_produccion', 'listo', 'enviado', 'entregado'])
-      .order('pagado_en', { ascending: true });
+      .order('pagado_en', { ascending: true }));
     if (!error) setPedidos(data || []);
     setCargando(false);
   }, []);
 
   const cargarInventario = useCallback(async () => {
-    const { data } = await supabase.from('inventario_placas').select('forma, color, cantidad');
+    const { data } = await conReintentoDeSesion(() => supabase.from('inventario_placas').select('forma, color, cantidad'));
     const mapa = {};
     (data || []).forEach((r) => { mapa[`${r.forma}-${r.color}`] = r.cantidad; });
     setInventario(mapa);
@@ -191,10 +193,16 @@ export const Produccion = () => {
   }, [cargarPedidos, cargarInventario]);
 
   const guardarInventario = async (forma, color, cantidad) => {
-    await supabase.from('inventario_placas').upsert(
+    const { error } = await conReintentoDeSesion(() => supabase.from('inventario_placas').upsert(
       { forma, color, cantidad, actualizado_en: new Date().toISOString() },
       { onConflict: 'forma,color' },
-    );
+    ));
+    if (error) {
+      // Si de plano no se pudo (p.ej. la sesión ya ni se pudo renovar), no
+      // dejamos el número editado en pantalla como si sí se hubiera guardado.
+      cargarInventario();
+      return;
+    }
     setInventario((prev) => ({ ...prev, [`${forma}-${color}`]: cantidad }));
   };
 
