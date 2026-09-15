@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
-import { PawPrint, Plus, Download, ShieldCheck, ShieldOff, Star, Check, X, Tag, Circle, FileSpreadsheet, Ban, RotateCcw, Search, Heart, HeartOff, Calculator, ChevronRight } from 'lucide-react';
+import { PawPrint, Plus, Download, ShieldCheck, ShieldOff, Star, Check, X, Tag, Circle, FileSpreadsheet, Ban, RotateCcw, Search, Heart, HeartOff, Calculator, ChevronRight, Factory } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 
@@ -699,7 +699,7 @@ export const Admin = () => {
 
         <Link
           to="/admin/calculadora"
-          className="flex items-center justify-between gap-2 mb-5 px-4 py-3 bg-white rounded-2xl border border-emerald-100 hover:border-[#1C5253] group"
+          className="flex items-center justify-between gap-2 mb-2 px-4 py-3 bg-white rounded-2xl border border-emerald-100 hover:border-[#1C5253] group"
         >
           <span className="flex items-center gap-2.5 min-w-0">
             <Calculator className="w-4 h-4 text-[#1C5253] shrink-0" />
@@ -709,6 +709,24 @@ export const Admin = () => {
               </span>
               <span className="block text-[11px] text-gray-400 leading-tight">
                 Costos, precios y reparto — los mismos para los cuatro
+              </span>
+            </span>
+          </span>
+          <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#1C5253] shrink-0" />
+        </Link>
+
+        <Link
+          to="/admin/produccion"
+          className="flex items-center justify-between gap-2 mb-5 px-4 py-3 bg-white rounded-2xl border border-emerald-100 hover:border-[#1C5253] group"
+        >
+          <span className="flex items-center gap-2.5 min-w-0">
+            <Factory className="w-4 h-4 text-[#1C5253] shrink-0" />
+            <span className="min-w-0">
+              <span className="block text-sm font-bold text-[#1C5253] leading-tight">
+                Producción
+              </span>
+              <span className="block text-[11px] text-gray-400 leading-tight">
+                Pedidos pagados, en qué van, e inventario suelto
               </span>
             </span>
           </span>

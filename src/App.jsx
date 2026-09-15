@@ -17,9 +17,11 @@ import Adopciones from './pages/Adopciones';
 import OlvideContrasena from './pages/OlvideContrasena';
 import RestablecerContrasena from './pages/RestablecerContrasena';
 import AdminCalculadora from './pages/AdminCalculadora';
+import Produccion from './pages/Produccion';
 import Pedir from './pages/Pedir';
 import Gracias from './pages/Gracias';
 import PagoFallido from './pages/PagoFallido';
+import SeguimientoPedido from './pages/SeguimientoPedido';
 
 function App() {
   return (
@@ -33,6 +35,7 @@ function App() {
           <Route path="/pedir" element={<Pedir />} />
           <Route path="/gracias" element={<Gracias />} />
           <Route path="/pago-fallido" element={<PagoFallido />} />
+          <Route path="/pedido/:id" element={<SeguimientoPedido />} />
           <Route
             path="/mis-perros"
             element={
@@ -73,6 +76,16 @@ function App() {
               <RutaProtegida>
                 <RutaAdmin>
                   <AdminCalculadora />
+                </RutaAdmin>
+              </RutaProtegida>
+            }
+          />
+          <Route
+            path="/admin/produccion"
+            element={
+              <RutaProtegida>
+                <RutaAdmin>
+                  <Produccion />
                 </RutaAdmin>
               </RutaProtegida>
             }

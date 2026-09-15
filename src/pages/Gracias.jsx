@@ -112,6 +112,12 @@ export const Gracias = () => {
               <p className="text-sm text-gray-500 mt-1">
                 Ya estoy con tu placa. Te aviso por WhatsApp cuando esté lista.
               </p>
+              <Link
+                to={`/pedido/${pedidoId}`}
+                className="inline-block mt-3 text-xs font-bold text-[#1C5253] underline underline-offset-2"
+              >
+                Sigue el progreso de tu pedido aquí
+              </Link>
             </>
           )}
 
