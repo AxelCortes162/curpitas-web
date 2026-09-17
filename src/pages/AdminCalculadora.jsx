@@ -63,7 +63,10 @@ const money2 = (n) => mx2.format(n || 0);
 const pctTxt = (n) => `${(Math.round((n || 0) * 10) / 10).toLocaleString('es-MX')} %`;
 
 /* ---------- el cálculo ---------- */
-function calcular(S) {
+// `piezasReales`: cuántas piezas se vendieron de verdad este mes, agrupadas
+// por precio (null mientras carga). Ya no se captura a mano: en cuanto un
+// pedido se paga, cuenta aquí solo. Ver el useEffect que lo llena.
+function calcular(S, piezasReales) {
   const base = MATERIALES.reduce((a, [k]) => a + (Number(S[k]) || 0), 0);
 
   const lineas = S.tiers.map((t) => {
@@ -72,12 +75,13 @@ function calcular(S) {
     const com = t.precio * (S.comisionPct / 100) * ((Number(t.tarjetaPct) || 0) / 100);
     const costo = base + com;
     const deja = t.precio - costo;
+    const piezas = piezasReales ? (Number(piezasReales[t.precio]) || 0) : 0;
     return {
       t, costo, deja,
       margen: t.precio > 0 ? (deja / t.precio) * 100 : 0,
-      ingreso: t.precio * t.piezas,
-      utilidad: deja * t.piezas,
-      piezas: Number(t.piezas) || 0,
+      ingreso: t.precio * piezas,
+      utilidad: deja * piezas,
+      piezas,
     };
   });
 
@@ -174,9 +178,10 @@ export const AdminCalculadora = () => {
   const [meta, setMeta] = useState(null);
   const [activadas, setActivadas] = useState(null);
   const [comisionVendedores, setComisionVendedores] = useState(null);
+  const [piezasReales, setPiezasReales] = useState(null);
 
   const sucio = useMemo(() => JSON.stringify(S) !== JSON.stringify(original), [S, original]);
-  const r = useMemo(() => calcular(S), [S]);
+  const r = useMemo(() => calcular(S, piezasReales), [S, piezasReales]);
 
   /* ---------- carga ---------- */
   useEffect(() => {
@@ -211,6 +216,35 @@ export const AdminCalculadora = () => {
       .select('id', { count: 'exact', head: true })
       .not('owner_id', 'is', null)
       .then(({ count }) => { if (vivo && typeof count === 'number') setActivadas(count); });
+
+    // Piezas reales de este mes, agrupadas por precio (que es lo que
+    // identifica a qué línea pertenece cada pedido: sencilla $169,
+    // personalizada $249, mayoreo $100). Ya no se captura a mano en la tabla
+    // de líneas -- en cuanto un pedido se marca pagado, ya está contado
+    // aquí. Se usa `pagado_en` (no `estado`) porque lo que define "venta del
+    // mes" es que ya entró el dinero, sin importar en qué etapa de
+    // producción vaya.
+    (() => {
+      const inicioMes = new Date();
+      inicioMes.setDate(1);
+      inicioMes.setHours(0, 0, 0, 0);
+
+      supabase
+        .from('pedidos')
+        .select('precio_unitario, cantidad')
+        .not('pagado_en', 'is', null)
+        .gte('pagado_en', inicioMes.toISOString())
+        .then(({ data, error: errPedidos }) => {
+          if (!vivo) return;
+          if (errPedidos) { setPiezasReales({}); return; }
+          const porPrecio = {};
+          (data || []).forEach((p) => {
+            const precio = Number(p.precio_unitario);
+            porPrecio[precio] = (porPrecio[precio] || 0) + (Number(p.cantidad) || 0);
+          });
+          setPiezasReales(porPrecio);
+        });
+    })();
 
     // Comisión real ya generada por vendedores externos — dinero de verdad,
     // no una simulación. Se muestra aparte del cálculo de arriba porque ese
@@ -379,7 +413,7 @@ export const AdminCalculadora = () => {
         {/* líneas de producto */}
         <Panel
           titulo="Las tres líneas"
-          nota="La placa es la misma en las tres líneas y cuesta lo mismo producirla; lo que cambia es el precio. El % con tarjeta es qué tanto de esa línea se cobra con tarjeta en vez de efectivo o transferencia — solo esa parte paga comisión."
+          nota="La placa es la misma en las tres líneas y cuesta lo mismo producirla; lo que cambia es el precio. Las piezas ya no se capturan a mano: son los pedidos pagados de este mes, contados solos por precio. El % con tarjeta es qué tanto de esa línea se cobra con tarjeta en vez de efectivo o transferencia — solo esa parte paga comisión."
           className="mb-4"
         >
           <div className="overflow-x-auto -mx-4 px-4">
@@ -388,7 +422,7 @@ export const AdminCalculadora = () => {
                 <tr className="text-[9.5px] font-mono uppercase tracking-wider text-gray-400">
                   <th className="text-left pb-2 font-medium">Línea</th>
                   <th className="text-right pb-2 font-medium">Precio</th>
-                  <th className="text-right pb-2 font-medium">Piezas</th>
+                  <th className="text-right pb-2 font-medium">Piezas (mes, real)</th>
                   <th className="text-right pb-2 font-medium">% con tarjeta</th>
                   <th className="text-right pb-2 font-medium">Costo</th>
                   <th className="text-right pb-2 font-medium">Deja</th>
@@ -413,7 +447,11 @@ export const AdminCalculadora = () => {
                       </div>
                     </td>
                     <td className="py-2 text-right"><Num value={l.t.precio} onChange={(v) => setTier(i, 'precio', v)} paso={5} min={0} /></td>
-                    <td className="py-2 text-right pl-2"><Num value={l.t.piezas} onChange={(v) => setTier(i, 'piezas', v)} prefijo="" ancho="w-20" paso={1} min={0} /></td>
+                    <td className="py-2 text-right pl-2 font-mono tabular-nums font-semibold text-[#1C5253]">
+                      {piezasReales === null
+                        ? <Loader2 className="w-3.5 h-3.5 animate-spin inline-block text-gray-300" />
+                        : l.piezas.toLocaleString('es-MX')}
+                    </td>
                     <td className="py-2 text-right pl-2">
                       <Pct value={l.t.tarjetaPct} onChange={(v) => setTier(i, 'tarjetaPct', v)} />
                     </td>
