@@ -12,7 +12,7 @@ import TestimonioForm from '../components/TestimonioForm';
 // REFIERE Y GANA — la mitad del programa de puntos para dueños de mascotas
 // (la otra mitad, vendedores externos, vive aparte y paga comisión en
 // dinero real). Aquí no hay dinero: un tutor comparte su código, y cuando
-// alguien que lo usó paga su pedido, gana 500 puntos. Ver
+// alguien que lo usó paga su pedido, gana 100 puntos. Ver
 // claude/sistema-referidos.md en el proyecto de Claude para el diseño
 // completo.
 //
@@ -25,9 +25,11 @@ import TestimonioForm from '../components/TestimonioForm';
 // ---------------------------------------------------------------------------
 
 const PREMIOS = [
-  { id: 'plato', nombre: 'Plato', costo: 800 },
-  { id: 'segunda_placa', nombre: 'Segunda placa', costo: 1500 },
-  { id: 'sudadera', nombre: 'Sudadera', costo: 3000 },
+  { id: 'bolsas_popo', nombre: 'Bolsitas para popó', costo: 350 },
+  { id: 'plato', nombre: 'Plato CURPitas', costo: 750 },
+  { id: 'totebag', nombre: 'Totebag', costo: 1050 },
+  { id: 'segunda_placa', nombre: 'Segunda placa', costo: 1200 },
+  { id: 'sudadera', nombre: 'Sudadera CURPitas', costo: 3500 },
 ];
 
 const ReferidosYPuntos = ({ userId }) => {
@@ -95,7 +97,8 @@ const ReferidosYPuntos = ({ userId }) => {
         <Gift className="w-3.5 h-3.5" /> Refiere y gana
       </p>
       <p className="text-[11px] text-gray-400 mb-3">
-        Comparte tu link. Cuando un amigo compre su CURPita con él, ganas 500 puntos.
+        Comparte tu link. Cuando un amigo compre su CURPita con él, ganas 100 puntos.
+        También ganas 50 por registrarte y 150 por cada placa que tú compres.
       </p>
 
       {cargando ? (
@@ -122,7 +125,7 @@ const ReferidosYPuntos = ({ userId }) => {
             <span className="text-lg font-black text-[#1C5253]">{saldo}</span>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 mb-2">
+          <div className="grid grid-cols-2 gap-2 mb-2">
             {PREMIOS.map((p) => {
               const alcanza = saldo >= p.costo;
               return (

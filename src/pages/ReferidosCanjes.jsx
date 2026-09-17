@@ -17,9 +17,11 @@ import { supabase, conReintentoDeSesion } from '../supabaseClient';
 // ---------------------------------------------------------------------------
 
 const NOMBRES_PREMIO = {
-  plato: 'Plato',
+  bolsas_popo: 'Bolsitas para popó',
+  plato: 'Plato CURPitas',
+  totebag: 'Totebag',
   segunda_placa: 'Segunda placa',
-  sudadera: 'Sudadera',
+  sudadera: 'Sudadera CURPitas',
 };
 
 export const ReferidosCanjes = () => {
