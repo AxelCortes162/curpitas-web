@@ -20,6 +20,7 @@ import AdminCalculadora from './pages/AdminCalculadora';
 import Produccion from './pages/Produccion';
 import PedidoManual from './pages/PedidoManual';
 import Vendedores from './pages/Vendedores';
+import ReferidosCanjes from './pages/ReferidosCanjes';
 import PanelVendedor from './pages/PanelVendedor';
 import RutaVendedor from './context/RutaVendedor';
 import Pedir from './pages/Pedir';
@@ -110,6 +111,16 @@ function App() {
               <RutaProtegida>
                 <RutaAdmin>
                   <Vendedores />
+                </RutaAdmin>
+              </RutaProtegida>
+            }
+          />
+          <Route
+            path="/admin/referidos"
+            element={
+              <RutaProtegida>
+                <RutaAdmin>
+                  <ReferidosCanjes />
                 </RutaAdmin>
               </RutaProtegida>
             }

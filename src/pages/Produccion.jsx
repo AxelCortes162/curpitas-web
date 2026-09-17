@@ -87,6 +87,11 @@ const FilaPedido = ({ pedido, onCambio }) => {
                 {pedido.vendedor.codigo}
               </span>
             )}
+            {pedido.referido?.full_name && (
+              <span className="font-sans font-bold text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
+                Ref: {pedido.referido.full_name.split(' ')[0]}
+              </span>
+            )}
           </p>
           <p className="text-sm font-bold text-[#1C5253] mt-0.5">
             {forma.nombre} {color.nombre.toLowerCase()}
@@ -211,7 +216,7 @@ export const Produccion = () => {
     const { data, error } = await conReintentoDeSesion(() => {
       const base = supabase
         .from('pedidos')
-        .select('id, forma, color, nombre_mascota, cantidad, nombre_cliente, telefono, email, estado, pagado_en, creado_en, origen, vendedor:vendedores(codigo)')
+        .select('id, forma, color, nombre_mascota, cantidad, nombre_cliente, telefono, email, estado, pagado_en, creado_en, origen, vendedor:vendedores(codigo), referido:profiles!pedidos_referido_por_fkey(full_name)')
         .order('pagado_en', { ascending: true })
         .range(desde, hasta);
       return filtro === 'todos' ? base.in('estado', IDS_ETAPAS) : base.eq('estado', filtro);

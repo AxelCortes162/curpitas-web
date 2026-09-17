@@ -325,6 +325,10 @@ export const Pedir = () => {
             </div>
 
             <div>
+              {/* Un solo campo para dos cosas: el código de un vendedor
+                  externo, o el código de referido de un tutor amigo. El
+                  servidor prueba primero contra vendedores y luego contra
+                  tutores — aquí no hace falta distinguirlos. */}
               <label htmlFor="codigo-vendedor" className="block text-sm font-bold text-[#1C5253] mb-1">
                 Código de quien te recomendó <span className="font-normal text-gray-400">(opcional)</span>
               </label>

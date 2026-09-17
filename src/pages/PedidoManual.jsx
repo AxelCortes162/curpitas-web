@@ -352,15 +352,17 @@ export const PedidoManual = () => {
               />
             </label>
 
-            {/* Código de vendedor */}
+            {/* Código de vendedor o de referido — el mismo campo sirve para los
+                dos: primero se busca entre vendedores externos, y si no
+                coincide, entre los códigos de referido de los tutores. */}
             <label className="block">
               <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                Código de vendedor (opcional)
+                Código de vendedor o de referido (opcional)
               </span>
               <input
                 value={codigoVendedor}
                 onChange={(e) => setCodigoVendedor(e.target.value.toUpperCase().slice(0, 20))}
-                placeholder="si esta venta la cerró un vendedor externo"
+                placeholder="si un vendedor la cerró, o un tutor la recomendó"
                 className="mt-1 w-full py-2.5 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-sm text-[#1C5253] font-bold uppercase outline-none focus:border-[#1C5253]"
               />
             </label>

@@ -1,10 +1,178 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { LogOut, Link2, Heart } from 'lucide-react';
-import { supabase } from '../supabaseClient';
+import {
+  LogOut, Link2, Heart, Gift, Copy, Loader2,
+} from 'lucide-react';
+import { supabase, conReintentoDeSesion } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import PetEditorCard from '../components/PetEditorCard';
 import TestimonioForm from '../components/TestimonioForm';
+
+// ---------------------------------------------------------------------------
+// REFIERE Y GANA — la mitad del programa de puntos para dueños de mascotas
+// (la otra mitad, vendedores externos, vive aparte y paga comisión en
+// dinero real). Aquí no hay dinero: un tutor comparte su código, y cuando
+// alguien que lo usó paga su pedido, gana 500 puntos. Ver
+// claude/sistema-referidos.md en el proyecto de Claude para el diseño
+// completo.
+//
+// El código se genera solo, la primera vez que este bloque se monta —
+// generar_codigo_referido() regresa el mismo de siempre si el tutor ya
+// tenía uno. El saldo sale de saldo_puntos() (ya descuenta lo vencido), y
+// el canje lo pide el propio tutor: solicitar_canje() valida que le
+// alcance y descuenta los puntos en la misma transacción — aquí solo se
+// muestra el resultado.
+// ---------------------------------------------------------------------------
+
+const PREMIOS = [
+  { id: 'plato', nombre: 'Plato', costo: 800 },
+  { id: 'segunda_placa', nombre: 'Segunda placa', costo: 1500 },
+  { id: 'sudadera', nombre: 'Sudadera', costo: 3000 },
+];
+
+const ReferidosYPuntos = ({ userId }) => {
+  const [codigo, setCodigo] = useState('');
+  const [saldo, setSaldo] = useState(0);
+  const [movimientos, setMovimientos] = useState([]);
+  const [solicitudes, setSolicitudes] = useState([]);
+  const [cargando, setCargando] = useState(true);
+  const [copiado, setCopiado] = useState(false);
+  const [canjeando, setCanjeando] = useState('');
+  const [errorCanje, setErrorCanje] = useState('');
+
+  const cargar = useCallback(async () => {
+    setCargando(true);
+    const [{ data: cod }, { data: s }, { data: movs }, { data: sols }] = await Promise.all([
+      conReintentoDeSesion(() => supabase.rpc('generar_codigo_referido')),
+      conReintentoDeSesion(() => supabase.rpc('saldo_puntos', { p_tutor_id: userId })),
+      conReintentoDeSesion(() => supabase.from('puntos_movimientos')
+        .select('*').eq('tutor_id', userId).order('creado_en', { ascending: false }).limit(20)),
+      conReintentoDeSesion(() => supabase.from('solicitudes_canje')
+        .select('*').eq('tutor_id', userId).order('creado_en', { ascending: false }).limit(10)),
+    ]);
+    setCodigo(cod || '');
+    setSaldo(s ?? 0);
+    setMovimientos(movs || []);
+    setSolicitudes(sols || []);
+    setCargando(false);
+  }, [userId]);
+
+  useEffect(() => { cargar(); }, [cargar]);
+
+  const linkReferido = useMemo(
+    () => (codigo ? `${window.location.origin}/pedir?v=${codigo}` : ''),
+    [codigo],
+  );
+
+  const copiarLink = async () => {
+    if (!linkReferido) return;
+    try {
+      await navigator.clipboard.writeText(linkReferido);
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2000);
+    } catch { /* el link ya está visible en pantalla */ }
+  };
+
+  const pedirCanje = async (premio) => {
+    setErrorCanje('');
+    setCanjeando(premio.id);
+    const { error } = await conReintentoDeSesion(() => supabase.rpc('solicitar_canje', {
+      p_premio: premio.id,
+    }));
+    setCanjeando('');
+    if (error) {
+      setErrorCanje(error.message || 'No se pudo pedir el canje.');
+      return;
+    }
+    cargar();
+  };
+
+  const solicitudPendiente = solicitudes.find((s) => s.estado === 'pendiente');
+
+  return (
+    <div className="bg-white rounded-2xl border border-emerald-100/80 shadow-sm p-4 mb-5">
+      <p className="text-xs font-bold text-[#1C5253] flex items-center gap-1.5 mb-1">
+        <Gift className="w-3.5 h-3.5" /> Refiere y gana
+      </p>
+      <p className="text-[11px] text-gray-400 mb-3">
+        Comparte tu link. Cuando un amigo compre su CURPita con él, ganas 500 puntos.
+      </p>
+
+      {cargando ? (
+        <p className="text-xs text-gray-400">Cargando...</p>
+      ) : (
+        <>
+          <div className="flex items-center justify-between gap-2 bg-[#F4F9F8] rounded-xl p-3 mb-3">
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Tu código</p>
+              <p className="text-sm font-black text-[#1C5253] font-mono truncate">{codigo}</p>
+            </div>
+            <button
+              onClick={copiarLink}
+              className="shrink-0 p-2.5 rounded-lg bg-white border border-emerald-100 hover:bg-emerald-50 text-[#1C5253]"
+              title="Copiar link para compartir"
+            >
+              <Copy className="w-4 h-4" />
+            </button>
+          </div>
+          {copiado && <p className="text-[11px] text-[#0B7345] -mt-2 mb-3 text-right">Copiado.</p>}
+
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-bold text-gray-400">Tus puntos</span>
+            <span className="text-lg font-black text-[#1C5253]">{saldo}</span>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 mb-2">
+            {PREMIOS.map((p) => {
+              const alcanza = saldo >= p.costo;
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => pedirCanje(p)}
+                  disabled={!alcanza || canjeando === p.id || !!solicitudPendiente}
+                  title={solicitudPendiente ? 'Ya tienes un canje pendiente' : ''}
+                  className="p-2.5 rounded-xl bg-[#F4F9F8] hover:bg-emerald-100 disabled:opacity-40 disabled:cursor-not-allowed text-center"
+                >
+                  {canjeando === p.id
+                    ? <Loader2 className="w-3.5 h-3.5 animate-spin mx-auto" />
+                    : (
+                      <>
+                        <p className="text-[11px] font-bold text-[#1C5253] leading-tight">{p.nombre}</p>
+                        <p className="text-[10px] text-gray-400">{p.costo} pts</p>
+                      </>
+                    )}
+                </button>
+              );
+            })}
+          </div>
+          {errorCanje && <p className="text-[11px] text-red-500 mb-2">{errorCanje}</p>}
+          {solicitudPendiente && (
+            <p className="text-[11px] text-gray-400 mb-2">
+              Ya pediste tu canje de {PREMIOS.find((p) => p.id === solicitudPendiente.premio)?.nombre ?? solicitudPendiente.premio}
+              {' '}— te avisamos cuando esté listo.
+            </p>
+          )}
+
+          {movimientos.length > 0 && (
+            <details className="mt-1">
+              <summary className="text-[11px] font-bold text-gray-400 cursor-pointer">Historial de puntos</summary>
+              <div className="mt-2 space-y-1">
+                {movimientos.map((m) => (
+                  <div key={m.id} className="flex items-center justify-between text-[11px] text-gray-500">
+                    <span className="truncate pr-2">{m.descripcion || (m.tipo === 'referido' ? 'Referido' : 'Canje')}</span>
+                    <span className={`shrink-0 font-bold ${m.puntos > 0 ? 'text-[#0B7345]' : 'text-red-500'}`}>
+                      {m.puntos > 0 ? '+' : ''}{m.puntos}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </details>
+          )}
+        </>
+      )}
+    </div>
+  );
+};
 
 export const MiCuenta = () => {
   const { user, signOut } = useAuth();
@@ -122,6 +290,9 @@ export const MiCuenta = () => {
           </div>
           {claimMsg && <p className="text-[11px] text-[#1C5253]">{claimMsg}</p>}
         </form>
+
+        {/* Refiere y gana */}
+        <ReferidosYPuntos userId={user.id} />
 
         {/* Lista de mascotas */}
         <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
