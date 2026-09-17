@@ -43,6 +43,7 @@ export const Pedir = () => {
   const [nombreCliente, setNombreCliente] = useState('');
   const [telefono, setTelefono] = useState('');
   const [email, setEmail] = useState('');
+  const [codigoVendedor, setCodigoVendedor] = useState(params.get('v') ?? '');
 
   const [precios, setPrecios] = useState(null);
   const [errorPrecios, setErrorPrecios] = useState('');
@@ -89,6 +90,7 @@ export const Pedir = () => {
       const { url } = await iniciarPago({
         forma, color, cantidad, nombreMascota,
         nombreCliente: nombreCliente.trim(), telefono, email: email.trim(),
+        codigoVendedor: codigoVendedor.trim(),
       });
       // A partir de aquí manda Mercado Pago. No se apaga "enviando": la página
       // se está yendo, y si se apagara, el botón se vería activo un instante y
@@ -320,6 +322,20 @@ export const Pedir = () => {
               <p className="text-xs text-gray-400 mt-1">
                 Aquí te llega la confirmación de tu pedido en cuanto se aprueba el pago.
               </p>
+            </div>
+
+            <div>
+              <label htmlFor="codigo-vendedor" className="block text-sm font-bold text-[#1C5253] mb-1">
+                Código de quien te recomendó <span className="font-normal text-gray-400">(opcional)</span>
+              </label>
+              <input
+                id="codigo-vendedor"
+                type="text"
+                value={codigoVendedor}
+                onChange={(e) => setCodigoVendedor(e.target.value.toUpperCase().slice(0, 20))}
+                placeholder="si alguien te lo dio"
+                className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-[#1C5253] uppercase focus:outline-none focus:border-[#1C5253]"
+              />
             </div>
           </div>
 

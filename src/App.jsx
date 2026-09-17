@@ -18,6 +18,10 @@ import OlvideContrasena from './pages/OlvideContrasena';
 import RestablecerContrasena from './pages/RestablecerContrasena';
 import AdminCalculadora from './pages/AdminCalculadora';
 import Produccion from './pages/Produccion';
+import PedidoManual from './pages/PedidoManual';
+import Vendedores from './pages/Vendedores';
+import PanelVendedor from './pages/PanelVendedor';
+import RutaVendedor from './context/RutaVendedor';
 import Pedir from './pages/Pedir';
 import Gracias from './pages/Gracias';
 import PagoFallido from './pages/PagoFallido';
@@ -87,6 +91,36 @@ function App() {
                 <RutaAdmin>
                   <Produccion />
                 </RutaAdmin>
+              </RutaProtegida>
+            }
+          />
+          <Route
+            path="/admin/pedido-manual"
+            element={
+              <RutaProtegida>
+                <RutaAdmin>
+                  <PedidoManual />
+                </RutaAdmin>
+              </RutaProtegida>
+            }
+          />
+          <Route
+            path="/admin/vendedores"
+            element={
+              <RutaProtegida>
+                <RutaAdmin>
+                  <Vendedores />
+                </RutaAdmin>
+              </RutaProtegida>
+            }
+          />
+          <Route
+            path="/vendedor"
+            element={
+              <RutaProtegida>
+                <RutaVendedor>
+                  <PanelVendedor />
+                </RutaVendedor>
               </RutaProtegida>
             }
           />

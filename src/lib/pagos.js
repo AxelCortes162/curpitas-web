@@ -71,7 +71,7 @@ export function calcularTotal(precios, { forma, cantidad, nombreMascota }) {
 // Crea el pedido y la orden de pago. Devuelve { pedido_id, total, url }.
 // La url es la página de Mercado Pago: el que llama redirige ahí.
 export async function iniciarPago({
-  forma, color, cantidad, nombreMascota, nombreCliente, telefono, email,
+  forma, color, cantidad, nombreMascota, nombreCliente, telefono, email, codigoVendedor,
 }) {
   const res = await fetch(`${BASE}/crear-pago`, {
     method: 'POST',
@@ -84,6 +84,7 @@ export async function iniciarPago({
       nombre_cliente: nombreCliente,
       telefono,
       email,
+      codigo_vendedor: codigoVendedor || '',
     }),
   });
   const datos = await leerJson(res);

@@ -55,3 +55,32 @@ export const conReintentoDeSesion = async (llamada) => {
 
   return llamada();
 };
+
+// ---------------------------------------------------------------------------
+// LLAMAR A UNA EDGE FUNCTION CON SESIÓN (pedido-manual, y cualquier otra que
+// vaya necesitando login más adelante) — a diferencia de crear-pago o
+// estado-pedido, que son públicas y se llaman con fetch simple desde
+// lib/pagos.js, estas exigen que quien llama esté logueado.
+//
+// supabase.functions.invoke() ya manda el token de la sesión actual solo,
+// pero su error NO trae la forma {status, message} que esErrorDeSesionVencida
+// sabe leer — viene envuelto en `error.context` (la Response cruda). Este
+// envoltorio lo normaliza para que conReintentoDeSesion funcione igual aquí
+// que con una llamada a `supabase.from(...)` o `supabase.rpc(...)`.
+export const invocarFuncion = async (nombre, body) => {
+  const { data, error } = await supabase.functions.invoke(nombre, { body });
+  if (!error) return { data, error: null };
+
+  let mensaje = error.message;
+  const status = error.context?.status;
+  try {
+    const cuerpo = await error.context?.json();
+    if (cuerpo?.error) mensaje = cuerpo.error;
+  } catch {
+    // La respuesta de la function no era JSON (p.ej. un 401 de la
+    // plataforma antes de que corriera nuestro código) — se deja el
+    // mensaje genérico, pero el `status` normalizado ya alcanza para que
+    // esErrorDeSesionVencida lo detecte si fue un 401.
+  }
+  return { data: null, error: { status, message: mensaje } };
+};

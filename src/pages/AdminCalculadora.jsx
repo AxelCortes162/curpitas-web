@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Save, Loader2, RotateCcw, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { supabase } from '../supabaseClient';
+import { supabase, conReintentoDeSesion } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 
 /* ------------------------------------------------------------------ *
@@ -173,6 +173,7 @@ export const AdminCalculadora = () => {
   const [error, setError] = useState('');
   const [meta, setMeta] = useState(null);
   const [activadas, setActivadas] = useState(null);
+  const [comisionVendedores, setComisionVendedores] = useState(null);
 
   const sucio = useMemo(() => JSON.stringify(S) !== JSON.stringify(original), [S, original]);
   const r = useMemo(() => calcular(S), [S]);
@@ -210,6 +211,19 @@ export const AdminCalculadora = () => {
       .select('id', { count: 'exact', head: true })
       .not('owner_id', 'is', null)
       .then(({ count }) => { if (vivo && typeof count === 'number') setActivadas(count); });
+
+    // Comisión real ya generada por vendedores externos — dinero de verdad,
+    // no una simulación. Se muestra aparte del cálculo de arriba porque ese
+    // reparto es solo entre los cuatro; esto es gasto real hacia afuera.
+    conReintentoDeSesion(() => supabase.rpc('resumen_vendedores')).then(({ data }) => {
+      if (!vivo || !data) return;
+      const total = data.reduce((acc, v) => ({
+        liberada: acc.liberada + (Number(v.comision_liberada) || 0),
+        pendiente: acc.pendiente + (Number(v.comision_pendiente) || 0),
+        pagada: acc.pagada + (Number(v.comision_pagada) || 0),
+      }), { liberada: 0, pendiente: 0, pagada: 0 });
+      setComisionVendedores(total);
+    });
 
     return () => { vivo = false; };
   }, []);
@@ -489,6 +503,36 @@ export const AdminCalculadora = () => {
               <p className="text-[11px] text-gray-400 mt-3 leading-snug">
                 Los sueldos no van aquí: viven en la tabla de pago por trabajo.
               </p>
+            </Panel>
+
+            <Panel
+              titulo="Comisión a vendedores externos"
+              nota="Dinero real ya generado por códigos de vendedor. No entra al cálculo de arriba — ese reparto es solo entre los cuatro; esto sale aparte, hacia afuera."
+            >
+              {comisionVendedores ? (
+                <div className="space-y-1.5 text-[13px]">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Liberada (ya entregada)</span>
+                    <span className="font-mono tabular-nums font-semibold text-emerald-600">{money(comisionVendedores.liberada)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Sin liberar (aún no entregada)</span>
+                    <span className="font-mono tabular-nums text-amber-600">{money(comisionVendedores.pendiente)}</span>
+                  </div>
+                  <div className="flex justify-between pt-1.5 border-t border-emerald-100 font-bold text-[#1C5253]">
+                    <span>Ya pagada</span>
+                    <span className="font-mono tabular-nums">{money(comisionVendedores.pagada)}</span>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-[12px] text-gray-400">Cargando...</p>
+              )}
+              <Link
+                to="/admin/vendedores"
+                className="inline-block mt-3 text-[11px] font-bold text-[#1C5253] hover:underline"
+              >
+                Ver detalle por vendedor →
+              </Link>
             </Panel>
 
             <Panel titulo="Donativos" nota="No se reparten: van completos al fondo de producción.">

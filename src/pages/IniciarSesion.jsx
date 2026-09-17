@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { MailCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { supabase } from '../supabaseClient';
+import { supabase, conReintentoDeSesion } from '../supabaseClient';
 import BrandHeader from '../components/BrandHeader';
 import CaptchaBox from '../components/CaptchaBox';
 
@@ -32,7 +32,7 @@ export const IniciarSesion = () => {
     }
 
     setLoading(true);
-    const { error } = await signIn({ email, password, captchaToken });
+    const { data, error } = await signIn({ email, password, captchaToken });
     setLoading(false);
 
     // El token es de un solo uso: hay que pedir uno nuevo para el
@@ -50,6 +50,18 @@ export const IniciarSesion = () => {
         setError(error.message);
       }
       return;
+    }
+
+    // Un vendedor externo cae directo a su panel, no al de dueño de mascota
+    // — no tiene nada que hacer en /mi-cuenta.
+    const userId = data?.user?.id;
+    if (userId) {
+      const { data: vendedor } = await conReintentoDeSesion(() => supabase
+        .from('vendedores').select('activo').eq('id', userId).maybeSingle());
+      if (vendedor?.activo) {
+        navigate('/vendedor');
+        return;
+      }
     }
 
     navigate('/mi-cuenta');

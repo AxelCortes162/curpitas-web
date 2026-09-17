@@ -31,7 +31,13 @@ const ETAPAS = [
   { id: 'entregado', nombre: 'Entregada', siguiente: null, accion: null, icono: PartyPopper },
 ];
 
+const IDS_ETAPAS = ETAPAS.map((e) => e.id);
 const etapaPorId = (id) => ETAPAS.find((e) => e.id === id) ?? ETAPAS[0];
+
+// Cuántos pedidos se traen por página. La lista es lo único que crece sin
+// límite con el tiempo — el resumen por etapa NO se pagina, sale de
+// resumen_produccion() (agregado calculado en la base, siempre 5 filas).
+const POR_PAGINA = 15;
 
 const FilaPedido = ({ pedido, onCambio }) => {
   const [nota, setNota] = useState('');
@@ -69,7 +75,19 @@ const FilaPedido = ({ pedido, onCambio }) => {
     <div className="bg-white rounded-2xl border border-emerald-100/80 shadow-sm p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="font-mono text-[11px] text-gray-400">{folio}</p>
+          <p className="font-mono text-[11px] text-gray-400 flex items-center gap-1.5">
+            {folio}
+            {pedido.origen === 'manual' && (
+              <span className="font-sans font-bold text-[9px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                Manual
+              </span>
+            )}
+            {pedido.vendedor?.codigo && (
+              <span className="font-sans font-bold text-[9px] px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700">
+                {pedido.vendedor.codigo}
+              </span>
+            )}
+          </p>
           <p className="text-sm font-bold text-[#1C5253] mt-0.5">
             {forma.nombre} {color.nombre.toLowerCase()}
             {pedido.nombre_mascota ? ` — "${pedido.nombre_mascota}"` : ''}
@@ -167,18 +185,40 @@ export const Produccion = () => {
   const [pedidos, setPedidos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [filtro, setFiltro] = useState('todos');
+  const [pagina, setPagina] = useState(1);
   const [inventario, setInventario] = useState({});
+
+  // El resumen por etapa (tarjetas de arriba) sale de resumen_produccion(),
+  // no de sumar los `pedidos` que ya están en pantalla — porque esos ahora
+  // son solo la página actual. Así las tarjetas siempre muestran el total
+  // real, sin importar en qué página estés parada.
+  const [resumen, setResumen] = useState({});
+
+  const cargarResumen = useCallback(async () => {
+    const { data } = await conReintentoDeSesion(() => supabase.rpc('resumen_produccion'));
+    const porEtapa = {};
+    ETAPAS.forEach((e) => { porEtapa[e.id] = { pedidos: 0, placas: 0 }; });
+    (data || []).forEach((fila) => {
+      if (porEtapa[fila.estado]) porEtapa[fila.estado] = { pedidos: fila.pedidos, placas: fila.placas };
+    });
+    setResumen(porEtapa);
+  }, []);
 
   const cargarPedidos = useCallback(async () => {
     setCargando(true);
-    const { data, error } = await conReintentoDeSesion(() => supabase
-      .from('pedidos')
-      .select('id, forma, color, nombre_mascota, cantidad, nombre_cliente, telefono, email, estado, pagado_en, creado_en')
-      .in('estado', ['pagado', 'en_produccion', 'listo', 'enviado', 'entregado'])
-      .order('pagado_en', { ascending: true }));
+    const desde = (pagina - 1) * POR_PAGINA;
+    const hasta = desde + POR_PAGINA - 1;
+    const { data, error } = await conReintentoDeSesion(() => {
+      const base = supabase
+        .from('pedidos')
+        .select('id, forma, color, nombre_mascota, cantidad, nombre_cliente, telefono, email, estado, pagado_en, creado_en, origen, vendedor:vendedores(codigo)')
+        .order('pagado_en', { ascending: true })
+        .range(desde, hasta);
+      return filtro === 'todos' ? base.in('estado', IDS_ETAPAS) : base.eq('estado', filtro);
+    });
     if (!error) setPedidos(data || []);
     setCargando(false);
-  }, []);
+  }, [filtro, pagina]);
 
   const cargarInventario = useCallback(async () => {
     const { data } = await conReintentoDeSesion(() => supabase.from('inventario_placas').select('forma, color, cantidad'));
@@ -187,10 +227,30 @@ export const Produccion = () => {
     setInventario(mapa);
   }, []);
 
+  // Cambiar de filtro o de página siempre recarga solo la lista (cargarPedidos
+  // ya cambia porque `filtro`/`pagina` son sus dependencias). El resumen y el
+  // inventario no dependen de eso, se cargan una sola vez al entrar.
   useEffect(() => {
     cargarPedidos();
+  }, [cargarPedidos]);
+
+  useEffect(() => {
+    cargarResumen();
     cargarInventario();
-  }, [cargarPedidos, cargarInventario]);
+  }, [cargarResumen, cargarInventario]);
+
+  // Avanzar un pedido de etapa cambia tanto la lista (puede salirse de la
+  // página/filtro actual) como los totales del resumen — hay que refrescar
+  // los dos, no solo la lista.
+  const refrescarTrasCambio = useCallback(() => {
+    cargarPedidos();
+    cargarResumen();
+  }, [cargarPedidos, cargarResumen]);
+
+  const alternarFiltro = (id) => {
+    setFiltro((f) => (f === id ? 'todos' : id));
+    setPagina(1); // otra vista = se vuelve a empezar por la primera página
+  };
 
   const guardarInventario = async (forma, color, cantidad) => {
     const { error } = await conReintentoDeSesion(() => supabase.from('inventario_placas').upsert(
@@ -206,25 +266,25 @@ export const Produccion = () => {
     setInventario((prev) => ({ ...prev, [`${forma}-${color}`]: cantidad }));
   };
 
-  // Conteo automático: pedidos y placas (suma de cantidad) por etapa. Nunca
-  // hay que anotarlo — sale de los mismos pedidos que ya se están viendo.
-  const resumen = useMemo(() => {
-    const porEtapa = {};
-    ETAPAS.forEach((e) => { porEtapa[e.id] = { pedidos: 0, placas: 0 }; });
-    pedidos.forEach((p) => {
-      if (!porEtapa[p.estado]) return;
-      porEtapa[p.estado].pedidos += 1;
-      porEtapa[p.estado].placas += p.cantidad;
-    });
-    return porEtapa;
-  }, [pedidos]);
-
   const totalInventario = useMemo(
     () => Object.values(inventario).reduce((acc, n) => acc + n, 0),
     [inventario],
   );
 
-  const pedidosFiltrados = filtro === 'todos' ? pedidos : pedidos.filter((p) => p.estado === filtro);
+  // Cuántos pedidos hay en total bajo el filtro actual (para "página X de Y")
+  // — sale del resumen agregado, no de contar `pedidos` (que es solo la
+  // página actual).
+  const totalPedidosFiltro = filtro === 'todos'
+    ? Object.values(resumen).reduce((acc, r) => acc + (r?.pedidos ?? 0), 0)
+    : resumen[filtro]?.pedidos ?? 0;
+  const totalPaginas = Math.max(1, Math.ceil(totalPedidosFiltro / POR_PAGINA));
+
+  // Si al avanzar un pedido la página actual se queda sin nada (era el
+  // último de esa página/filtro), regresa sola a la última página que sí
+  // tiene datos, en vez de dejar el panel viendo una página vacía.
+  useEffect(() => {
+    if (pagina > totalPaginas) setPagina(totalPaginas);
+  }, [pagina, totalPaginas]);
 
   return (
     <div className="min-h-screen bg-[#E8F3F1] p-4 font-sans antialiased">
@@ -249,7 +309,7 @@ export const Produccion = () => {
           {ETAPAS.map((e) => (
             <button
               key={e.id}
-              onClick={() => setFiltro((f) => (f === e.id ? 'todos' : e.id))}
+              onClick={() => alternarFiltro(e.id)}
               className={`text-left p-3 rounded-2xl border transition-colors ${
                 filtro === e.id ? 'bg-[#1C5253] border-[#1C5253]' : 'bg-white border-emerald-100/80'
               }`}
@@ -269,7 +329,7 @@ export const Produccion = () => {
 
         {cargando && <p className="text-xs text-gray-400">Cargando...</p>}
 
-        {!cargando && pedidosFiltrados.length === 0 && (
+        {!cargando && pedidos.length === 0 && (
           <div className="bg-white rounded-2xl border border-emerald-100/80 p-6 text-center mb-6">
             <p className="text-sm font-bold text-[#1C5253]">No hay pedidos aquí</p>
             <p className="text-xs text-gray-400 mt-1">
@@ -278,11 +338,35 @@ export const Produccion = () => {
           </div>
         )}
 
-        <div className="space-y-2 mb-8">
-          {pedidosFiltrados.map((p) => (
-            <FilaPedido key={p.id} pedido={p} onCambio={cargarPedidos} />
+        <div className="space-y-2 mb-3">
+          {pedidos.map((p) => (
+            <FilaPedido key={p.id} pedido={p} onCambio={refrescarTrasCambio} />
           ))}
         </div>
+
+        {!cargando && pedidos.length > 0 && totalPaginas > 1 && (
+          <div className="flex items-center justify-between gap-2 mb-8 px-0.5">
+            <button
+              onClick={() => setPagina((p) => Math.max(1, p - 1))}
+              disabled={pagina === 1}
+              className="px-3 py-2 rounded-lg bg-white border border-emerald-100/80 text-[11px] font-bold text-[#1C5253] disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              ← Anteriores
+            </button>
+            <p className="text-[11px] text-gray-400 text-center">
+              Página {pagina} de {totalPaginas}
+              <br />
+              {totalPedidosFiltro} pedido{totalPedidosFiltro === 1 ? '' : 's'}
+            </p>
+            <button
+              onClick={() => setPagina((p) => Math.min(totalPaginas, p + 1))}
+              disabled={pagina === totalPaginas}
+              className="px-3 py-2 rounded-lg bg-white border border-emerald-100/80 text-[11px] font-bold text-[#1C5253] disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Siguientes →
+            </button>
+          </div>
+        )}
 
         {/* Inventario suelto */}
         <div className="flex items-center justify-between mb-1">
