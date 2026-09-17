@@ -7,6 +7,7 @@ import { supabase, conReintentoDeSesion } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import PetEditorCard from '../components/PetEditorCard';
 import TestimonioForm from '../components/TestimonioForm';
+import CarruselMascotas from '../components/CarruselMascotas';
 
 // ---------------------------------------------------------------------------
 // REFIERE Y GANA — la mitad del programa de puntos para dueños de mascotas
@@ -182,6 +183,7 @@ export const MiCuenta = () => {
   const [pets, setPets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [esRescatista, setEsRescatista] = useState(false);
+  const [mascotaActiva, setMascotaActiva] = useState(0);
 
   const [folio, setFolio] = useState('');
   const [claiming, setClaiming] = useState(false);
@@ -208,6 +210,16 @@ export const MiCuenta = () => {
       .single()
       .then(({ data }) => setEsRescatista(data?.is_rescuer === true));
   }, [cargarMascotas, user.id]);
+
+  // Si se borra la mascota activa (o cambia la lista tras vincular/cargar),
+  // el índice del carrusel se recorre para que nunca apunte a algo que ya
+  // no existe.
+  useEffect(() => {
+    setMascotaActiva((i) => {
+      if (pets.length === 0) return 0;
+      return Math.min(i, pets.length - 1);
+    });
+  }, [pets]);
 
   const handleClaim = async (e) => {
     e.preventDefault();
@@ -265,6 +277,43 @@ export const MiCuenta = () => {
           </Link>
         )}
 
+        {/* Mis mascotas — primero, porque es lo que más importa y para que
+            no haya que bajar tanto para llegar a ellas. Si hay más de una,
+            un carrusel 3D (igual que el de Adopciones) elige cuál mostrar;
+            abajo solo se renderiza el editor completo de esa mascota
+            activa, no todas apiladas. */}
+        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+          Mis mascotas
+        </p>
+
+        {loading && <p className="text-xs text-gray-400 mb-5">Cargando...</p>}
+
+        {!loading && pets.length === 0 && (
+          <p className="text-xs text-gray-400 mb-5">
+            Aún no tienes mascotas vinculadas. Usa el formulario de abajo con el folio de tu placa.
+          </p>
+        )}
+
+        {!loading && pets.length > 0 && (
+          <div className="mb-5">
+            {pets.length > 1 && (
+              <CarruselMascotas
+                pets={pets}
+                indice={mascotaActiva}
+                onCambiar={setMascotaActiva}
+              />
+            )}
+            <div className={pets.length > 1 ? 'mt-3' : ''}>
+              <PetEditorCard
+                key={pets[mascotaActiva]?.id}
+                pet={pets[mascotaActiva]}
+                onUpdated={cargarMascotas}
+                onDeleted={cargarMascotas}
+              />
+            </div>
+          </div>
+        )}
+
         {/* Vincular nueva mascota */}
         <form
           onSubmit={handleClaim}
@@ -296,30 +345,6 @@ export const MiCuenta = () => {
 
         {/* Refiere y gana */}
         <ReferidosYPuntos userId={user.id} />
-
-        {/* Lista de mascotas */}
-        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-          Mis mascotas
-        </p>
-
-        {loading && <p className="text-xs text-gray-400">Cargando...</p>}
-
-        {!loading && pets.length === 0 && (
-          <p className="text-xs text-gray-400">
-            Aún no tienes mascotas vinculadas. Usa el formulario de arriba con el folio de tu placa.
-          </p>
-        )}
-
-        <div className="space-y-3">
-          {pets.map((pet) => (
-            <PetEditorCard
-              key={pet.id}
-              pet={pet}
-              onUpdated={cargarMascotas}
-              onDeleted={cargarMascotas}
-            />
-          ))}
-        </div>
 
         {/* Testimonio */}
         <div className="mt-6">
