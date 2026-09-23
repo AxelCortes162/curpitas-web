@@ -38,6 +38,13 @@ const formatFecha = (isoDateStr) => {
   return `${day}/${month}/${year}`;
 };
 
+// 5586694753 -> 55 8669 4753, para que se pueda leer y dictar
+const formatTelefono = (tel) => {
+  const d = (tel || '').replace(/\D/g, '');
+  if (d.length === 10) return d.slice(0, 2) + ' ' + d.slice(2, 6) + ' ' + d.slice(6);
+  return tel;
+};
+
 export const PetProfile = ({ pet }) => {
   const isLost = pet.is_lost ?? true;
   const [mostrarModal, setMostrarModal] = useState(false);
@@ -134,13 +141,13 @@ export const PetProfile = ({ pet }) => {
           ) : (
             <>
               <CheckCircle2 className="w-4 h-4 text-[#88D49E]" />
-              <span>IDENTIFICACIÓN OFICIAL VITAL</span>
+              <span>¿Me encontraste? Llama a mi tutor</span>
             </>
           )}
         </div>
 
         {/* Encabezado Hero */}
-        <div className="bg-[#1C5253] pt-12 pb-16 px-6 text-center relative overflow-hidden flex flex-col items-center justify-center">
+        <div className="bg-[#1C5253] pt-8 pb-14 px-6 text-center relative overflow-hidden flex flex-col items-center justify-center">
           <div className="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none -translate-y-3">
             <img src="/logo.png" alt="" className="w-40 h-40 object-contain brightness-0 invert" />
           </div>
@@ -217,6 +224,63 @@ export const PetProfile = ({ pet }) => {
             </div>
           )}
 
+          {/* Botones de Acción */}
+          {isLost && (
+            <p className="text-xs text-gray-500 mt-4 leading-snug">
+              Si tienes a {pet.name} contigo, llama a su tutor o mándale tu ubicación.
+            </p>
+          )}
+          <div className="mt-4 space-y-2">
+            <a
+              href={`tel:${pet.phone}`}
+              className="w-full py-3.5 bg-[#88D49E] hover:bg-[#78c98e] text-[#1C5253] font-black rounded-2xl flex items-center justify-center gap-2 shadow-md shadow-emerald-900/10 text-sm active:scale-[0.99] transition-transform"
+            >
+              <Phone className="w-4 h-4 fill-current" />
+              Llamar al Tutor Ahora
+            </a>
+
+            {/* Segundo contacto: solo aparece si el tutor lo llenó en su
+                cuenta — por si el primer número no contesta. */}
+            {pet.phone_2 && (
+              <a
+                href={`tel:${pet.phone_2}`}
+                className="block py-1 text-xs font-bold text-[#1C5253] underline underline-offset-2"
+              >
+                ¿No contesta? Llama al segundo contacto
+              </a>
+            )}
+
+            <button
+              onClick={handleCompartirUbicacion}
+              disabled={obteniendoUbicacion}
+              className="w-full py-2.5 bg-white border-2 border-[#1C5253] text-[#1C5253] font-bold rounded-2xl flex items-center justify-center gap-2 text-xs hover:bg-emerald-50/50 active:scale-[0.99] transition-transform disabled:opacity-60"
+            >
+              {obteniendoUbicacion ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" /> Obteniendo ubicación...
+                </>
+              ) : (
+                <>
+                  <MapPin className="w-3.5 h-3.5" /> Enviar mi ubicación por WhatsApp
+                </>
+              )}
+            </button>
+            {errorUbicacion && (
+              <p className="text-[10px] text-amber-600 text-center">{errorUbicacion}</p>
+            )}
+          </div>
+
+          {/* Alerta Médica Importante */}
+          {pet.medical_info && (
+            <div className="bg-amber-50 border border-amber-200/80 rounded-2xl p-3 mt-3 text-left flex items-start gap-2.5 text-xs text-amber-900 shadow-2xs">
+              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold block text-amber-950">Atención médica prioritaria:</span>
+                <span className="text-amber-800 text-[11px] leading-tight block mt-0.5">{pet.medical_info}</span>
+              </div>
+            </div>
+          )}
+
           {/* Tarjeta de Datos */}
           <div className="bg-[#F4F9F8] rounded-2xl p-4 mt-4 space-y-2 text-xs text-left border border-emerald-100/80 shadow-sm">
             <div className="flex justify-between items-center border-b border-emerald-100 pb-2">
@@ -250,72 +314,23 @@ export const PetProfile = ({ pet }) => {
 
             <div className="flex justify-between items-center">
               <span className="text-gray-400 font-bold text-[10px] tracking-wider uppercase">Teléfono</span>
-              <span className="font-bold text-gray-700">{pet.phone}</span>
+              <span className="font-bold text-gray-700">{formatTelefono(pet.phone)}</span>
             </div>
           </div>
 
-          {/* Alerta Médica Importante */}
-          {pet.medical_info && (
-            <div className="bg-amber-50 border border-amber-200/80 rounded-2xl p-3 mt-3 text-left flex items-start gap-2.5 text-xs text-amber-900 shadow-2xs">
-              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-              <div>
-                <span className="font-bold block text-amber-950">Atención médica prioritaria:</span>
-                <span className="text-amber-800 text-[11px] leading-tight block mt-0.5">{pet.medical_info}</span>
-              </div>
-            </div>
-          )}
-
-          {/* Botones de Acción */}
-          <div className="mt-5 space-y-2">
-            <a
-              href={`tel:${pet.phone}`}
-              className="w-full py-3.5 bg-[#88D49E] hover:bg-[#78c98e] text-[#1C5253] font-black rounded-2xl flex items-center justify-center gap-2 shadow-md shadow-emerald-900/10 text-sm active:scale-[0.99] transition-transform"
-            >
-              <Phone className="w-4 h-4 fill-current" />
-              Llamar al Tutor Ahora
-            </a>
-
-            {/* Segundo contacto: solo aparece si el tutor lo llenó en su
-                cuenta — por si el primer número no contesta. */}
-            {pet.phone_2 && (
-              <a
-                href={`tel:${pet.phone_2}`}
-                className="w-full py-2.5 bg-[#F4F9F8] border border-emerald-100 text-[#1C5253] font-bold rounded-2xl flex items-center justify-center gap-2 text-xs active:scale-[0.99] transition-transform"
-              >
-                <Phone className="w-3.5 h-3.5" />
-                Llamar a segundo contacto
-              </a>
-            )}
-
-            <button
-              onClick={handleCompartirUbicacion}
-              disabled={obteniendoUbicacion}
-              className="w-full py-2.5 bg-white border-2 border-[#1C5253] text-[#1C5253] font-bold rounded-2xl flex items-center justify-center gap-2 text-xs hover:bg-emerald-50/50 active:scale-[0.99] transition-transform disabled:opacity-60"
-            >
-              {obteniendoUbicacion ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" /> Obteniendo ubicación...
-                </>
-              ) : (
-                <>
-                  <MapPin className="w-3.5 h-3.5" /> Enviar mi ubicación por WhatsApp
-                </>
-              )}
-            </button>
-            {errorUbicacion && (
-              <p className="text-[10px] text-amber-600 text-center">{errorUbicacion}</p>
-            )}
-          </div>
         </div>
 
         {/* Footer */}
-        <div className="bg-[#F4F9F8] px-5 py-3 border-t border-emerald-100 flex items-center justify-center text-[11px] text-gray-400">
-          <span className="font-medium">Sistema de Seguridad CURPitas</span>
-        </div>
+        <a
+          href="/"
+          className="bg-[#F4F9F8] px-5 py-3 border-t border-emerald-100 flex items-center justify-center text-[11px] text-gray-400 hover:text-[#1C5253]"
+        >
+          <span className="font-medium">¿Quieres una para tu mascota? Conoce CURPitas</span>
+        </a>
 
       </div>
     </div>
   );
 };
 
-export default PetProfile;
+export default PetProfile;

@@ -266,7 +266,9 @@ export const MiCuenta = () => {
   const [esRescatista, setEsRescatista] = useState(false);
   const [mascotaActiva, setMascotaActiva] = useState(0);
 
-  const [folio, setFolio] = useState('');
+  const [folio, setFolio] = useState(() => {
+    try { return localStorage.getItem('folioPendiente') || ''; } catch { return ''; }
+  });
   const [claiming, setClaiming] = useState(false);
   const [claimMsg, setClaimMsg] = useState('');
 
@@ -323,6 +325,7 @@ export const MiCuenta = () => {
 
     setClaimMsg('¡Mascota vinculada! Ya puedes completar sus datos abajo.');
     setFolio('');
+    try { localStorage.removeItem('folioPendiente'); } catch { /* nada que limpiar */ }
     cargarMascotas();
   };
 
@@ -439,4 +442,4 @@ export const MiCuenta = () => {
   );
 };
 
-export default MiCuenta;
+export default MiCuenta;

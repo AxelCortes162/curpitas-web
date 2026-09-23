@@ -753,7 +753,7 @@ export const Admin = () => {
 
         <Link
           to="/admin/vendedores"
-          className="flex items-center justify-between gap-2 mb-5 px-4 py-3 bg-white rounded-2xl border border-emerald-100 hover:border-[#1C5253] group"
+          className="flex items-center justify-between gap-2 mb-2 px-4 py-3 bg-white rounded-2xl border border-emerald-100 hover:border-[#1C5253] group"
         >
           <span className="flex items-center gap-2.5 min-w-0">
             <Users className="w-4 h-4 text-[#1C5253] shrink-0" />
@@ -771,7 +771,7 @@ export const Admin = () => {
 
         <Link
           to="/admin/prospectos"
-          className="flex items-center justify-between gap-2 mb-5 px-4 py-3 bg-white rounded-2xl border border-emerald-100 hover:border-[#1C5253] group"
+          className="flex items-center justify-between gap-2 mb-2 px-4 py-3 bg-white rounded-2xl border border-emerald-100 hover:border-[#1C5253] group"
         >
           <span className="flex items-center gap-2.5 min-w-0">
             <Store className="w-4 h-4 text-[#1C5253] shrink-0" />

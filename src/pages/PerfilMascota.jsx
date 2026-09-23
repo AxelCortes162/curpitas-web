@@ -110,17 +110,48 @@ export const PerfilMascota = () => {
     );
   }
 
-  if (estado === 'no_existe' || estado === 'sin_reclamar') {
+  if (estado === 'sin_reclamar') {
+    const guardarFolio = () => {
+      try { localStorage.setItem('folioPendiente', curpita); } catch { /* sin almacenamiento, lo escribe a mano */ }
+    };
+    return (
+      <div className="min-h-screen bg-[#E8F3F1] flex flex-col items-center justify-center p-4 text-center">
+        <img src="/logo.png" alt="CURPitas" className="w-14 h-14 object-contain mb-4" />
+        <p className="text-lg font-black text-[#1C5253] mb-2">Esta placa todavía no está activada</p>
+        <p className="text-sm text-gray-500 mb-4 max-w-xs">
+          Si es tuya, actívala para que tenga el perfil de tu mascota y tu teléfono.
+        </p>
+        <p className="font-mono font-bold text-[#1C5253] bg-white px-3 py-1.5 rounded-lg border border-emerald-100 mb-6">
+          {curpita}
+        </p>
+        <Link
+          to="/mi-cuenta"
+          onClick={guardarFolio}
+          className="w-full max-w-xs py-3.5 bg-[#1C5253] hover:bg-[#164343] text-white font-black rounded-2xl text-sm"
+        >
+          Es mía, activarla
+        </Link>
+        <Link
+          to="/registro"
+          onClick={guardarFolio}
+          className="mt-3 text-sm font-bold text-[#1C5253] hover:underline"
+        >
+          Todavía no tengo cuenta
+        </Link>
+      </div>
+    );
+  }
+
+  if (estado === 'no_existe') {
     return (
       <div className="min-h-screen bg-[#E8F3F1] flex flex-col items-center justify-center p-4 text-center">
         <p className="text-lg font-black text-[#1C5253] mb-2">Mascota no encontrada</p>
-        <p className="text-sm text-gray-500 mb-6">
-          No existe ninguna mascota registrada con el folio "{curpita}", o todavía no ha sido
-          vinculada a una cuenta.
+        <p className="text-sm text-gray-500 mb-6 max-w-xs">
+          No existe ninguna mascota registrada con el folio "{curpita}". Revisa que esté bien escrito.
         </p>
-        <Link to="/iniciar-sesion" className="flex items-center gap-2 text-sm font-bold text-[#1C5253] hover:underline">
+        <Link to="/" className="flex items-center gap-2 text-sm font-bold text-[#1C5253] hover:underline">
           <ArrowLeft className="w-4 h-4" />
-          Ir a iniciar sesión
+          Ir al inicio
         </Link>
       </div>
     );
@@ -129,4 +160,4 @@ export const PerfilMascota = () => {
   return <PetProfile pet={pet} />;
 };
 
-export default PerfilMascota;
+export default PerfilMascota;

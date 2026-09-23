@@ -115,7 +115,9 @@ const CredencialHero = () => (
       <div className="p-5">
         <div className="flex items-center gap-3">
           <img
-            src="/kenai.png"
+            src="/kenai.webp"
+            width="56"
+            height="56"
             alt="Kenai"
             className="w-14 h-14 rounded-full object-cover border-2 border-[#E8F3F1]"
           />
@@ -319,7 +321,7 @@ export const Inicio = () => {
         <div>
           <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-[#1C5253] bg-[#88D49E]/25 px-3 py-1.5 rounded-full uppercase tracking-wider">
             <ShieldCheck className="w-3 h-3" />
-            Identidad oficial para mascotas
+            Identificación digital para mascotas
           </span>
           <h1 className="text-4xl md:text-5xl font-black text-[#1C5253] leading-[1.05] mt-4 tracking-tight">
             La credencial que le da a tu mascota un camino de regreso a casa.
@@ -332,20 +334,18 @@ export const Inicio = () => {
           </p>
           <div className="flex flex-wrap gap-3 mt-8">
             <Link
-              to={user ? '/mi-cuenta' : '/registro'}
+              to="/pedir"
               className="inline-flex items-center gap-2 px-6 py-3.5 bg-[#1C5253] hover:bg-[#164343] text-white font-black rounded-2xl text-sm shadow-lg shadow-[#1C5253]/20 transition-colors"
             >
-              {user ? 'Ir a mi cuenta' : 'Registrar mi mascota'}
+              Pedir mi CURPita
               <ArrowRight className="w-4 h-4" />
             </Link>
-            {!user && (
-              <Link
-                to="/iniciar-sesion"
-                className="inline-flex items-center px-6 py-3.5 bg-white border-2 border-[#1C5253] text-[#1C5253] font-bold rounded-2xl text-sm hover:bg-emerald-50/50 transition-colors"
-              >
-                Ya tengo cuenta
-              </Link>
-            )}
+            <Link
+              to={user ? '/mi-cuenta' : '/registro'}
+              className="inline-flex items-center px-6 py-3.5 bg-white border-2 border-[#1C5253] text-[#1C5253] font-bold rounded-2xl text-sm hover:bg-emerald-50/50 transition-colors"
+            >
+              {user ? 'Ir a mi cuenta' : 'Ya tengo mi placa'}
+            </Link>
           </div>
         </div>
 
@@ -433,7 +433,7 @@ export const Inicio = () => {
           <Feature
             icon={PawPrint}
             titulo="Folio único"
-            texto="Cada mascota tiene su propio CURPITA, como una credencial oficial imposible de duplicar."
+            texto="Cada mascota tiene su propio CURPITA, irrepetible, como una credencial: no hay dos iguales."
           />
           <Feature
             icon={Phone}
@@ -524,8 +524,8 @@ export const Inicio = () => {
             <p className="text-sm text-gray-500 mt-1.5 leading-relaxed">
               Rescatistas verificados publican perros, gatos y otras mascotas buscando hogar. Cada
               ficha tiene fotos, su historia, y un formulario antes de contactar — para que la
-              adopción sea responsable. Muchas salen de aquí con su propia credencial CURPitas de
-              regalo.
+              adopción sea responsable. La meta es que cada una salga de aquí con su propia
+              credencial CURPitas de regalo.
             </p>
             <Link
               to="/adopciones"
@@ -563,10 +563,10 @@ export const Inicio = () => {
           Dale a tu mascota un camino de regreso a casa.
         </h2>
         <Link
-          to={user ? '/mi-cuenta' : '/registro'}
+          to="/pedir"
           className="inline-flex items-center gap-2 mt-6 px-7 py-4 bg-[#1C5253] hover:bg-[#164343] text-white font-black rounded-2xl text-sm shadow-lg shadow-[#1C5253]/20 transition-colors"
         >
-          {user ? 'Ir a mi cuenta' : 'Crear mi cuenta'}
+          Pedir mi CURPita
           <ArrowRight className="w-4 h-4" />
         </Link>
       </section>
@@ -630,4 +630,4 @@ export const Inicio = () => {
   );
 };
 
-export default Inicio;
+export default Inicio;
