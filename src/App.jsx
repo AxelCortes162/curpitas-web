@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation, useNavigationType } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import RutaProtegida from './context/RutaProtegida';
 import PerfilMascota from './pages/PerfilMascota';
@@ -29,10 +29,22 @@ import Gracias from './pages/Gracias';
 import PagoFallido from './pages/PagoFallido';
 import SeguimientoPedido from './pages/SeguimientoPedido';
 
+// Al cambiar de página, empezar arriba. Con "atrás" no, para que el
+// navegador regrese a donde estaba.
+function SubirAlCambiarPagina() {
+  const { pathname } = useLocation();
+  const tipo = useNavigationType();
+  React.useEffect(() => {
+    if (tipo !== 'POP') window.scrollTo(0, 0);
+  }, [pathname, tipo]);
+  return null;
+}
+
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <SubirAlCambiarPagina />
         <Routes>
           <Route path="/" element={<Inicio />} />
           <Route path="/aviso-de-privacidad" element={<AvisoPrivacidad />} />
