@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
-import { PawPrint, Plus, Download, ShieldCheck, ShieldOff, Star, Check, X, Tag, Circle, FileSpreadsheet, Ban, RotateCcw, Search, Heart, HeartOff, Calculator, ChevronRight, Factory, ClipboardList, Users, Gift } from 'lucide-react';
+import { PawPrint, Plus, Download, ShieldCheck, ShieldOff, Star, Check, X, Tag, Circle, FileSpreadsheet, Ban, RotateCcw, Search, Heart, HeartOff, Calculator, ChevronRight, Factory, ClipboardList, Users, Gift, Store } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 
@@ -763,6 +763,24 @@ export const Admin = () => {
               </span>
               <span className="block text-[11px] text-gray-400 leading-tight">
                 Códigos, comisiones y a quién ya se le pagó
+              </span>
+            </span>
+          </span>
+          <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#1C5253] shrink-0" />
+        </Link>
+
+        <Link
+          to="/admin/prospectos"
+          className="flex items-center justify-between gap-2 mb-5 px-4 py-3 bg-white rounded-2xl border border-emerald-100 hover:border-[#1C5253] group"
+        >
+          <span className="flex items-center gap-2.5 min-w-0">
+            <Store className="w-4 h-4 text-[#1C5253] shrink-0" />
+            <span className="min-w-0">
+              <span className="block text-sm font-bold text-[#1C5253] leading-tight">
+                Prospectos
+              </span>
+              <span className="block text-[11px] text-gray-400 leading-tight">
+                Veterinarias y tiendas visitadas, negadas o afiliadas
               </span>
             </span>
           </span>

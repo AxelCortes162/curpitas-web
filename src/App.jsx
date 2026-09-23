@@ -20,6 +20,7 @@ import AdminCalculadora from './pages/AdminCalculadora';
 import Produccion from './pages/Produccion';
 import PedidoManual from './pages/PedidoManual';
 import Vendedores from './pages/Vendedores';
+import Prospectos from './pages/Prospectos';
 import ReferidosCanjes from './pages/ReferidosCanjes';
 import PanelVendedor from './pages/PanelVendedor';
 import RutaVendedor from './context/RutaVendedor';
@@ -116,6 +117,16 @@ function App() {
             }
           />
           <Route
+            path="/admin/prospectos"
+            element={
+              <RutaProtegida>
+                <RutaAdmin>
+                  <Prospectos />
+                </RutaAdmin>
+              </RutaProtegida>
+            }
+          />
+          <Route
             path="/admin/referidos"
             element={
               <RutaProtegida>
@@ -141,4 +152,4 @@ function App() {
   );
 }
 
-export default App;
+export default App;
