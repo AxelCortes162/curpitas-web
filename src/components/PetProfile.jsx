@@ -58,7 +58,9 @@ export const PetProfile = ({ pet }) => {
   };
 
   // Arma el link de WhatsApp hacia el dueño, agregando "52" (México) si
-  // el teléfono guardado no lo trae ya.
+  // el teléfono guardado no lo trae ya. Siempre le escribe al teléfono
+  // principal — el segundo contacto es solo para llamar, por si el primero
+  // no contesta.
   const construirLinkWhatsApp = (mensaje) => {
     let digitos = pet.phone.replace(/\D/g, '');
     if (!digitos.startsWith('52')) digitos = '52' + digitos;
@@ -272,6 +274,18 @@ export const PetProfile = ({ pet }) => {
               <Phone className="w-4 h-4 fill-current" />
               Llamar al Tutor Ahora
             </a>
+
+            {/* Segundo contacto: solo aparece si el tutor lo llenó en su
+                cuenta — por si el primer número no contesta. */}
+            {pet.phone_2 && (
+              <a
+                href={`tel:${pet.phone_2}`}
+                className="w-full py-2.5 bg-[#F4F9F8] border border-emerald-100 text-[#1C5253] font-bold rounded-2xl flex items-center justify-center gap-2 text-xs active:scale-[0.99] transition-transform"
+              >
+                <Phone className="w-3.5 h-3.5" />
+                Llamar a segundo contacto
+              </a>
+            )}
 
             <button
               onClick={handleCompartirUbicacion}

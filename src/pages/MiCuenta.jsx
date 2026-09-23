@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  LogOut, Link2, Heart, Gift, Copy, Loader2,
+  LogOut, Link2, Heart, Gift, Copy, Loader2, Phone,
 } from 'lucide-react';
 import { supabase, conReintentoDeSesion } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
@@ -178,6 +178,87 @@ const ReferidosYPuntos = ({ userId }) => {
   );
 };
 
+// ---------------------------------------------------------------------------
+// SEGUNDO CONTACTO — un teléfono más, opcional, por si el tutor no contesta.
+// Vive en profiles.phone_2 (una sola vez por cuenta, igual que el teléfono
+// principal), y get_pet_public ya lo regresa: cuando existe, PetProfile
+// muestra un segundo botón de llamada además de "Llamar al Tutor Ahora".
+// ---------------------------------------------------------------------------
+
+const ContactoEmergencia = ({ userId }) => {
+  const [phone2, setPhone2] = useState('');
+  const [cargando, setCargando] = useState(true);
+  const [guardando, setGuardando] = useState(false);
+  const [mensaje, setMensaje] = useState('');
+
+  useEffect(() => {
+    let activo = true;
+    supabase
+      .from('profiles')
+      .select('phone_2')
+      .eq('id', userId)
+      .single()
+      .then(({ data }) => {
+        if (activo) setPhone2(data?.phone_2 || '');
+        if (activo) setCargando(false);
+      });
+    return () => { activo = false; };
+  }, [userId]);
+
+  const handleChange = (e) => {
+    setPhone2(e.target.value.replace(/\D/g, '').slice(0, 10));
+  };
+
+  const guardar = async () => {
+    if (phone2 && phone2.length !== 10) {
+      setMensaje('El teléfono debe tener exactamente 10 dígitos.');
+      return;
+    }
+    setGuardando(true);
+    setMensaje('');
+    const { error } = await conReintentoDeSesion(() => supabase
+      .from('profiles')
+      .update({ phone_2: phone2 || null })
+      .eq('id', userId));
+    setGuardando(false);
+    setMensaje(error ? 'No se pudo guardar: ' + error.message : 'Guardado ✓');
+  };
+
+  return (
+    <div className="bg-white rounded-2xl border border-emerald-100/80 shadow-sm p-4 mb-5 space-y-2">
+      <p className="text-xs font-bold text-[#1C5253] flex items-center gap-1.5">
+        <Phone className="w-3.5 h-3.5" /> Segundo contacto (opcional)
+      </p>
+      <p className="text-[11px] text-gray-400">
+        Por si no contestas, en el perfil de tus mascotas aparece un botón para llamar también a
+        este número.
+      </p>
+      {cargando ? (
+        <p className="text-xs text-gray-400">Cargando...</p>
+      ) : (
+        <div className="flex gap-2">
+          <input
+            type="tel"
+            inputMode="numeric"
+            value={phone2}
+            onChange={handleChange}
+            placeholder="10 dígitos, ej. 5512345678"
+            className="flex-1 py-2.5 px-3 rounded-xl border border-emerald-100 bg-[#F4F9F8] text-xs font-mono text-[#1C5253]"
+          />
+          <button
+            onClick={guardar}
+            disabled={guardando}
+            className="px-4 py-2.5 bg-[#88D49E] hover:bg-[#78c98e] text-[#1C5253] font-black rounded-xl text-xs disabled:opacity-60"
+          >
+            {guardando ? '...' : 'Guardar'}
+          </button>
+        </div>
+      )}
+      {mensaje && <p className="text-[11px] text-[#1C5253]">{mensaje}</p>}
+    </div>
+  );
+};
+
 export const MiCuenta = () => {
   const { user, signOut } = useAuth();
   const [pets, setPets] = useState([]);
@@ -342,6 +423,9 @@ export const MiCuenta = () => {
           </div>
           {claimMsg && <p className="text-[11px] text-[#1C5253]">{claimMsg}</p>}
         </form>
+
+        {/* Segundo contacto */}
+        <ContactoEmergencia userId={user.id} />
 
         {/* Refiere y gana */}
         <ReferidosYPuntos userId={user.id} />
