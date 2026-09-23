@@ -158,7 +158,12 @@ export const SeccionPrecios = () => {
           </p>
         )}
 
-        <p className="text-xs text-gray-400 text-center mt-8">
+        <p className="text-sm text-[#1C5253] text-center mt-8 max-w-md mx-auto">
+          <span className="font-bold">¿Cuándo está lista?</span> Si la tenemos hecha, sale el mismo
+          día o al siguiente (con nombre grabado, al día siguiente). Si hay que hacerla, en unos
+          4 días.
+        </p>
+        <p className="text-xs text-gray-400 text-center mt-2">
           Precios en pesos mexicanos. El envío se cotiza aparte según tu ciudad.
         </p>
       </div>
@@ -166,4 +171,4 @@ export const SeccionPrecios = () => {
   );
 };
 
-export default SeccionPrecios;
+export default SeccionPrecios;

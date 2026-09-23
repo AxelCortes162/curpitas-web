@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Loader2, Lock, MessageCircle, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Loader2, Lock, MessageCircle, ShieldCheck, Clock } from 'lucide-react';
+import { supabase } from '../supabaseClient';
 import BrandHeader from '../components/BrandHeader';
 import Placa3D from '../components/Placa3D';
 import { COLORES, FORMAS, MAX_NOMBRE, colorPorId, formaPorId } from '../lib/placa';
@@ -49,6 +50,7 @@ export const Pedir = () => {
   const [errorPrecios, setErrorPrecios] = useState('');
   const [error, setError] = useState('');
   const [enviando, setEnviando] = useState(false);
+  const [hayStock, setHayStock] = useState(null);
 
   const formaActual = formaPorId(forma);
 
@@ -61,6 +63,17 @@ export const Pedir = () => {
       });
     return () => { vivo = false; };
   }, []);
+
+  useEffect(() => {
+    let vivo = true;
+    const piezas = parseInt(cantidad, 10) || 1;
+    supabase
+      .rpc('hay_stock', { p_forma: forma, p_color: color, p_cantidad: piezas })
+      .then(({ data, error: err }) => {
+        if (vivo) setHayStock(err ? null : data === true);
+      });
+    return () => { vivo = false; };
+  }, [forma, color, cantidad]);
 
   // Al cambiar a una forma que no lleva nombre grabado, el nombre se limpia en
   // el mismo clic. Si no, el cliente pagaría precio de personalizada por una
@@ -365,6 +378,19 @@ export const Pedir = () => {
                     Precio de mayoreo aplicado.
                   </p>
                 )}
+                {hayStock !== null && (
+                  <div className="flex items-start gap-2 mt-3 pt-3 border-t border-gray-100">
+                    <Clock className="w-4 h-4 text-[#1C5253] shrink-0 mt-0.5" />
+                    <div className="text-xs">
+                      <p className={`font-bold ${hayStock ? 'text-[#0B7345]' : 'text-[#1C5253]'}`}>
+                        {hayStock && cuenta.esPersonalizada && 'La tenemos lista: grabamos el nombre y sale mañana.'}
+                        {hayStock && !cuenta.esPersonalizada && 'La tenemos lista: sale hoy o mañana.'}
+                        {!hayStock && 'Se hace a mano para ti: queda lista en unos 4 días.'}
+                      </p>
+                      <p className="text-gray-400 mt-0.5">Más el tiempo de envío a tu ciudad.</p>
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -415,4 +441,4 @@ export const Pedir = () => {
   );
 };
 
-export default Pedir;
+export default Pedir;
