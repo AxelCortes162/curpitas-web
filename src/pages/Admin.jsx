@@ -101,11 +101,11 @@ const dibujarFolio = (ctx, x, y, w, folio, colores, alto = 90) => {
   trazarRectRedondeado(ctx, x, y, w, alto, 12);
   ctx.fill();
   ctx.fillStyle = '#999999';
-  ctx.font = `bold ${Math.max(11, Math.round(alto * 0.16))}px sans-serif`;
+  ctx.font = `bold ${Math.max(11, Math.round(alto * 0.16))}px Poppins, sans-serif`;
   ctx.textAlign = 'center';
   ctx.fillText('FOLIO', x + w / 2, y + alto * 0.38);
   ctx.fillStyle = colores.teal;
-  ctx.font = `bold ${Math.max(14, Math.round(alto * 0.28))}px monospace`;
+  ctx.font = `bold ${Math.max(14, Math.round(alto * 0.28))}px "JetBrains Mono", monospace`;
   ctx.fillText(folio, x + w / 2, y + alto * 0.78);
 };
 
@@ -213,15 +213,35 @@ const FilaMascota = ({ pet, onUpdated }) => {
 
     ctx.fillStyle = white;
     ctx.textAlign = 'left';
-    const tituloSize = base * 0.11;
-    ctx.font = `bold ${Math.round(tituloSize)}px sans-serif`;
+    // Logotipo: CURP en Black blanco + ITAS en SemiBold menta
+    let tituloSize = base * 0.11;
+    let anchoCurp = 0;
+    let anchoItas = 0;
+    for (let intento = 0; intento < 20; intento++) {
+      ctx.font = `900 ${Math.round(tituloSize)}px Poppins, sans-serif`;
+      ctx.letterSpacing = `${-0.01 * tituloSize}px`;
+      anchoCurp = ctx.measureText('CURP').width;
+      ctx.font = `600 ${Math.round(tituloSize)}px Poppins, sans-serif`;
+      ctx.letterSpacing = `${0.02 * tituloSize}px`;
+      anchoItas = ctx.measureText('ITAS').width;
+      if (anchoCurp + anchoItas <= w - pad * 2) break;
+      tituloSize = tituloSize * 0.95;
+    }
     cursorY += tituloSize * 0.8;
-    ctx.fillText('CURPitas', pad, cursorY);
+    ctx.fillStyle = white;
+    ctx.font = `900 ${Math.round(tituloSize)}px Poppins, sans-serif`;
+    ctx.letterSpacing = `${-0.01 * tituloSize}px`;
+    ctx.fillText('CURP', pad, cursorY);
+    ctx.fillStyle = mint;
+    ctx.font = `600 ${Math.round(tituloSize)}px Poppins, sans-serif`;
+    ctx.letterSpacing = `${0.02 * tituloSize}px`;
+    ctx.fillText('ITAS', pad + anchoCurp, cursorY);
+    ctx.letterSpacing = '0px';
     cursorY += tituloSize * 0.55;
 
     ctx.fillStyle = mint;
     const subtituloSize = base * 0.036;
-    ctx.font = `bold ${Math.round(subtituloSize)}px sans-serif`;
+    ctx.font = `bold ${Math.round(subtituloSize)}px Poppins, sans-serif`;
     cursorY += subtituloSize * 1.15;
     ctx.fillText('CREDENCIAL DE MASCOTAS', pad, cursorY);
     cursorY += subtituloSize * 0.6;
@@ -241,7 +261,7 @@ const FilaMascota = ({ pet, onUpdated }) => {
 
     ctx.fillStyle = mint;
     const dominioSize = base * 0.04;
-    ctx.font = `${Math.round(dominioSize)}px sans-serif`;
+    ctx.font = `${Math.round(dominioSize)}px Poppins, sans-serif`;
     ctx.textAlign = 'center';
     ctx.fillText('curpitas.com', w / 2, h - base * 0.045);
 
@@ -258,7 +278,7 @@ const FilaMascota = ({ pet, onUpdated }) => {
     ctx.fillStyle = teal;
     ctx.textAlign = 'left';
     const tituloSize = base * 0.06;
-    ctx.font = `bold ${Math.round(tituloSize)}px sans-serif`;
+    ctx.font = `bold ${Math.round(tituloSize)}px Poppins, sans-serif`;
     cursorY += tituloSize * 0.8;
     ctx.fillText('Actívala en', pad, cursorY);
     cursorY += tituloSize * 1.15;
@@ -282,12 +302,12 @@ const FilaMascota = ({ pet, onUpdated }) => {
       ctx.arc(pad + r, circuloY, r, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = cream;
-      ctx.font = `bold ${Math.round(numSize)}px sans-serif`;
+      ctx.font = `bold ${Math.round(numSize)}px Poppins, sans-serif`;
       ctx.textAlign = 'center';
       ctx.fillText(String(i + 1), pad + r, circuloY + numSize * 0.35);
 
       ctx.fillStyle = teal;
-      ctx.font = `${Math.round(textoSize)}px sans-serif`;
+      ctx.font = `${Math.round(textoSize)}px Poppins, sans-serif`;
       ctx.textAlign = 'left';
 
       const maxWidth = w - pad - (r * 2 + 16) - pad;
@@ -317,15 +337,29 @@ const FilaMascota = ({ pet, onUpdated }) => {
 
     ctx.fillStyle = teal;
     const dominioSize = base * 0.04;
-    ctx.font = `${Math.round(dominioSize)}px sans-serif`;
+    ctx.font = `${Math.round(dominioSize)}px Poppins, sans-serif`;
     ctx.textAlign = 'center';
     ctx.fillText('curpitas.com', w / 2, h - base * 0.045);
 
     descargarCanvas(canvas, `${sufijo}-reverso`);
   };
 
-  const handleBlister = () => {
+  const handleBlister = async () => {
     const espacioPerforacion = mmAPx(10);
+
+    // Sin esto, el canvas dibuja con la letra del sistema si Poppins
+    // todavía no se ha descargado.
+    try {
+      await Promise.all([
+        document.fonts.load('900 60px Poppins'),
+        document.fonts.load('600 60px Poppins'),
+        document.fonts.load('700 30px Poppins'),
+        document.fonts.load('400 30px Poppins'),
+        document.fonts.load('700 30px "JetBrains Mono"'),
+      ]);
+    } catch {
+      // si no cargan, se dibuja con la letra de respaldo
+    }
 
     generarFrente(BLISTER.w, BLISTER.h, 'blister', espacioPerforacion);
     setTimeout(

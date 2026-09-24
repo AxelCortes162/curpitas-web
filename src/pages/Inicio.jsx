@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabaseClient';
 import CarruselPlacas from '../components/CarruselPlacas';
 import SeccionPrecios from '../components/SeccionPrecios';
+import Logotipo from '../components/Logotipo';
 import {
   PawPrint,
   ShieldCheck,
@@ -65,7 +66,7 @@ const NavBar = ({ user }) => (
   <nav className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between gap-2">
     <Link to="/" className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
       <img src="/logo.png" alt="CURPitas" className="w-8 h-8 sm:w-12 sm:h-12 object-contain" />
-      <span className="font-black text-[#1C5253] tracking-tight text-base sm:text-lg">CURPitas</span>
+      <Logotipo className="text-base sm:text-lg" />
     </Link>
     <div className="flex items-center gap-2.5 sm:gap-5">
       <Link
@@ -93,7 +94,8 @@ const NavBar = ({ user }) => (
           to="/iniciar-sesion"
           className="text-xs sm:text-sm font-bold text-[#1C5253] hover:text-[#88D49E] transition-colors whitespace-nowrap"
         >
-          Iniciar sesión
+          <span className="sm:hidden">Entrar</span>
+          <span className="hidden sm:inline">Iniciar sesión</span>
         </Link>
       )}
     </div>
@@ -129,7 +131,7 @@ const CredencialHero = () => (
           </div>
           <CheckCircle2 className="w-4 h-4 text-[#88D49E] ml-auto" />
         </div>
-        <div className="mt-4 pt-3 border-t border-dashed border-emerald-100 flex items-center justify-between">
+        <div className="mt-4 pt-3 pr-8 border-t border-dashed border-emerald-100 flex items-center justify-between">
           <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">
             Teléfono
           </span>
@@ -576,9 +578,9 @@ export const Inicio = () => {
         <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <img src="/logo.png" alt="CURPitas" className="w-6 h-6 object-contain" />
-            <span className="text-xs font-bold text-[#1C5253]">CURPitas</span>
+            <Logotipo className="text-xs" />
           </div>
-          <div className="flex items-center gap-5 text-xs text-gray-400 font-medium">
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-gray-500 font-medium whitespace-nowrap">
             <Link to="/iniciar-sesion" className="hover:text-[#1C5253]">Iniciar sesión</Link>
             <Link to="/registro" className="hover:text-[#1C5253]">Crear cuenta</Link>
             <Link to="/aviso-de-privacidad" className="hover:text-[#1C5253]">Aviso de Privacidad</Link>

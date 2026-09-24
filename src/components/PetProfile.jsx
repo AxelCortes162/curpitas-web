@@ -284,20 +284,20 @@ export const PetProfile = ({ pet }) => {
           {/* Tarjeta de Datos */}
           <div className="bg-[#F4F9F8] rounded-2xl p-4 mt-4 space-y-2 text-xs text-left border border-emerald-100/80 shadow-sm">
             <div className="flex justify-between items-center border-b border-emerald-100 pb-2">
-              <span className="text-gray-400 font-bold text-[10px] tracking-wider uppercase">Folio CURPITA</span>
+              <span className="text-gray-500 font-bold text-[10px] tracking-wider uppercase">Folio CURPITA</span>
               <span className="font-extrabold text-[#1C5253] font-mono bg-white px-2 py-0.5 rounded border border-emerald-100 shadow-2xs">{pet.curpita}</span>
             </div>
 
             {fechaNacimiento && (
               <div className="flex justify-between items-center border-b border-emerald-100 pb-1.5">
-                <span className="text-gray-400 font-bold text-[10px] tracking-wider uppercase">Nacimiento</span>
+                <span className="text-gray-500 font-bold text-[10px] tracking-wider uppercase">Nacimiento</span>
                 <span className="font-bold text-gray-700">{fechaNacimiento}</span>
               </div>
             )}
 
             {pet.breed && (
               <div className="flex justify-between items-center border-b border-emerald-100 pb-1.5">
-                <span className="text-gray-400 font-bold text-[10px] tracking-wider uppercase">Raza</span>
+                <span className="text-gray-500 font-bold text-[10px] tracking-wider uppercase">Raza</span>
                 <span className="font-bold text-gray-700 flex items-center gap-1.5">
                   <IconoEspecie species={pet.species} className="w-3.5 h-3.5 text-[#1C5253]" />
                   {pet.breed}
@@ -307,13 +307,13 @@ export const PetProfile = ({ pet }) => {
 
             {pet.owner_name && (
               <div className="flex justify-between items-center border-b border-emerald-100 pb-1.5">
-                <span className="text-gray-400 font-bold text-[10px] tracking-wider uppercase">Tutor Responsable</span>
+                <span className="text-gray-500 font-bold text-[10px] tracking-wider uppercase">Tutor Responsable</span>
                 <span className="font-bold text-gray-700">{pet.owner_name}</span>
               </div>
             )}
 
             <div className="flex justify-between items-center">
-              <span className="text-gray-400 font-bold text-[10px] tracking-wider uppercase">Teléfono</span>
+              <span className="text-gray-500 font-bold text-[10px] tracking-wider uppercase">Teléfono</span>
               <span className="font-bold text-gray-700">{formatTelefono(pet.phone)}</span>
             </div>
           </div>

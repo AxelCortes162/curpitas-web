@@ -1,5 +1,18 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: 'Poppins', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+/* En iPhone, si un campo tiene letra menor a 16px, Safari hace zoom al
+   tocarlo y la página queda movida. */
+@media (max-width: 640px) {
+  input, select, textarea {
+    font-size: 16px;
+  }
+}
+
 :root {
   font-family: 'Poppins', system-ui, -apple-system, sans-serif;
 }
@@ -9,4 +22,4 @@ body {
   padding: 0;
   background-color: #E8F3F1;
   color: #1C5253;
-}
+}

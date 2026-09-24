@@ -18,7 +18,7 @@ import { IconoGato, IconoOtraMascota } from './IconosMascotas';
 import SelectorUbicacionPerdida from './SelectorUbicacionPerdida';
 import HistorialEscaneos from './HistorialEscaneos';
 
-export const PetEditorCard = ({ pet, onUpdated, onDeleted }) => {
+export const PetEditorCard = ({ pet, onUpdated, onDeleted, onPerdidaCambiada }) => {
   const { user } = useAuth();
   const [form, setForm] = useState({
     name: pet.name || '',
@@ -38,6 +38,8 @@ export const PetEditorCard = ({ pet, onUpdated, onDeleted }) => {
   });
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState('');
+  const [guardandoPerdida, setGuardandoPerdida] = useState(false);
+  const [msgPerdida, setMsgPerdida] = useState('');
   const [subiendoFoto, setSubiendoFoto] = useState(false);
   const [fotoError, setFotoError] = useState('');
   const [confirmandoEliminar, setConfirmandoEliminar] = useState(false);
@@ -93,6 +95,40 @@ export const PetEditorCard = ({ pet, onUpdated, onDeleted }) => {
     const { data } = supabase.storage.from('pet-photos').getPublicUrl(ruta);
     handleChange('photo_url', data.publicUrl);
     setSubiendoFoto(false);
+  };
+
+  const cambiarPerdida = async () => {
+    const marcada = !form.is_lost;
+    const cambios = { is_lost: marcada };
+    if (!marcada) {
+      cambios.lost_lat = null;
+      cambios.lost_lng = null;
+    }
+    setGuardandoPerdida(true);
+    setMsgPerdida('');
+    const { error } = await supabase.from('pets').update(cambios).eq('id', pet.id);
+    setGuardandoPerdida(false);
+    if (error) {
+      setMsgPerdida('No se pudo guardar: ' + error.message);
+    } else {
+      setForm((prev) => ({ ...prev, ...cambios }));
+      if (onPerdidaCambiada) onPerdidaCambiada(pet.id, cambios);
+      setMsgPerdida(marcada
+        ? 'Listo, ya aparece como perdida. Marca abajo dónde se perdió para que salga en el mapa.'
+        : 'Qué alegría. Ya no aparece como perdida.');
+    }
+  };
+
+  const guardarUbicacion = async (coords) => {
+    handleChange('lost_lat', coords.lat);
+    handleChange('lost_lng', coords.lng);
+    const { error } = await supabase
+      .from('pets')
+      .update({ lost_lat: coords.lat, lost_lng: coords.lng })
+      .eq('id', pet.id);
+    setMsgPerdida(error
+      ? 'No se pudo guardar la ubicación: ' + error.message
+      : 'Ubicación guardada. Ya aparece en el mapa de perdidas.');
   };
 
   const handleSave = async () => {
@@ -167,6 +203,41 @@ export const PetEditorCard = ({ pet, onUpdated, onDeleted }) => {
         >
           Ver perfil público <ExternalLink className="w-2.5 h-2.5" />
         </Link>
+      </div>
+
+      {/* Perdida: se guarda en cuanto se toca, sin esperar a "Guardar cambios".
+          Es lo que alguien hace con prisa y no puede quedarse a medias. */}
+      <div className="px-4 pt-3">
+        <div className={`rounded-xl p-3 border ${form.is_lost ? 'bg-red-50 border-red-200' : 'bg-[#F4F9F8] border-emerald-100'}`}>
+          <p className={`text-sm font-black ${form.is_lost ? 'text-red-600' : 'text-[#1C5253]'}`}>
+            {form.is_lost ? 'Reportada como perdida' : '¿Se perdió?'}
+          </p>
+          <p className="text-xs text-gray-500 mt-0.5">
+            {form.is_lost
+              ? 'Su perfil muestra la alerta y te avisamos por correo cuando escaneen su placa.'
+              : 'Márcala y su perfil mostrará la alerta de inmediato.'}
+          </p>
+          <button
+            type="button"
+            onClick={cambiarPerdida}
+            disabled={guardandoPerdida}
+            className={`w-full mt-2.5 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-60 ${
+              form.is_lost ? 'bg-white border-2 border-[#1C5253] text-[#1C5253]' : 'bg-red-500 hover:bg-red-600 text-white'
+            }`}
+          >
+            {guardandoPerdida && <Loader2 className="w-4 h-4 animate-spin" />}
+            {form.is_lost ? '¡Ya apareció!' : 'Marcar como perdida'}
+          </button>
+          {msgPerdida && <p className="text-xs text-[#1C5253] mt-2 text-center">{msgPerdida}</p>}
+          {form.is_lost && (
+            <div className="mt-3">
+              <SelectorUbicacionPerdida
+                value={form.lost_lat && form.lost_lng ? { lat: form.lost_lat, lng: form.lost_lng } : null}
+                onChange={guardarUbicacion}
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Modal para ver la foto en grande, con transición de entrada/salida */}
@@ -299,35 +370,6 @@ export const PetEditorCard = ({ pet, onUpdated, onDeleted }) => {
           </div>
         </div>
 
-        <label className="flex items-center justify-between text-xs font-bold text-gray-600">
-          Marcar como perdida
-          <input
-            type="checkbox"
-            checked={form.is_lost}
-            onChange={(e) => {
-              const marcada = e.target.checked;
-              handleChange('is_lost', marcada);
-              if (!marcada) {
-                // Al recuperarla, limpiamos la ubicación para no dejar
-                // rastro de "dónde se perdió" una vez que ya no aplica.
-                handleChange('lost_lat', null);
-                handleChange('lost_lng', null);
-              }
-            }}
-            className="w-4 h-4 accent-red-500"
-          />
-        </label>
-
-        {form.is_lost && (
-          <SelectorUbicacionPerdida
-            value={form.lost_lat && form.lost_lng ? { lat: form.lost_lat, lng: form.lost_lng } : null}
-            onChange={(coords) => {
-              handleChange('lost_lat', coords.lat);
-              handleChange('lost_lng', coords.lng);
-            }}
-          />
-        )}
-
         <HistorialEscaneos petId={pet.id} />
 
         <div className="border-t border-emerald-100 pt-2 space-y-1.5">
@@ -425,4 +467,4 @@ export const PetEditorCard = ({ pet, onUpdated, onDeleted }) => {
   );
 };
 
-export default PetEditorCard;
+export default PetEditorCard;

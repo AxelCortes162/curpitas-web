@@ -230,7 +230,7 @@ const ContactoEmergencia = ({ userId }) => {
         <Phone className="w-3.5 h-3.5" /> Segundo contacto (opcional)
       </p>
       <p className="text-[11px] text-gray-400">
-        Por si no contestas, en el perfil de tus mascotas aparece un botón para llamar también a
+        Por si no contestas, en el perfil de tus mascotas aparece un enlace para llamar también a
         este número.
       </p>
       {cargando ? (
@@ -303,6 +303,17 @@ export const MiCuenta = () => {
       return Math.min(i, pets.length - 1);
     });
   }, [pets]);
+
+  const actualizarMascotaLocal = (id, cambios) => {
+    setPets((prev) => {
+      const copia = [];
+      for (let i = 0; i < prev.length; i++) {
+        if (prev[i].id === id) copia.push({ ...prev[i], ...cambios });
+        else copia.push(prev[i]);
+      }
+      return copia;
+    });
+  };
 
   const handleClaim = async (e) => {
     e.preventDefault();
@@ -393,6 +404,7 @@ export const MiCuenta = () => {
                 pet={pets[mascotaActiva]}
                 onUpdated={cargarMascotas}
                 onDeleted={cargarMascotas}
+                onPerdidaCambiada={actualizarMascotaLocal}
               />
             </div>
           </div>
