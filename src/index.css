@@ -5,6 +5,12 @@
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 }
 
+/* Por defecto un campo no se encoge más allá de su ancho natural, y en
+   celulares angostos empujaba el botón de al lado fuera de la tarjeta. */
+input, select, textarea {
+  min-width: 0;
+}
+
 /* En iPhone, si un campo tiene letra menor a 16px, Safari hace zoom al
    tocarlo y la página queda movida. */
 @media (max-width: 640px) {

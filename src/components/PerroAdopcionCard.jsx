@@ -21,6 +21,7 @@ export const PerroAdopcionCard = ({ dog, onUpdated, onDeleted }) => {
   const [savedMsg, setSavedMsg] = useState('');
   const [subiendoFoto, setSubiendoFoto] = useState(false);
   const [confirmandoEliminar, setConfirmandoEliminar] = useState(false);
+  const [avisoFotos, setAvisoFotos] = useState('');
 
   const handleChange = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
 
@@ -35,18 +36,32 @@ export const PerroAdopcionCard = ({ dog, onUpdated, onDeleted }) => {
     const archivosAUsar = archivos.slice(0, espacioDisponible);
 
     setSubiendoFoto(true);
+    setAvisoFotos('');
     const nuevasUrls = [];
+    let pesadas = 0;
+    let fallidas = 0;
 
     for (const archivo of archivosAUsar) {
-      if (archivo.size > 5 * 1024 * 1024) continue; // se salta las de más de 5MB
+      if (archivo.size > 5 * 1024 * 1024) {
+        pesadas = pesadas + 1;
+        continue;
+      }
       const extension = archivo.name.split('.').pop();
       const ruta = `${user.id}/adopcion-${dog.id}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${extension}`;
       const { error } = await supabase.storage.from('pet-photos').upload(ruta, archivo, { upsert: true });
       if (!error) {
         const { data } = supabase.storage.from('pet-photos').getPublicUrl(ruta);
         nuevasUrls.push(data.publicUrl);
+      } else {
+        fallidas = fallidas + 1;
       }
     }
+
+    let aviso = '';
+    if (pesadas > 0) aviso = aviso + `${pesadas} foto(s) pesaban más de 5 MB y no se subieron. `;
+    if (fallidas > 0) aviso = aviso + `${fallidas} foto(s) no se pudieron subir, intenta de nuevo. `;
+    if (archivos.length > archivosAUsar.length) aviso = aviso + `Solo caben ${MAX_FOTOS} fotos.`;
+    setAvisoFotos(aviso.trim());
 
     setForm((prev) => ({ ...prev, photo_urls: [...prev.photo_urls, ...nuevasUrls] }));
     setSubiendoFoto(false);
@@ -79,7 +94,7 @@ export const PerroAdopcionCard = ({ dog, onUpdated, onDeleted }) => {
         value={form.name}
         onChange={(e) => handleChange('name', e.target.value)}
         placeholder="Nombre de la mascota"
-        className="w-full font-black text-[#1C5253] bg-transparent border-b border-emerald-100 pb-1 text-sm"
+        className="w-full min-w-0 font-black text-[#1C5253] bg-transparent border-b border-emerald-100 pb-1 text-base focus:outline-none focus:border-[#1C5253]"
       />
       {form.status === 'adoptado' && (
         <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#88D49E]">
@@ -88,8 +103,8 @@ export const PerroAdopcionCard = ({ dog, onUpdated, onDeleted }) => {
       )}
 
       <div>
-        <p className="text-[10px] font-bold text-gray-400 uppercase mb-1.5">
-          Fotos ({form.photo_urls.length}/{MAX_FOTOS})
+        <p className="text-xs font-semibold text-[#1C5253] mb-1.5">
+          Fotos ({form.photo_urls.length}/{MAX_FOTOS}) <span className="font-normal text-gray-400">· la primera es la portada</span>
         </p>
         <div className="flex flex-wrap gap-2">
           {form.photo_urls.map((url, i) => (
@@ -121,13 +136,14 @@ export const PerroAdopcionCard = ({ dog, onUpdated, onDeleted }) => {
             </label>
           )}
         </div>
+        {avisoFotos && <p className="text-xs text-amber-600 mt-1">{avisoFotos}</p>}
         {form.photo_urls.length >= MAX_FOTOS && (
           <p className="text-[10px] text-gray-400 mt-1">Máximo {MAX_FOTOS} fotos — quita alguna para agregar otra.</p>
         )}
       </div>
 
       <div>
-        <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Especie</p>
+        <p className="text-xs font-semibold text-[#1C5253] mb-1">Especie</p>
         <div className="flex gap-1.5">
           {[
             { valor: 'perro', label: 'Perro', Icon: PawPrint },
@@ -152,35 +168,48 @@ export const PerroAdopcionCard = ({ dog, onUpdated, onDeleted }) => {
       </div>
 
       <div className="grid grid-cols-2 gap-2">
-        <input
-          value={form.breed}
-          onChange={(e) => handleChange('breed', e.target.value)}
-          placeholder="Raza (opcional)"
-          className="py-2 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-xs text-[#1C5253]"
-        />
-        <input
-          value={form.age_text}
-          onChange={(e) => handleChange('age_text', e.target.value)}
-          placeholder="Edad (ej. 2 años)"
-          className="py-2 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-xs text-[#1C5253]"
-        />
+        <label className="block min-w-0">
+          <span className="text-xs font-semibold text-[#1C5253]">Raza <span className="font-normal text-gray-400">(opcional)</span></span>
+          <input
+            value={form.breed}
+            onChange={(e) => handleChange('breed', e.target.value)}
+            placeholder="Mestizo"
+            className="w-full min-w-0 mt-1 py-2.5 px-3 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-sm text-[#1C5253] focus:outline-none focus:border-[#1C5253]"
+          />
+        </label>
+        <label className="block min-w-0">
+          <span className="text-xs font-semibold text-[#1C5253]">Edad</span>
+          <input
+            value={form.age_text}
+            onChange={(e) => handleChange('age_text', e.target.value)}
+            placeholder="2 años"
+            className="w-full min-w-0 mt-1 py-2.5 px-3 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-sm text-[#1C5253] focus:outline-none focus:border-[#1C5253]"
+          />
+        </label>
+      </div>
+
+      <label className="block">
+        <span className="text-xs font-semibold text-[#1C5253]">Colonia / Zona</span>
         <input
           value={form.city}
           onChange={(e) => handleChange('city', e.target.value)}
-          placeholder="Colonia / Zona"
-          className="py-2 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-xs text-[#1C5253]"
+          placeholder="Lindavista, GAM"
+          className="w-full min-w-0 mt-1 py-2.5 px-3 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-sm text-[#1C5253] focus:outline-none focus:border-[#1C5253]"
         />
-      </div>
+      </label>
 
-      <textarea
-        value={form.description}
-        onChange={(e) => handleChange('description', e.target.value)}
-        placeholder="Cuéntale a la gente sobre su personalidad, salud, si es bueno con niños, etc."
-        rows={3}
-        className="w-full py-2 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-xs text-[#1C5253]"
-      />
+      <label className="block">
+        <span className="text-xs font-semibold text-[#1C5253]">Descripción</span>
+        <textarea
+          value={form.description}
+          onChange={(e) => handleChange('description', e.target.value)}
+          placeholder="Personalidad, salud, si es bueno con niños u otros animales..."
+          rows={3}
+          className="w-full min-w-0 mt-1 py-2.5 px-3 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-sm text-[#1C5253] focus:outline-none focus:border-[#1C5253]"
+        />
+      </label>
 
-      <label className="flex items-center justify-between text-xs font-bold text-gray-600">
+      <label className="flex items-center justify-between text-sm font-bold text-gray-600">
         Ya fue adoptado
         <input
           type="checkbox"
@@ -243,4 +272,4 @@ export const PerroAdopcionCard = ({ dog, onUpdated, onDeleted }) => {
   );
 };
 
-export default PerroAdopcionCard;
+export default PerroAdopcionCard;
