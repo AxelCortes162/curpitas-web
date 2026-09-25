@@ -226,9 +226,15 @@ export const PetProfile = ({ pet }) => {
 
           {/* Botones de Acción */}
           {isLost && (
-            <p className="text-xs text-gray-500 mt-4 leading-snug">
-              Si tienes a {pet.name} contigo, llama a su tutor o mándale tu ubicación.
-            </p>
+            <>
+              <p className="text-xs text-gray-500 mt-4 leading-snug">
+                Si tienes a {pet.name} contigo, llama a su tutor o mándale tu ubicación.
+              </p>
+              <p className="text-[11px] text-gray-400 mt-1 leading-snug">
+                Tu ubicación, si la permites, se usa solo para avisarle a su tutor dónde está{' '}
+                {pet.name} y marcar la zona en el mapa de mascotas perdidas.
+              </p>
+            </>
           )}
           <div className="mt-4 space-y-2">
             <a

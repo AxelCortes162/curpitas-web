@@ -4,6 +4,52 @@ import { ArrowLeft, Ban } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import PetProfile from '../components/PetProfile';
 
+// Registra que alguien abrió la placa. Si la mascota está perdida, esto
+// dispara el correo al tutor (con el mapa, si viene ubicación).
+// Ojo: en supabase-js la petición solo sale si se encadena un .then().
+const registrar = (curpita, coords) => {
+  const datos = { p_curpita: curpita };
+  if (coords) {
+    datos.p_lat = coords.latitude;
+    datos.p_lng = coords.longitude;
+    datos.p_accuracy = coords.accuracy ?? null;
+  }
+  supabase.rpc('registrar_escaneo', datos).then(({ error }) => {
+    if (error) console.warn('No se registró el escaneo:', error.message);
+  });
+};
+
+// Mascota perdida: se pide la ubicación desde que se abre el perfil, para que
+// el primer correo al tutor ya lleve el mapa.
+const registrarConUbicacion = (curpita) => {
+  let registrado = false;
+  // Si la persona no contesta el permiso, el navegador nunca responde; a los
+  // 10 segundos se avisa al tutor sin ubicación. Si la ubicación llega
+  // después, se manda otro correo, ya con el mapa.
+  const espera = setTimeout(() => {
+    if (!registrado) {
+      registrado = true;
+      registrar(curpita, null);
+    }
+  }, 10000);
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      clearTimeout(espera);
+      registrado = true;
+      registrar(curpita, pos.coords);
+    },
+    () => {
+      clearTimeout(espera);
+      if (!registrado) {
+        registrado = true;
+        registrar(curpita, null);
+      }
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
+  );
+};
+
 export const PerfilMascota = () => {
   const { curpita } = useParams();
   const [pet, setPet] = useState(null);
@@ -68,11 +114,11 @@ export const PerfilMascota = () => {
         // un .then() (o un await). Sin esto, la llamada nunca sale.
         if (!yaRegistrado.current) {
           yaRegistrado.current = true;
-          supabase
-            .rpc('registrar_escaneo', { p_curpita: curpita })
-            .then(({ error: errEscaneo }) => {
-              if (errEscaneo) console.warn('No se registró el escaneo:', errEscaneo.message);
-            });
+          if (data.is_lost && navigator.geolocation) {
+            registrarConUbicacion(curpita);
+          } else {
+            registrar(curpita, null);
+          }
         }
       }
       setLoading(false);
