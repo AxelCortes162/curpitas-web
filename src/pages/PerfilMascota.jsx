@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Ban } from 'lucide-react';
+import { ArrowLeft, Ban, MapPin, Loader2 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import PetProfile from '../components/PetProfile';
 
@@ -19,36 +19,48 @@ const registrar = (curpita, coords) => {
   });
 };
 
-// Mascota perdida: se pide la ubicación desde que se abre el perfil, para que
-// el primer correo al tutor ya lleve el mapa.
-const registrarConUbicacion = (curpita) => {
-  let registrado = false;
-  // Si la persona no contesta el permiso, el navegador nunca responde; a los
-  // 10 segundos se avisa al tutor sin ubicación. Si la ubicación llega
-  // después, se manda otro correo, ya con el mapa.
-  const espera = setTimeout(() => {
-    if (!registrado) {
-      registrado = true;
-      registrar(curpita, null);
-    }
-  }, 10000);
-
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      clearTimeout(espera);
-      registrado = true;
-      registrar(curpita, pos.coords);
-    },
-    () => {
-      clearTimeout(espera);
-      if (!registrado) {
-        registrado = true;
-        registrar(curpita, null);
-      }
-    },
-    { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
-  );
-};
+// Aviso con el estilo de CURPitas antes del permiso del navegador. El cuadro
+// del navegador no se puede cambiar; este explica para qué es, y al tocar
+// "Compartir" aparece el del navegador.
+const AvisoUbicacion = ({ nombre, pidiendo, onCompartir, onAhoraNo }) => (
+  <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center p-3">
+    <div className="w-full max-w-sm bg-white rounded-3xl overflow-hidden shadow-2xl">
+      <div className="bg-[#1C5253] px-6 pt-6 pb-5 text-center">
+        <div className="w-14 h-14 mx-auto rounded-2xl bg-[#88D49E] flex items-center justify-center">
+          <MapPin className="w-7 h-7 text-[#1C5253]" />
+        </div>
+        <p className="text-white text-lg font-black mt-3 leading-tight">
+          ¿Nos ayudas a que {nombre} vuelva a casa?
+        </p>
+      </div>
+      <div className="px-6 pt-4 pb-5 text-center">
+        <p className="text-sm text-gray-600 leading-snug">
+          Comparte tu ubicación y su tutor recibirá al instante dónde está {nombre}.
+        </p>
+        <p className="text-xs text-gray-400 mt-2 leading-snug">
+          Solo se usa para avisarle a su tutor y marcar la zona en el mapa de mascotas perdidas.
+          Tu navegador te pedirá permiso.
+        </p>
+        <button
+          type="button"
+          onClick={onCompartir}
+          disabled={pidiendo}
+          className="w-full mt-4 py-3.5 bg-[#88D49E] hover:bg-[#78c98e] text-[#1C5253] font-black rounded-2xl flex items-center justify-center gap-2 text-sm disabled:opacity-60"
+        >
+          {pidiendo ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
+          {pidiendo ? 'Obteniendo ubicación...' : 'Compartir mi ubicación'}
+        </button>
+        <button
+          type="button"
+          onClick={onAhoraNo}
+          className="w-full mt-1 py-2.5 text-sm font-bold text-gray-500"
+        >
+          Ahora no
+        </button>
+      </div>
+    </div>
+  </div>
+);
 
 export const PerfilMascota = () => {
   const { curpita } = useParams();
@@ -59,6 +71,69 @@ export const PerfilMascota = () => {
   // En desarrollo React monta el efecto dos veces; sin esto quedarían dos
   // escaneos registrados por cada visita.
   const yaRegistrado = useRef(false);
+  const sinUbicacionRegistrado = useRef(false);
+  const esperaRef = useRef(null);
+  const [mostrarAviso, setMostrarAviso] = useState(false);
+  const [pidiendoUbicacion, setPidiendoUbicacion] = useState(false);
+
+  const registrarSinUbicacion = () => {
+    if (!sinUbicacionRegistrado.current) {
+      sinUbicacionRegistrado.current = true;
+      registrar(curpita, null);
+    }
+  };
+
+  const pedirUbicacion = () => {
+    setPidiendoUbicacion(true);
+    // Ya tocó "Compartir": se espera su respuesta al permiso del navegador
+    // para mandar un solo correo, con el mapa. Solo si en 30 segundos no
+    // contesta, se avisa al tutor sin ubicación.
+    clearTimeout(esperaRef.current);
+    esperaRef.current = setTimeout(registrarSinUbicacion, 30000);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        clearTimeout(esperaRef.current);
+        registrar(curpita, pos.coords);
+        setPidiendoUbicacion(false);
+        setMostrarAviso(false);
+      },
+      () => {
+        clearTimeout(esperaRef.current);
+        registrarSinUbicacion();
+        setPidiendoUbicacion(false);
+        setMostrarAviso(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
+    );
+  };
+
+  const mostrarAvisoUbicacion = () => {
+    setMostrarAviso(true);
+    // Si no toca nada, a los 30 segundos se avisa al tutor sin ubicación.
+    // Si después la comparte, le llega otro correo con el mapa.
+    esperaRef.current = setTimeout(registrarSinUbicacion, 30000);
+  };
+
+  const ahoraNo = () => {
+    clearTimeout(esperaRef.current);
+    registrarSinUbicacion();
+    setMostrarAviso(false);
+  };
+
+  const empezarConUbicacion = () => {
+    if (navigator.permissions && navigator.permissions.query) {
+      navigator.permissions
+        .query({ name: 'geolocation' })
+        .then((permiso) => {
+          if (permiso.state === 'granted') pedirUbicacion();
+          else if (permiso.state === 'denied') registrarSinUbicacion();
+          else mostrarAvisoUbicacion();
+        })
+        .catch(mostrarAvisoUbicacion);
+    } else {
+      mostrarAvisoUbicacion();
+    }
+  };
 
   useEffect(() => {
     let activo = true;
@@ -115,7 +190,7 @@ export const PerfilMascota = () => {
         if (!yaRegistrado.current) {
           yaRegistrado.current = true;
           if (data.is_lost && navigator.geolocation) {
-            registrarConUbicacion(curpita);
+            empezarConUbicacion();
           } else {
             registrar(curpita, null);
           }
@@ -127,7 +202,9 @@ export const PerfilMascota = () => {
     cargarPerfil();
     return () => {
       activo = false;
+      clearTimeout(esperaRef.current);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [curpita]);
 
   if (loading) {
@@ -203,7 +280,19 @@ export const PerfilMascota = () => {
     );
   }
 
-  return <PetProfile pet={pet} />;
+  return (
+    <>
+      <PetProfile pet={pet} />
+      {mostrarAviso && (
+        <AvisoUbicacion
+          nombre={pet.name}
+          pidiendo={pidiendoUbicacion}
+          onCompartir={pedirUbicacion}
+          onAhoraNo={ahoraNo}
+        />
+      )}
+    </>
+  );
 };
 
 export default PerfilMascota;

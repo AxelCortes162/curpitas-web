@@ -28,6 +28,7 @@ import Pedir from './pages/Pedir';
 import Gracias from './pages/Gracias';
 import PagoFallido from './pages/PagoFallido';
 import SeguimientoPedido from './pages/SeguimientoPedido';
+import NoEncontrada from './pages/NoEncontrada';
 
 // Al cambiar de página, empezar arriba. Con "atrás" no, para que el
 // navegador regrese a donde estaba.
@@ -158,6 +159,7 @@ function App() {
               </RutaProtegida>
             }
           />
+          <Route path="*" element={<NoEncontrada />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
