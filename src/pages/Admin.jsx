@@ -198,10 +198,9 @@ const FilaMascota = ({ pet, onUpdated }) => {
   };
 
   // ============================================
-  // Diseño del frente del blíster. El espacio superior queda libre para
-  // hacer la perforación sin tocar el título, el QR ni el folio.
+  // Diseño del frente del blíster (8 x 11 cm), sin espacio de perforación.
   // ============================================
-  const generarFrente = (w, h, sufijo, espacioSuperior = 0) => {
+  const generarFrente = (w, h, sufijo) => {
     const qrCanvas = qrGrandeRef.current?.querySelector('canvas');
     if (!qrCanvas) return;
     const { teal, mint, white } = colores;
@@ -209,7 +208,7 @@ const FilaMascota = ({ pet, onUpdated }) => {
 
     const pad = w * 0.08;
     const base = Math.min(w, h);
-    let cursorY = espacioSuperior + h * 0.035;
+    let cursorY = h * 0.075;
 
     ctx.fillStyle = white;
     ctx.textAlign = 'left';
@@ -237,20 +236,19 @@ const FilaMascota = ({ pet, onUpdated }) => {
     ctx.letterSpacing = `${0.02 * tituloSize}px`;
     ctx.fillText('ITAS', pad + anchoCurp, cursorY);
     ctx.letterSpacing = '0px';
-    cursorY += tituloSize * 0.55;
+    cursorY += tituloSize * 0.35;
 
     ctx.fillStyle = mint;
     const subtituloSize = base * 0.036;
     ctx.font = `bold ${Math.round(subtituloSize)}px Poppins, sans-serif`;
     cursorY += subtituloSize * 1.15;
-    ctx.fillText('CREDENCIAL DE MASCOTAS', pad, cursorY);
-    cursorY += subtituloSize * 0.6;
+    ctx.fillText('CREDENCIAL DIGITAL DE MASCOTAS', pad, cursorY);
 
     // Centrado del bloque QR en el espacio restante entre el texto y el folio
     const qrR = base * 0.22;
     const folioAlto = base * 0.11;
     const espacioInferior = folioAlto + base * 0.16; // folio + margen + dominio
-    const espacioDisponibleTop = cursorY + base * 0.03;
+    const espacioDisponibleTop = cursorY + subtituloSize;
     const centroQRY = espacioDisponibleTop + (h - espacioInferior - espacioDisponibleTop) / 2;
 
     dibujarQRConAnillo(ctx, qrCanvas, w / 2, centroQRY, qrR * 1.3, qrR, qrR * 1.3, colores);
@@ -268,12 +266,12 @@ const FilaMascota = ({ pet, onUpdated }) => {
     descargarCanvas(canvas, `${sufijo}-frente`);
   };
 
-  const generarReverso = (w, h, sufijo, espacioSuperior = 0) => {
+  const generarReverso = (w, h, sufijo) => {
     const { teal, cream } = colores;
     const { canvas, ctx } = crearCanvas(w, h, cream);
     const pad = w * 0.08;
     const base = Math.min(w, h);
-    let cursorY = espacioSuperior + h * 0.035;
+    let cursorY = h * 0.075;
 
     ctx.fillStyle = teal;
     ctx.textAlign = 'left';
@@ -345,8 +343,6 @@ const FilaMascota = ({ pet, onUpdated }) => {
   };
 
   const handleBlister = async () => {
-    const espacioPerforacion = mmAPx(10);
-
     // Sin esto, el canvas dibuja con la letra del sistema si Poppins
     // todavía no se ha descargado.
     try {
@@ -361,11 +357,8 @@ const FilaMascota = ({ pet, onUpdated }) => {
       // si no cargan, se dibuja con la letra de respaldo
     }
 
-    generarFrente(BLISTER.w, BLISTER.h, 'blister', espacioPerforacion);
-    setTimeout(
-      () => generarReverso(BLISTER.w, BLISTER.h, 'blister', espacioPerforacion),
-      250
-    );
+    generarFrente(BLISTER.w, BLISTER.h, 'blister');
+    setTimeout(() => generarReverso(BLISTER.w, BLISTER.h, 'blister'), 250);
   };
 
   const [confirmandoInvalidar, setConfirmandoInvalidar] = useState(false);
