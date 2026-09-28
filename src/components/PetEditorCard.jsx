@@ -20,7 +20,7 @@ import HistorialEscaneos from './HistorialEscaneos';
 
 export const PetEditorCard = ({ pet, onUpdated, onDeleted, onPerdidaCambiada }) => {
   const { user } = useAuth();
-  const [form, setForm] = useState({
+  const valoresIniciales = {
     name: pet.name || '',
     species: pet.species || 'perro',
     breed: pet.breed || '',
@@ -35,7 +35,10 @@ export const PetEditorCard = ({ pet, onUpdated, onDeleted, onPerdidaCambiada }) 
     show_birth_date: pet.show_birth_date,
     show_medical_info: pet.show_medical_info,
     show_owner_name: pet.show_owner_name,
-  });
+  };
+  const [form, setForm] = useState(valoresIniciales);
+  const [guardado, setGuardado] = useState(valoresIniciales);
+  const hayCambios = JSON.stringify(form) !== JSON.stringify(guardado);
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState('');
   const [guardandoPerdida, setGuardandoPerdida] = useState(false);
@@ -112,6 +115,7 @@ export const PetEditorCard = ({ pet, onUpdated, onDeleted, onPerdidaCambiada }) 
       setMsgPerdida('No se pudo guardar: ' + error.message);
     } else {
       setForm((prev) => ({ ...prev, ...cambios }));
+      setGuardado((prev) => ({ ...prev, ...cambios }));
       if (onPerdidaCambiada) onPerdidaCambiada(pet.id, cambios);
       setMsgPerdida(marcada
         ? 'Listo, ya aparece como perdida. Marca abajo dónde se perdió para que salga en el mapa.'
@@ -126,6 +130,7 @@ export const PetEditorCard = ({ pet, onUpdated, onDeleted, onPerdidaCambiada }) 
       .from('pets')
       .update({ lost_lat: coords.lat, lost_lng: coords.lng })
       .eq('id', pet.id);
+    if (!error) setGuardado((prev) => ({ ...prev, lost_lat: coords.lat, lost_lng: coords.lng }));
     setMsgPerdida(error
       ? 'No se pudo guardar la ubicación: ' + error.message
       : 'Ubicación guardada. Ya aparece en el mapa de perdidas.');
@@ -144,6 +149,7 @@ export const PetEditorCard = ({ pet, onUpdated, onDeleted, onPerdidaCambiada }) 
       return;
     }
 
+    setGuardado(form);
     setSavedMsg('Guardado ✓');
     onUpdated?.();
   };
@@ -271,7 +277,7 @@ export const PetEditorCard = ({ pet, onUpdated, onDeleted, onPerdidaCambiada }) 
       <div className="px-4 pb-4 pt-3 space-y-3">
         <div className="grid grid-cols-2 gap-2">
           <div className="col-span-2">
-            <label className="text-[10px] font-bold text-gray-400 uppercase">Nombre</label>
+            <label className="text-xs font-semibold text-[#1C5253]">Nombre</label>
             <input
               value={form.name}
               onChange={(e) => handleChange('name', e.target.value)}
@@ -279,7 +285,7 @@ export const PetEditorCard = ({ pet, onUpdated, onDeleted, onPerdidaCambiada }) 
             />
           </div>
           <div className="col-span-2">
-            <label className="text-[10px] font-bold text-gray-400 uppercase">Especie</label>
+            <label className="text-xs font-semibold text-[#1C5253]">Especie</label>
             <div className="flex gap-1.5 mt-0.5">
               {[
                 { valor: 'perro', label: 'Perro', Icon: PawPrint },
@@ -303,7 +309,7 @@ export const PetEditorCard = ({ pet, onUpdated, onDeleted, onPerdidaCambiada }) 
             </div>
           </div>
           <div className="col-span-2">
-            <label className="text-[10px] font-bold text-gray-400 uppercase">Raza</label>
+            <label className="text-xs font-semibold text-[#1C5253]">Raza</label>
             <div className="mt-0.5">
               <BreedSelect
                 species={form.species}
@@ -313,7 +319,7 @@ export const PetEditorCard = ({ pet, onUpdated, onDeleted, onPerdidaCambiada }) 
             </div>
           </div>
           <div className="col-span-2">
-            <label className="text-[10px] font-bold text-gray-400 uppercase">Nacimiento</label>
+            <label className="text-xs font-semibold text-[#1C5253]">Nacimiento</label>
             <input
               type="date"
               value={form.birth_date}
@@ -322,7 +328,7 @@ export const PetEditorCard = ({ pet, onUpdated, onDeleted, onPerdidaCambiada }) 
             />
           </div>
           <div className="col-span-2">
-            <label className="text-[10px] font-bold text-gray-400 uppercase">Colonia / Zona</label>
+            <label className="text-xs font-semibold text-[#1C5253]">Colonia / Zona</label>
             <input
               value={form.city}
               onChange={(e) => handleChange('city', e.target.value)}
@@ -334,7 +340,7 @@ export const PetEditorCard = ({ pet, onUpdated, onDeleted, onPerdidaCambiada }) 
             </p>
           </div>
           <div className="col-span-2">
-            <label className="text-[10px] font-bold text-gray-400 uppercase">Foto</label>
+            <label className="text-xs font-semibold text-[#1C5253]">Foto</label>
             <div className="mt-0.5">
               <label>
                 <span className="inline-flex items-center gap-1.5 py-2 px-3 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-xs font-bold text-[#1C5253] cursor-pointer hover:bg-emerald-50">
@@ -360,7 +366,7 @@ export const PetEditorCard = ({ pet, onUpdated, onDeleted, onPerdidaCambiada }) 
             {fotoError && <p className="text-[10px] text-red-500 mt-1">{fotoError}</p>}
           </div>
           <div className="col-span-2">
-            <label className="text-[10px] font-bold text-gray-400 uppercase">Info médica</label>
+            <label className="text-xs font-semibold text-[#1C5253]">Info médica</label>
             <textarea
               value={form.medical_info}
               onChange={(e) => handleChange('medical_info', e.target.value)}
@@ -373,60 +379,67 @@ export const PetEditorCard = ({ pet, onUpdated, onDeleted, onPerdidaCambiada }) 
         <HistorialEscaneos petId={pet.id} />
 
         <div className="border-t border-emerald-100 pt-2 space-y-1.5">
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+          <p className="text-xs font-semibold text-[#1C5253]">
             Qué se muestra en el perfil público
           </p>
-          <label className="flex items-center justify-between text-xs text-gray-600">
+          <label className="flex items-center justify-between py-1.5 text-sm text-gray-700 cursor-pointer">
             Raza
             <input
               type="checkbox"
               checked={form.show_breed}
               onChange={(e) => handleChange('show_breed', e.target.checked)}
-              className="w-4 h-4 accent-[#88D49E]"
+              className="w-5 h-5 accent-[#1C5253]"
             />
           </label>
-          <label className="flex items-center justify-between text-xs text-gray-600">
+          <label className="flex items-center justify-between py-1.5 text-sm text-gray-700 cursor-pointer">
             Fecha de nacimiento
             <input
               type="checkbox"
               checked={form.show_birth_date}
               onChange={(e) => handleChange('show_birth_date', e.target.checked)}
-              className="w-4 h-4 accent-[#88D49E]"
+              className="w-5 h-5 accent-[#1C5253]"
             />
           </label>
-          <label className="flex items-center justify-between text-xs text-gray-600">
+          <label className="flex items-center justify-between py-1.5 text-sm text-gray-700 cursor-pointer">
             Información médica
             <input
               type="checkbox"
               checked={form.show_medical_info}
               onChange={(e) => handleChange('show_medical_info', e.target.checked)}
-              className="w-4 h-4 accent-[#88D49E]"
+              className="w-5 h-5 accent-[#1C5253]"
             />
           </label>
-          <label className="flex items-center justify-between text-xs text-gray-600">
+          <label className="flex items-center justify-between py-1.5 text-sm text-gray-700 cursor-pointer">
             Nombre del tutor
             <input
               type="checkbox"
               checked={form.show_owner_name}
               onChange={(e) => handleChange('show_owner_name', e.target.checked)}
-              className="w-4 h-4 accent-[#88D49E]"
+              className="w-5 h-5 accent-[#1C5253]"
             />
           </label>
-          <p className="text-[10px] text-gray-400 italic">
-            El teléfono siempre se muestra — no es opcional.
+          <p className="text-xs text-gray-500">
+            Tu teléfono siempre se muestra: es lo que necesita quien la encuentre.
           </p>
         </div>
 
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="w-full py-2.5 bg-[#1C5253] hover:bg-[#164343] text-white font-bold rounded-xl flex items-center justify-center gap-2 text-xs disabled:opacity-60"
-        >
-          <Save className="w-3.5 h-3.5" />
-          {saving ? 'Guardando...' : 'Guardar cambios'}
-        </button>
+        {/* Con cambios sin guardar, el botón se queda pegado abajo de la
+            pantalla para que no se pierdan al irse o cambiar de mascota. */}
+        <div className={hayCambios ? 'sticky bottom-3 z-10 bg-white rounded-2xl p-2 -mx-2 shadow-lg border border-amber-200' : ''}>
+          {hayCambios && (
+            <p className="text-xs font-semibold text-amber-700 text-center mb-1.5">Tienes cambios sin guardar</p>
+          )}
+          <button
+            onClick={handleSave}
+            disabled={saving || !hayCambios}
+            className="w-full py-3 bg-[#1C5253] hover:bg-[#164343] text-white font-bold rounded-xl flex items-center justify-center gap-2 text-sm disabled:bg-[#F4F9F8] disabled:text-gray-400"
+          >
+            <Save className="w-4 h-4" />
+            {saving ? 'Guardando...' : hayCambios ? 'Guardar cambios' : 'Todo guardado'}
+          </button>
+        </div>
 
-        {savedMsg && <p className="text-center text-[11px] text-emerald-700">{savedMsg}</p>}
+        {savedMsg && !hayCambios && <p className="text-center text-xs text-emerald-700">{savedMsg}</p>}
 
         {/* Eliminar mascota */}
         <div className="border-t border-emerald-100 pt-3">

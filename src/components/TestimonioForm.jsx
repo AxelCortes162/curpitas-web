@@ -82,7 +82,7 @@ export const TestimonioForm = () => {
 
   return (
     <div className="bg-white rounded-2xl border border-emerald-100/80 shadow-sm p-4">
-      <p className="text-xs font-bold text-[#1C5253] mb-1">Tu testimonio</p>
+      <p className="text-sm font-bold text-[#1C5253] mb-1">Tu testimonio</p>
 
       {misTestimonio ? (
         <div>
@@ -164,4 +164,4 @@ export const TestimonioForm = () => {
   );
 };
 
-export default TestimonioForm;
+export default TestimonioForm;

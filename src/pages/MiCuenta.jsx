@@ -94,10 +94,10 @@ const ReferidosYPuntos = ({ userId }) => {
 
   return (
     <div className="bg-white rounded-2xl border border-emerald-100/80 shadow-sm p-4 mb-5">
-      <p className="text-xs font-bold text-[#1C5253] flex items-center gap-1.5 mb-1">
-        <Gift className="w-3.5 h-3.5" /> Refiere y gana
+      <p className="text-sm font-bold text-[#1C5253] flex items-center gap-1.5 mb-1">
+        <Gift className="w-4 h-4" /> Refiere y gana
       </p>
-      <p className="text-[11px] text-gray-400 mb-3">
+      <p className="text-xs text-gray-500 mb-3">
         Comparte tu link. Cuando un amigo compre su CURPita con él, ganas 100 puntos.
         También ganas 50 por registrarte y 150 por cada placa que tú compres.
       </p>
@@ -122,7 +122,7 @@ const ReferidosYPuntos = ({ userId }) => {
           {copiado && <p className="text-[11px] text-[#0B7345] -mt-2 mb-3 text-right">Copiado.</p>}
 
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-gray-400">Tus puntos</span>
+            <span className="text-sm font-bold text-gray-500">Tus puntos</span>
             <span className="text-lg font-black text-[#1C5253]">{saldo}</span>
           </div>
 
@@ -135,14 +135,18 @@ const ReferidosYPuntos = ({ userId }) => {
                   onClick={() => pedirCanje(p)}
                   disabled={!alcanza || canjeando === p.id || !!solicitudPendiente}
                   title={solicitudPendiente ? 'Ya tienes un canje pendiente' : ''}
-                  className="p-2.5 rounded-xl bg-[#F4F9F8] hover:bg-emerald-100 disabled:opacity-40 disabled:cursor-not-allowed text-center"
+                  className={`p-2.5 rounded-xl text-center border disabled:cursor-not-allowed ${
+                    alcanza ? 'bg-[#88D49E]/20 border-[#88D49E] hover:bg-[#88D49E]/40' : 'bg-[#F4F9F8] border-transparent'
+                  }`}
                 >
                   {canjeando === p.id
                     ? <Loader2 className="w-3.5 h-3.5 animate-spin mx-auto" />
                     : (
                       <>
-                        <p className="text-[11px] font-bold text-[#1C5253] leading-tight">{p.nombre}</p>
-                        <p className="text-[10px] text-gray-400">{p.costo} pts</p>
+                        <p className="text-xs font-bold text-[#1C5253] leading-tight">{p.nombre}</p>
+                        <p className={`text-[11px] mt-0.5 ${alcanza ? 'font-bold text-[#0B7345]' : 'text-gray-500'}`}>
+                          {alcanza ? `Canjear · ${p.costo} pts` : `Te faltan ${p.costo - saldo} pts`}
+                        </p>
                       </>
                     )}
                 </button>
@@ -179,82 +183,123 @@ const ReferidosYPuntos = ({ userId }) => {
 };
 
 // ---------------------------------------------------------------------------
-// SEGUNDO CONTACTO — un teléfono más, opcional, por si el tutor no contesta.
-// Vive en profiles.phone_2 (una sola vez por cuenta, igual que el teléfono
-// principal), y get_pet_public ya lo regresa: cuando existe, PetProfile
-// muestra un segundo botón de llamada además de "Llamar al Tutor Ahora".
+// MIS DATOS — nombre, teléfono principal y segundo contacto (opcional).
+// Viven en profiles; el trigger proteger_columnas_profiles solo deja que el
+// tutor cambie estos datos, nunca is_admin ni is_rescuer. get_pet_public lee
+// de aquí, así que el perfil de sus mascotas se actualiza solo.
 // ---------------------------------------------------------------------------
 
-const ContactoEmergencia = ({ userId }) => {
+const MisDatos = ({ userId }) => {
+  const [nombre, setNombre] = useState('');
+  const [phone, setPhone] = useState('');
   const [phone2, setPhone2] = useState('');
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState('');
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     let activo = true;
     supabase
       .from('profiles')
-      .select('phone_2')
+      .select('full_name, phone, phone_2')
       .eq('id', userId)
       .single()
       .then(({ data }) => {
-        if (activo) setPhone2(data?.phone_2 || '');
-        if (activo) setCargando(false);
+        if (activo) {
+          setNombre(data?.full_name || '');
+          setPhone(data?.phone || '');
+          setPhone2(data?.phone_2 || '');
+          setCargando(false);
+        }
       });
     return () => { activo = false; };
   }, [userId]);
 
-  const handleChange = (e) => {
-    setPhone2(e.target.value.replace(/\D/g, '').slice(0, 10));
-  };
+  const soloDigitos = (valor) => valor.replace(/\D/g, '').slice(0, 10);
 
   const guardar = async () => {
-    if (phone2 && phone2.length !== 10) {
-      setMensaje('El teléfono debe tener exactamente 10 dígitos.');
-      return;
-    }
-    setGuardando(true);
     setMensaje('');
-    const { error } = await conReintentoDeSesion(() => supabase
+    setError(true);
+    if (!nombre.trim()) { setMensaje('Escribe tu nombre.'); return; }
+    if (phone.length !== 10) { setMensaje('Tu teléfono debe tener exactamente 10 dígitos.'); return; }
+    if (phone2 && phone2.length !== 10) { setMensaje('El segundo contacto debe tener exactamente 10 dígitos.'); return; }
+    if (phone2 && phone2 === phone) { setMensaje('El segundo contacto debe ser un número distinto al tuyo.'); return; }
+
+    setGuardando(true);
+    const { error: err } = await conReintentoDeSesion(() => supabase
       .from('profiles')
-      .update({ phone_2: phone2 || null })
+      .update({ full_name: nombre.trim(), phone: phone, phone_2: phone2 || null })
       .eq('id', userId));
     setGuardando(false);
-    setMensaje(error ? 'No se pudo guardar: ' + error.message : 'Guardado ✓');
+    if (err) {
+      setMensaje('No se pudo guardar: ' + err.message);
+    } else {
+      setError(false);
+      setMensaje('Guardado ✓ El perfil de tus mascotas ya muestra estos datos.');
+    }
   };
 
+  const campo = 'w-full mt-1 py-2.5 px-3 rounded-xl border border-emerald-100 bg-[#F4F9F8] text-sm text-[#1C5253] focus:outline-none focus:border-[#1C5253]';
+
   return (
-    <div className="bg-white rounded-2xl border border-emerald-100/80 shadow-sm p-4 mb-5 space-y-2">
-      <p className="text-xs font-bold text-[#1C5253] flex items-center gap-1.5">
-        <Phone className="w-3.5 h-3.5" /> Segundo contacto (opcional)
+    <div className="bg-white rounded-2xl border border-emerald-100/80 shadow-sm p-4 mb-5 space-y-3">
+      <p className="text-sm font-bold text-[#1C5253] flex items-center gap-1.5">
+        <Phone className="w-4 h-4" /> Mis datos de contacto
       </p>
-      <p className="text-[11px] text-gray-400">
-        Por si no contestas, en el perfil de tus mascotas aparece un enlace para llamar también a
-        este número.
+      <p className="text-xs text-gray-500">
+        Es lo que ve quien encuentre a tus mascotas. Mantenlo al día.
       </p>
       {cargando ? (
         <p className="text-xs text-gray-400">Cargando...</p>
       ) : (
-        <div className="flex gap-2">
-          <input
-            type="tel"
-            inputMode="numeric"
-            value={phone2}
-            onChange={handleChange}
-            placeholder="10 dígitos, ej. 5512345678"
-            className="flex-1 py-2.5 px-3 rounded-xl border border-emerald-100 bg-[#F4F9F8] text-xs font-mono text-[#1C5253]"
-          />
+        <>
+          <label className="block">
+            <span className="text-xs font-semibold text-[#1C5253]">Tu nombre</span>
+            <input
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value.slice(0, 80))}
+              autoComplete="name"
+              className={campo}
+            />
+          </label>
+          <label className="block">
+            <span className="text-xs font-semibold text-[#1C5253]">Tu teléfono</span>
+            <input
+              type="tel"
+              inputMode="numeric"
+              value={phone}
+              onChange={(e) => setPhone(soloDigitos(e.target.value))}
+              placeholder="10 dígitos"
+              autoComplete="tel-national"
+              className={campo + ' font-mono'}
+            />
+          </label>
+          <label className="block">
+            <span className="text-xs font-semibold text-[#1C5253]">
+              Segundo contacto <span className="font-normal text-gray-400">(opcional)</span>
+            </span>
+            <input
+              type="tel"
+              inputMode="numeric"
+              value={phone2}
+              onChange={(e) => setPhone2(soloDigitos(e.target.value))}
+              placeholder="Por si tú no contestas"
+              className={campo + ' font-mono'}
+            />
+          </label>
           <button
             onClick={guardar}
             disabled={guardando}
-            className="px-4 py-2.5 bg-[#88D49E] hover:bg-[#78c98e] text-[#1C5253] font-black rounded-xl text-xs disabled:opacity-60"
+            className="w-full py-2.5 bg-[#1C5253] hover:bg-[#164343] text-white font-bold rounded-xl text-sm disabled:opacity-60"
           >
-            {guardando ? '...' : 'Guardar'}
+            {guardando ? 'Guardando...' : 'Guardar mis datos'}
           </button>
-        </div>
+        </>
       )}
-      {mensaje && <p className="text-[11px] text-[#1C5253]">{mensaje}</p>}
+      {mensaje && (
+        <p className={`text-xs ${error ? 'text-red-600' : 'text-emerald-700'}`}>{mensaje}</p>
+      )}
     </div>
   );
 };
@@ -415,17 +460,17 @@ export const MiCuenta = () => {
           onSubmit={handleClaim}
           className="bg-white rounded-2xl border border-emerald-100/80 shadow-sm p-4 mb-5 space-y-2"
         >
-          <p className="text-xs font-bold text-[#1C5253] flex items-center gap-1.5">
-            <Link2 className="w-3.5 h-3.5" /> Vincular una mascota
+          <p className="text-sm font-bold text-[#1C5253] flex items-center gap-1.5">
+            <Link2 className="w-4 h-4" /> Vincular una mascota
           </p>
-          <p className="text-[11px] text-gray-400">
+          <p className="text-xs text-gray-500">
             Escribe el folio CURPITA que viene en tu placa física.
           </p>
           <div className="flex gap-2">
             <input
               value={folio}
-              onChange={(e) => setFolio(e.target.value)}
-              placeholder="CURPITA80233025"
+              onChange={(e) => setFolio(e.target.value.toUpperCase().replace(/\s/g, ''))}
+              placeholder="Ej. CURPITA80233025"
               className="flex-1 py-2.5 px-3 rounded-xl border border-emerald-100 bg-[#F4F9F8] text-xs font-mono text-[#1C5253]"
             />
             <button
@@ -436,11 +481,11 @@ export const MiCuenta = () => {
               {claiming ? '...' : 'Vincular'}
             </button>
           </div>
-          {claimMsg && <p className="text-[11px] text-[#1C5253]">{claimMsg}</p>}
+          {claimMsg && <p className="text-xs text-[#1C5253]">{claimMsg}</p>}
         </form>
 
-        {/* Segundo contacto */}
-        <ContactoEmergencia userId={user.id} />
+        {/* Nombre, teléfono y segundo contacto */}
+        <MisDatos userId={user.id} />
 
         {/* Refiere y gana */}
         <ReferidosYPuntos userId={user.id} />
