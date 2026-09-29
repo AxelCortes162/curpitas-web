@@ -102,7 +102,7 @@ export const TestimonioForm = () => {
             </span>
           ) : (
             <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 mt-2">
-              <Clock className="w-3 h-3" /> En revisión, pronto lo publicamos
+              <Clock className="w-3 h-3" /> En revisión. Al publicarlo te damos tus 150 puntos
             </span>
           )}
 
@@ -115,8 +115,9 @@ export const TestimonioForm = () => {
         </div>
       ) : (
         <form onSubmit={handleEnviar} className="space-y-2.5">
-          <p className="text-[11px] text-gray-400">
-            Cuéntale a otros dueños tu experiencia con CURPitas.
+          <p className="text-xs text-gray-500">
+            Cuéntale a otros dueños tu experiencia con CURPitas. Cuando lo publiquemos, ganas
+            150 puntos (una sola vez).
           </p>
 
           <div className="flex gap-1">

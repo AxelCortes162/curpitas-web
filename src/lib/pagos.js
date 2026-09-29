@@ -45,15 +45,18 @@ export async function obtenerPrecios() {
 // Mercado Pago, así que cualquier cambio en los tiers hay que reflejarlo en
 // los dos lados.
 //
-// La personalizada (hueso con nombre grabado) NUNCA entra al precio de
+// El hueso SIEMPRE es personalizada: siempre lleva el nombre grabado y
+// siempre cuesta el precio de personalizada (regla de Axel, 29/09/2026).
+//
+// La personalizada NUNCA entra al precio de
 // mayoreo, sin importar la cantidad: cada placa lleva su propio grabado a
 // mano, así que el trabajo no baja por pedir más. Antes se revisaba primero
 // la cantidad, así que un pedido grande de placas con nombre se cobraba al
 // precio de mayoreo por error — se perdía el costo del grabado en cada una.
-export function calcularTotal(precios, { forma, cantidad, nombreMascota }) {
+export function calcularTotal(precios, { forma, cantidad }) {
   if (!precios) return null;
   const n = Math.max(1, Math.min(100, parseInt(cantidad, 10) || 1));
-  const esPersonalizada = forma === 'hueso' && !!String(nombreMascota || '').trim();
+  const esPersonalizada = forma === 'hueso';
   const esMayoreo = !esPersonalizada && n >= precios.mayoreo_desde;
   let unitario;
   if (esPersonalizada) unitario = precios.personalizada;
@@ -118,4 +121,4 @@ export function textoCotizacion({ forma, color, cantidad, nombreMascota }) {
 export const pesos = (n) =>
   new Intl.NumberFormat('es-MX', {
     style: 'currency', currency: 'MXN', minimumFractionDigits: 0, maximumFractionDigits: 0,
-  }).format(n);
+  }).format(n);

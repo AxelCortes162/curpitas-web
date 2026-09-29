@@ -107,6 +107,7 @@ export const SeccionPrecios = () => {
             monto={precios?.sencilla}
             puntos={[
               'Escudo de CURPitas al frente',
+              'Círculo, cuadrado o rectángulo',
               'QR y NFC al reverso',
               'El color que elijas',
               'Credencial digital incluida',

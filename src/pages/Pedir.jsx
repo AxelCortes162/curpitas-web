@@ -92,6 +92,9 @@ export const Pedir = () => {
     e.preventDefault();
     setError('');
 
+    if (formaActual.grabaNombre && !nombreMascota.trim()) {
+      return setError('La placa de hueso lleva el nombre de tu mascota: escríbelo arriba.');
+    }
     if (!nombreCliente.trim()) return setError('Escribe tu nombre.');
     if (telefono.length !== 10) return setError('El teléfono debe tener 10 dígitos.');
     if (!EMAIL_REGEX.test(email)) {
@@ -230,7 +233,7 @@ export const Pedir = () => {
           {formaActual.grabaNombre && (
             <div>
               <label htmlFor="nombre-mascota" className="block text-sm font-bold text-[#1C5253] mb-1">
-                Nombre de tu mascota <span className="font-normal text-gray-400">(opcional)</span>
+                Nombre de tu mascota
               </label>
               <input
                 id="nombre-mascota"
@@ -242,10 +245,10 @@ export const Pedir = () => {
                 className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-[#1C5253] focus:outline-none focus:border-[#1C5253]"
               />
               <p className="text-xs text-gray-400 mt-1">
-                Va grabado al frente, máximo {MAX_NOMBRE} letras.
+                Va grabado al frente, máximo {MAX_NOMBRE} letras. La de hueso siempre lleva nombre.
                 {precios && (
                   <>
-                    {' '}Con nombre cuesta {pesos(precios.personalizada)}; sin nombre,{' '}
+                    {' '}¿Sin nombre? Elige círculo, cuadrado o rectángulo, desde{' '}
                     {pesos(precios.sencilla)}.
                   </>
                 )}

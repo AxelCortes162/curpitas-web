@@ -87,6 +87,7 @@ export const PedidoManual = () => {
   };
 
   const validar = () => {
+    if (forma === 'hueso' && !nombreMascota.trim()) return 'La placa de hueso siempre lleva el nombre de la mascota.';
     if (!nombreCliente.trim()) return 'Falta el nombre del cliente.';
     if (telefono.replace(/\D/g, '').length < 10) return 'El teléfono debe traer 10 dígitos.';
     if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return 'El correo no es válido.';

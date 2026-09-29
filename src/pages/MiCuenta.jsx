@@ -99,7 +99,8 @@ const ReferidosYPuntos = ({ userId }) => {
       </p>
       <p className="text-xs text-gray-500 mb-3">
         Comparte tu link. Cuando un amigo compre su CURPita con él, ganas 100 puntos.
-        También ganas 50 por registrarte y 150 por cada placa que tú compres.
+        También ganas 50 por registrarte, 150 por cada placa que tú compres y 150 por tu
+        primer testimonio publicado.
       </p>
 
       {cargando ? (
