@@ -105,8 +105,8 @@ const NavBar = ({ user }) => (
 // La credencial inclinada del hero — reutiliza el mismo lenguaje visual
 // de la tarjeta real, con un "sello" dorado tipo holograma en la esquina.
 const CredencialHero = () => (
-  <div className="relative w-full max-w-xs mx-auto">
-    <div className="absolute -inset-4 bg-[#88D49E]/20 rounded-[32px] blur-2xl" />
+  <div className="relative w-full max-w-xs mx-auto flotar">
+    <div className="absolute -inset-4 bg-[#88D49E]/20 rounded-[32px] blur-2xl brillo" />
     <div className="relative bg-white rounded-[24px] shadow-2xl border border-emerald-100/60 overflow-hidden -rotate-3 hover:rotate-0 transition-transform duration-500">
       <div className="bg-[#1C5253] px-5 py-4 flex items-center justify-between">
         <span className="text-[9px] font-bold text-[#88D49E] uppercase tracking-[0.15em]">
@@ -143,26 +143,29 @@ const CredencialHero = () => (
     </div>
     {/* Chip NFC asomando, como si fuera la placa física detrás */}
     <div className="absolute -right-3 -bottom-3 w-14 h-14 bg-white rounded-2xl shadow-lg border border-emerald-100 flex items-center justify-center rotate-6">
-      <Nfc className="w-6 h-6 text-[#1C5253]" />
+      <span className="absolute inset-0 rounded-2xl border-2 border-[#88D49E] onda pointer-events-none" />
+      <Nfc className="relative w-6 h-6 text-[#1C5253]" />
     </div>
   </div>
 );
 
-const Paso = ({ numero, titulo, texto }) => (
-  <div className="flex-1">
+const Paso = ({ numero, titulo, texto, retraso }) => (
+  <div className="flex-1 aparecer" style={{ transitionDelay: retraso }}>
     <span className="font-mono text-3xl font-bold text-[#88D49E]">{numero}</span>
     <h3 className="text-lg font-black text-[#1C5253] mt-2">{titulo}</h3>
     <p className="text-sm text-gray-500 mt-1.5 leading-relaxed">{texto}</p>
   </div>
 );
 
-const Feature = ({ icon: Icon, titulo, texto }) => (
-  <div className="bg-white rounded-2xl p-5 border border-emerald-100/70 shadow-sm">
-    <div className="w-10 h-10 rounded-xl bg-[#E8F3F1] flex items-center justify-center mb-3">
-      <Icon className="w-5 h-5 text-[#1C5253]" />
+const Feature = ({ icon: Icon, titulo, texto, retraso }) => (
+  <div className="aparecer" style={{ transitionDelay: retraso }}>
+    <div className="h-full bg-white rounded-2xl p-5 border border-emerald-100/70 shadow-sm hover:-translate-y-1 hover:shadow-md transition">
+      <div className="w-10 h-10 rounded-xl bg-[#E8F3F1] flex items-center justify-center mb-3">
+        <Icon className="w-5 h-5 text-[#1C5253]" />
+      </div>
+      <h3 className="font-black text-[#1C5253] text-sm">{titulo}</h3>
+      <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">{texto}</p>
     </div>
-    <h3 className="font-black text-[#1C5253] text-sm">{titulo}</h3>
-    <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">{texto}</p>
   </div>
 );
 
@@ -314,6 +317,22 @@ export const Inicio = () => {
     cargarTestimonios();
   }, []);
 
+  useEffect(() => {
+    const elementos = document.querySelectorAll('.aparecer');
+    const observador = new IntersectionObserver((entradas) => {
+      for (let i = 0; i < entradas.length; i++) {
+        if (entradas[i].isIntersecting) {
+          entradas[i].target.classList.add('visible');
+          observador.unobserve(entradas[i].target);
+        }
+      }
+    }, { threshold: 0.15 });
+    for (let i = 0; i < elementos.length; i++) {
+      observador.observe(elementos[i]);
+    }
+    return () => observador.disconnect();
+  }, [testimonios.length]);
+
   return (
     <div className="min-h-screen bg-[#E8F3F1] font-sans antialiased overflow-x-hidden">
       <NavBar user={user} />
@@ -321,23 +340,23 @@ export const Inicio = () => {
       {/* HERO */}
       <section className="max-w-6xl mx-auto px-6 pt-8 pb-20 grid md:grid-cols-2 gap-12 items-center">
         <div>
-          <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-[#1C5253] bg-[#88D49E]/25 px-3 py-1.5 rounded-full uppercase tracking-wider">
+          <span className="entrada inline-flex items-center gap-1.5 text-[10px] font-bold text-[#1C5253] bg-[#88D49E]/25 px-3 py-1.5 rounded-full uppercase tracking-wider">
             <ShieldCheck className="w-3 h-3" />
             Identificación digital para mascotas
           </span>
-          <h1 className="text-4xl md:text-5xl font-black text-[#1C5253] leading-[1.05] mt-4 tracking-tight">
+          <h1 style={{ animationDelay: '0.1s' }} className="entrada text-4xl md:text-5xl font-black text-[#1C5253] leading-[1.05] mt-4 tracking-tight">
             La credencial que le da a tu mascota un camino de regreso a casa.
           </h1>
-          <p className="text-gray-500 mt-5 text-base leading-relaxed max-w-md">
+          <p style={{ animationDelay: '0.2s' }} className="entrada text-gray-500 mt-5 text-base leading-relaxed max-w-md">
             Cada mascota CURPitas tiene un folio único, una placa física con QR
             y NFC, y un perfil digital con tu teléfono siempre visible — para
             que cualquiera que la encuentre pueda contactarte al instante, sin
             instalar nada.
           </p>
-          <div className="flex flex-wrap gap-3 mt-8">
+          <div style={{ animationDelay: '0.3s' }} className="entrada flex flex-wrap gap-3 mt-8">
             <Link
               to="/pedir"
-              className="inline-flex items-center gap-2 px-6 py-3.5 bg-[#1C5253] hover:bg-[#164343] text-white font-black rounded-2xl text-sm shadow-lg shadow-[#1C5253]/20 transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3.5 bg-[#1C5253] hover:bg-[#164343] text-white font-black rounded-2xl text-sm shadow-lg shadow-[#1C5253]/20 transition hover:scale-105"
             >
               Pedir mi CURPita
               <ArrowRight className="w-4 h-4" />
@@ -351,30 +370,35 @@ export const Inicio = () => {
           </div>
         </div>
 
-        <CredencialHero />
+        <div style={{ animationDelay: '0.4s' }} className="entrada">
+          <CredencialHero />
+        </div>
       </section>
 
       {/* CÓMO FUNCIONA */}
       <section className="bg-white border-y border-emerald-100/70">
         <div className="max-w-6xl mx-auto px-6 py-16">
-          <h2 className="text-xs font-bold text-[#88D49E] uppercase tracking-[0.2em] mb-2">
+          <h2 className="aparecer text-xs font-bold text-[#88D49E] uppercase tracking-[0.2em] mb-2">
             Cómo funciona
           </h2>
-          <p className="text-2xl font-black text-[#1C5253] mb-10 max-w-lg">
+          <p className="aparecer text-2xl font-black text-[#1C5253] mb-10 max-w-lg">
             De la placa física al teléfono que suena, en tres pasos.
           </p>
           <div className="flex flex-col md:flex-row gap-10 md:gap-8">
             <Paso
+              retraso="0s"
               numero="01"
               titulo="Pide tu placa"
               texto="Recibes una placa personalizada con su folio CURPITA, un chip NFC y un código QR, ya grabados y listos."
             />
             <Paso
+              retraso="0.15s"
               numero="02"
               titulo="Vincula a tu mascota"
               texto="Creas tu cuenta, escribes el folio de tu placa, y completas su perfil: nombre, raza, alergias, lo que tú decidas."
             />
             <Paso
+              retraso="0.3s"
               numero="03"
               titulo="Si se pierde, la encuentran"
               texto="Cualquier persona acerca su celular al chip o escanea el QR, y llega directo a su perfil — con tu teléfono a la vista."
@@ -385,14 +409,14 @@ export const Inicio = () => {
 
       {/* ASÍ SE VEN — fotos reales del producto */}
       <section className="max-w-6xl mx-auto px-6 py-16">
-        <h2 className="text-xs font-bold text-[#88D49E] uppercase tracking-[0.2em] mb-2">
+        <h2 className="aparecer text-xs font-bold text-[#88D49E] uppercase tracking-[0.2em] mb-2">
           Así se ven
         </h2>
-        <p className="text-2xl font-black text-[#1C5253] mb-8 max-w-lg">
+        <p className="aparecer text-2xl font-black text-[#1C5253] mb-8 max-w-lg">
           Elige la forma, el color y el nombre.
         </p>
 
-        <div className="grid md:grid-cols-[minmax(0,1fr)_280px] gap-10 items-center">
+        <div className="aparecer grid md:grid-cols-[minmax(0,1fr)_280px] gap-10 items-center">
           <CarruselPlacas />
 
           <div>
@@ -408,7 +432,7 @@ export const Inicio = () => {
                 deja al cliente con dos pestañas del mismo sitio. */}
             <Link
               to="/pedir"
-              className="inline-flex items-center gap-2 mt-5 px-6 py-3.5 bg-[#88D49E] hover:bg-[#78c98e] text-[#1C5253] font-black rounded-2xl text-sm transition-colors"
+              className="inline-flex items-center gap-2 mt-5 px-6 py-3.5 bg-[#88D49E] hover:bg-[#78c98e] text-[#1C5253] font-black rounded-2xl text-sm transition hover:scale-105"
             >
               Pedir la mía
               <ArrowRight className="w-4 h-4" />
@@ -421,33 +445,39 @@ export const Inicio = () => {
           Es el orden en que la gente pregunta: primero le gusta, luego quiere
           saber cuánto. Los montos no están escritos aquí ni en el componente:
           se leen del servidor, de la misma lista con la que cobra la pasarela. */}
-      <SeccionPrecios />
+      <div className="aparecer">
+        <SeccionPrecios />
+      </div>
 
       {/* FEATURES */}
       <section className="max-w-6xl mx-auto px-6 py-16">
-        <h2 className="text-xs font-bold text-[#88D49E] uppercase tracking-[0.2em] mb-2">
+        <h2 className="aparecer text-xs font-bold text-[#88D49E] uppercase tracking-[0.2em] mb-2">
           Qué incluye
         </h2>
-        <p className="text-2xl font-black text-[#1C5253] mb-8 max-w-lg">
+        <p className="aparecer text-2xl font-black text-[#1C5253] mb-8 max-w-lg">
           Una identidad digital pensada para el peor momento.
         </p>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Feature
+            retraso="0.0s"
             icon={PawPrint}
             titulo="Folio único"
             texto="Cada mascota tiene su propio CURPITA, irrepetible, como una credencial: no hay dos iguales."
           />
           <Feature
+            retraso="0.1s"
             icon={Phone}
             titulo="Contacto inmediato"
             texto="Tu teléfono siempre visible en el perfil público — sin excepciones ni pasos extra."
           />
           <Feature
+            retraso="0.2s"
             icon={QrCode}
             titulo="QR + NFC"
             texto="Funciona con cualquier celular moderno: acércalo o escanéalo, sin instalar ninguna app."
           />
           <Feature
+            retraso="0.3s"
             icon={ShieldCheck}
             titulo="Datos protegidos"
             texto="La información de cada dueño está cifrada y aislada — nadie más puede verla ni editarla."
@@ -459,13 +489,13 @@ export const Inicio = () => {
       <section className="bg-[#1C5253] text-white">
         <div className="max-w-6xl mx-auto px-6 py-16 grid md:grid-cols-2 gap-10 items-center">
           <div>
-            <h2 className="text-xs font-bold text-[#88D49E] uppercase tracking-[0.2em] mb-2">
+            <h2 className="aparecer text-xs font-bold text-[#88D49E] uppercase tracking-[0.2em] mb-2">
               Privacidad
             </h2>
-            <p className="text-2xl font-black leading-tight mb-4">
+            <p className="aparecer text-2xl font-black leading-tight mb-4">
               Tú decides qué se muestra. El teléfono es lo único obligatorio.
             </p>
-            <p className="text-emerald-100/80 text-sm leading-relaxed max-w-md">
+            <p className="aparecer text-emerald-100/80 text-sm leading-relaxed max-w-md">
               Desde tu cuenta puedes activar o desactivar cada dato del perfil
               público de tu mascota: raza, fecha de nacimiento, información
               médica, incluso tu nombre. Lo único que siempre se muestra es tu
@@ -473,7 +503,7 @@ export const Inicio = () => {
               encuentra.
             </p>
           </div>
-          <div className="bg-[#E8F3F1]/10 rounded-2xl p-5 space-y-2 backdrop-blur-sm">
+          <div className="aparecer bg-[#E8F3F1]/10 rounded-2xl p-5 space-y-2 backdrop-blur-sm" style={{ transitionDelay: '0.15s' }}>
             <TogglePreview label="Raza" on={true} />
             <TogglePreview label="Fecha de nacimiento" on={true} />
             <TogglePreview label="Información médica" on={false} />
@@ -493,14 +523,14 @@ export const Inicio = () => {
 
       {/* COMUNIDAD — mapa de perdidas y adopciones */}
       <section className="max-w-6xl mx-auto px-6 py-16">
-        <h2 className="text-xs font-bold text-[#88D49E] uppercase tracking-[0.2em] mb-2">
+        <h2 className="aparecer text-xs font-bold text-[#88D49E] uppercase tracking-[0.2em] mb-2">
           Comunidad
         </h2>
-        <p className="text-2xl font-black text-[#1C5253] mb-8 max-w-lg">
+        <p className="aparecer text-2xl font-black text-[#1C5253] mb-8 max-w-lg">
           Más que una identidad — una red de ayuda entre dueños.
         </p>
         <div className="grid md:grid-cols-2 gap-4">
-          <div className="bg-white rounded-2xl p-6 border border-emerald-100/70 shadow-sm">
+          <div className="aparecer bg-white rounded-2xl p-6 border border-emerald-100/70 shadow-sm">
             <div className="w-11 h-11 rounded-xl bg-red-50 flex items-center justify-center mb-3">
               <ShieldAlert className="w-5 h-5 text-red-500" />
             </div>
@@ -518,7 +548,7 @@ export const Inicio = () => {
             </Link>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 border border-emerald-100/70 shadow-sm">
+          <div className="aparecer bg-white rounded-2xl p-6 border border-emerald-100/70 shadow-sm" style={{ transitionDelay: '0.15s' }}>
             <div className="w-11 h-11 rounded-xl bg-[#E8F3F1] flex items-center justify-center mb-3">
               <Heart className="w-5 h-5 text-[#1C5253]" />
             </div>
@@ -542,10 +572,10 @@ export const Inicio = () => {
       {/* TESTIMONIOS — solo se muestra si hay al menos uno aprobado */}
       {testimonios.length > 0 && (
         <section className="max-w-6xl mx-auto px-6 py-16">
-          <h2 className="text-xs font-bold text-[#88D49E] uppercase tracking-[0.2em] mb-2">
+          <h2 className="aparecer text-xs font-bold text-[#88D49E] uppercase tracking-[0.2em] mb-2">
             Testimonios
           </h2>
-          <div className="flex items-center gap-2 mb-8">
+          <div className="aparecer flex items-center gap-2 mb-8">
             <p className="text-2xl font-black text-[#1C5253]">Lo que dicen nuestros clientes</p>
             <span className="flex items-center gap-1 text-sm font-bold text-[#1C5253] bg-[#88D49E]/25 px-2.5 py-1 rounded-full">
               <Star className="w-3.5 h-3.5 fill-[#1C5253] text-[#1C5253]" />
@@ -555,18 +585,20 @@ export const Inicio = () => {
             </span>
           </div>
 
-          <CarruselTestimonios3D testimonios={testimonios} />
+          <div className="aparecer">
+            <CarruselTestimonios3D testimonios={testimonios} />
+          </div>
         </section>
       )}
 
       {/* CTA FINAL */}
-      <section className="max-w-6xl mx-auto px-6 py-20 text-center">
+      <section className="aparecer max-w-6xl mx-auto px-6 py-20 text-center">
         <h2 className="text-3xl font-black text-[#1C5253] max-w-lg mx-auto leading-tight">
           Dale a tu mascota un camino de regreso a casa.
         </h2>
         <Link
           to="/pedir"
-          className="inline-flex items-center gap-2 mt-6 px-7 py-4 bg-[#1C5253] hover:bg-[#164343] text-white font-black rounded-2xl text-sm shadow-lg shadow-[#1C5253]/20 transition-colors"
+          className="inline-flex items-center gap-2 mt-6 px-7 py-4 bg-[#1C5253] hover:bg-[#164343] text-white font-black rounded-2xl text-sm shadow-lg shadow-[#1C5253]/20 transition hover:scale-105"
         >
           Pedir mi CURPita
           <ArrowRight className="w-4 h-4" />
@@ -626,10 +658,11 @@ export const Inicio = () => {
         aria-label="Escríbenos por WhatsApp"
         className="fixed bottom-5 right-5 w-14 h-14 bg-[#25D366] hover:bg-[#20bd5a] rounded-full shadow-xl flex items-center justify-center z-40 transition-transform hover:scale-105"
       >
-        <WhatsAppIcon className="w-7 h-7 text-white" />
+        <span className="absolute inset-0 rounded-full bg-[#25D366] onda-lenta pointer-events-none" />
+        <WhatsAppIcon className="relative w-7 h-7 text-white" />
       </a>
     </div>
   );
 };
 
-export default Inicio;
+export default Inicio;

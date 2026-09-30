@@ -28,4 +28,45 @@ body {
   padding: 0;
   background-color: #E8F3F1;
   color: #1C5253;
-}
+}
+@keyframes entrada {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes flotar {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes brillo {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.06); }
+}
+
+@keyframes onda {
+  0% { transform: scale(1); opacity: 0.7; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+.entrada { animation: entrada 0.7s ease-out both; }
+.flotar { animation: flotar 5s ease-in-out infinite; }
+.brillo { animation: brillo 4s ease-in-out infinite; }
+.onda { animation: onda 2s ease-out infinite; }
+.onda-lenta { animation: onda 2.5s ease-out 3s infinite; }
+
+.aparecer {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+}
+
+.aparecer.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .entrada, .flotar, .brillo, .onda, .onda-lenta { animation: none; }
+  .aparecer { opacity: 1; transform: none; transition: none; }
+}
