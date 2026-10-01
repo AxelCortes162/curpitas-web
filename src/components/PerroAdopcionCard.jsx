@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Camera, Loader2, Save, Trash2, CheckCircle2, Plus, X, PawPrint } from 'lucide-react';
+import { Loader2, Save, Trash2, CheckCircle2, Plus, X, PawPrint } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { IconoGato, IconoOtraMascota } from './IconosMascotas';

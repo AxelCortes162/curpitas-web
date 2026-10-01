@@ -61,6 +61,7 @@ export const Mapa = () => {
 
   return (
     <div className="min-h-screen bg-[#E8F3F1] font-sans antialiased">
+      <title>Mapa de mascotas perdidas | CURPitas</title>
       <div className="max-w-4xl mx-auto p-4">
         <div className="flex items-center justify-between mb-4">
           <Link to="/" className="flex items-center gap-1.5 text-sm font-bold text-[#1C5253] hover:underline">

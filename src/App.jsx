@@ -1,33 +1,33 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, useLocation, useNavigationType } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import RutaProtegida from './context/RutaProtegida';
 import PerfilMascota from './pages/PerfilMascota';
-import Registro from './pages/Registro';
-import IniciarSesion from './pages/IniciarSesion';
-import MiCuenta from './pages/MiCuenta';
+const Registro = lazy(() => import('./pages/Registro'));
+const IniciarSesion = lazy(() => import('./pages/IniciarSesion'));
+const MiCuenta = lazy(() => import('./pages/MiCuenta'));
 import Inicio from './pages/Inicio';
 import RutaAdmin from './context/RutaAdmin';
-import Admin from './pages/Admin';
-import AvisoPrivacidad from './pages/AvisoPrivacidad';
-import Mapa from './pages/Mapa';
+const Admin = lazy(() => import('./pages/Admin'));
+const AvisoPrivacidad = lazy(() => import('./pages/AvisoPrivacidad'));
+const Mapa = lazy(() => import('./pages/Mapa'));
 import RutaRescatista from './context/RutaRescatista';
-import MisPerros from './pages/MisPerros';
-import Adopciones from './pages/Adopciones';
-import OlvideContrasena from './pages/OlvideContrasena';
-import RestablecerContrasena from './pages/RestablecerContrasena';
-import AdminCalculadora from './pages/AdminCalculadora';
-import Produccion from './pages/Produccion';
-import PedidoManual from './pages/PedidoManual';
-import Vendedores from './pages/Vendedores';
-import Prospectos from './pages/Prospectos';
-import ReferidosCanjes from './pages/ReferidosCanjes';
-import PanelVendedor from './pages/PanelVendedor';
+const MisPerros = lazy(() => import('./pages/MisPerros'));
+const Adopciones = lazy(() => import('./pages/Adopciones'));
+const OlvideContrasena = lazy(() => import('./pages/OlvideContrasena'));
+const RestablecerContrasena = lazy(() => import('./pages/RestablecerContrasena'));
+const AdminCalculadora = lazy(() => import('./pages/AdminCalculadora'));
+const Produccion = lazy(() => import('./pages/Produccion'));
+const PedidoManual = lazy(() => import('./pages/PedidoManual'));
+const Vendedores = lazy(() => import('./pages/Vendedores'));
+const Prospectos = lazy(() => import('./pages/Prospectos'));
+const ReferidosCanjes = lazy(() => import('./pages/ReferidosCanjes'));
+const PanelVendedor = lazy(() => import('./pages/PanelVendedor'));
 import RutaVendedor from './context/RutaVendedor';
-import Pedir from './pages/Pedir';
-import Gracias from './pages/Gracias';
-import PagoFallido from './pages/PagoFallido';
-import SeguimientoPedido from './pages/SeguimientoPedido';
+const Pedir = lazy(() => import('./pages/Pedir'));
+const Gracias = lazy(() => import('./pages/Gracias'));
+const PagoFallido = lazy(() => import('./pages/PagoFallido'));
+const SeguimientoPedido = lazy(() => import('./pages/SeguimientoPedido'));
 import NoEncontrada from './pages/NoEncontrada';
 
 // Al cambiar de página, empezar arriba. Con "atrás" no, para que el
@@ -46,6 +46,7 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <SubirAlCambiarPagina />
+        <Suspense fallback={null}>
         <Routes>
           <Route path="/" element={<Inicio />} />
           <Route path="/aviso-de-privacidad" element={<AvisoPrivacidad />} />
@@ -161,6 +162,7 @@ function App() {
           />
           <Route path="*" element={<NoEncontrada />} />
         </Routes>
+        </Suspense>
       </BrowserRouter>
     </AuthProvider>
   );

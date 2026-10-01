@@ -170,25 +170,25 @@ export default function CarruselPlacas({ fotos = FOTOS }) {
 
       <button
         onClick={() => avanzar(-1)}
-        className="absolute left-0 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 shadow-md flex items-center justify-center text-[#1C5253] hover:bg-white z-20"
+        className="absolute left-0 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 shadow-md flex items-center justify-center text-[#1C5253] hover:bg-white z-20"
         aria-label="Foto anterior"
       >
         <ChevronLeft className="w-4 h-4" />
       </button>
       <button
         onClick={() => avanzar(1)}
-        className="absolute right-0 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 shadow-md flex items-center justify-center text-[#1C5253] hover:bg-white z-20"
+        className="absolute right-0 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 shadow-md flex items-center justify-center text-[#1C5253] hover:bg-white z-20"
         aria-label="Foto siguiente"
       >
         <ChevronRight className="w-4 h-4" />
       </button>
 
-      <div className="flex justify-center gap-1.5 mt-2">
+      <div className="flex justify-center mt-1">
         {fotos.map((f, i) => (
           <button
             key={f.id}
             onClick={() => setIndice(i)}
-            className={`w-1.5 h-1.5 rounded-full transition-colors ${
+            className={`w-1.5 h-1.5 p-2 box-content bg-clip-content rounded-full transition-colors ${
               i === indice ? 'bg-[#1C5253]' : 'bg-emerald-100'
             }`}
             aria-label={`Ir a la foto ${i + 1} de ${total}`}

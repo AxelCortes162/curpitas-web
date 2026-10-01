@@ -9,7 +9,7 @@ import FotoCarrusel3D from '../components/FotoCarrusel3D';
 // línea para el posicionamiento (más confiable que clases de Tailwind aquí).
 const SelloAdoptado = ({ size = 76, style = {} }) => (
   <img
-    src="/sello-adoptado.png"
+    src="/sello-adoptado.webp"
     alt="Adoptado"
     style={{ width: size, height: size, position: 'absolute', zIndex: 10, ...style }}
   />
@@ -440,6 +440,7 @@ export const Adopciones = () => {
 
   return (
     <div className="min-h-screen bg-[#E8F3F1] font-sans antialiased">
+      <title>Mascotas en adopción | CURPitas</title>
       <div className="max-w-4xl mx-auto p-4">
         <Link to="/" className="flex items-center gap-1.5 text-sm font-bold text-[#1C5253] hover:underline mb-4">
           <ArrowLeft className="w-4 h-4" /> Inicio

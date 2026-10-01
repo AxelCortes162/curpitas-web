@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Phone, ShieldAlert, MapPin, AlertCircle, CheckCircle2, Cake, X, Loader2, PawPrint } from 'lucide-react';
 import { IconoGato, IconoOtraMascota } from './IconosMascotas';
 import { supabase } from '../supabaseClient';
@@ -63,6 +63,14 @@ export const PetProfile = ({ pet }) => {
     setAnimando(false);
     setTimeout(() => setMostrarModal(false), 200);
   };
+
+  // Esc cierra la foto en grande, como cualquier ventana emergente.
+  useEffect(() => {
+    if (!mostrarModal) return;
+    const alTeclear = (e) => { if (e.key === 'Escape') cerrarFoto(); };
+    document.addEventListener('keydown', alTeclear);
+    return () => document.removeEventListener('keydown', alTeclear);
+  }, [mostrarModal]);
 
   // Arma el link de WhatsApp hacia el dueño, agregando "52" (México) si
   // el teléfono guardado no lo trae ya. Siempre le escribe al teléfono
@@ -135,7 +143,7 @@ export const PetProfile = ({ pet }) => {
         <div className={`p-3 text-center text-white text-xs font-black tracking-wider uppercase flex items-center justify-center gap-2 ${isLost ? 'bg-red-500 shadow-inner' : 'bg-[#1C5253]'}`}>
           {isLost ? (
             <>
-              <ShieldAlert className="w-4 h-4 animate-pulse" />
+              <ShieldAlert className="w-4 h-4 motion-safe:animate-pulse" />
               <span>¡MASCOTA REPORTADA COMO PERDIDA!</span>
             </>
           ) : (
@@ -156,17 +164,24 @@ export const PetProfile = ({ pet }) => {
         {/* Foto de la Mascota */}
         <div className="-mt-14 flex justify-center relative z-10">
           <div className="relative">
-            <button
-              type="button"
-              onClick={() => tieneFotoReal && abrirFoto()}
-              className="block rounded-full"
-            >
-              <img
-                src={pet.photo_url || 'https://placehold.co/200x200/E8F3F1/1C5253?text=%3A%29'}
-                alt={pet.name}
-                className="w-28 h-28 rounded-full object-cover border-4 border-white shadow-xl"
-              />
-            </button>
+            {tieneFotoReal ? (
+              <button
+                type="button"
+                onClick={abrirFoto}
+                className="block rounded-full"
+                aria-label={`Ver foto de ${pet.name} en grande`}
+              >
+                <img
+                  src={pet.photo_url}
+                  alt={pet.name}
+                  className="w-28 h-28 rounded-full object-cover border-4 border-white shadow-xl"
+                />
+              </button>
+            ) : (
+              <div className="w-28 h-28 rounded-full bg-[#E8F3F1] border-4 border-white shadow-xl flex items-center justify-center">
+                <IconoEspecie species={pet.species} className="w-10 h-10 text-[#1C5253]/40" />
+              </div>
+            )}
             <div className="absolute bottom-1 right-1 bg-[#88D49E] p-1.5 rounded-full border-2 border-white shadow-md">
               <CheckCircle2 className="w-3.5 h-3.5 text-[#1C5253]" />
             </div>
@@ -191,6 +206,7 @@ export const PetProfile = ({ pet }) => {
             />
             <button
               onClick={cerrarFoto}
+              aria-label="Cerrar foto"
               className={`absolute top-4 right-4 text-white bg-white/20 hover:bg-white/30 rounded-full p-2 transition-opacity duration-200 ${
                 animando ? 'opacity-100' : 'opacity-0'
               }`}
@@ -230,7 +246,7 @@ export const PetProfile = ({ pet }) => {
               <p className="text-xs text-gray-500 mt-4 leading-snug">
                 Si tienes a {pet.name} contigo, llama a su tutor o mándale tu ubicación.
               </p>
-              <p className="text-[11px] text-gray-400 mt-1 leading-snug">
+              <p className="text-[11px] text-gray-500 mt-1 leading-snug">
                 Tu ubicación, si la permites, se usa solo para avisarle a su tutor dónde está{' '}
                 {pet.name} y marcar la zona en el mapa de mascotas perdidas.
               </p>
@@ -272,7 +288,7 @@ export const PetProfile = ({ pet }) => {
               )}
             </button>
             {errorUbicacion && (
-              <p className="text-[10px] text-amber-600 text-center">{errorUbicacion}</p>
+              <p className="text-xs text-amber-700 text-center">{errorUbicacion}</p>
             )}
           </div>
 
@@ -282,7 +298,7 @@ export const PetProfile = ({ pet }) => {
               <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
               <div>
                 <span className="font-bold block text-amber-950">Atención médica prioritaria:</span>
-                <span className="text-amber-800 text-[11px] leading-tight block mt-0.5">{pet.medical_info}</span>
+                <span className="text-amber-800 text-xs leading-snug block mt-0.5">{pet.medical_info}</span>
               </div>
             </div>
           )}
@@ -329,7 +345,7 @@ export const PetProfile = ({ pet }) => {
         {/* Footer */}
         <a
           href="/"
-          className="bg-[#F4F9F8] px-5 py-3 border-t border-emerald-100 flex items-center justify-center text-[11px] text-gray-400 hover:text-[#1C5253]"
+          className="bg-[#F4F9F8] px-5 py-3 border-t border-emerald-100 flex items-center justify-center text-[11px] text-gray-500 hover:text-[#1C5253]"
         >
           <span className="font-medium">¿Quieres una para tu mascota? Conoce CURPitas</span>
         </a>

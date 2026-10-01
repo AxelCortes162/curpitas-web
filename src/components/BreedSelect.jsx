@@ -70,6 +70,7 @@ export const BreedSelect = ({ species, value, onChange }) => {
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder="Escribe la raza (o lo que sea 😄)"
+          aria-label="Raza"
           className="w-full py-2 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-xs text-[#1C5253]"
         />
         {species !== 'otro' && (
@@ -79,7 +80,7 @@ export const BreedSelect = ({ species, value, onChange }) => {
               setModoManual(false);
               onChange('');
             }}
-            className="text-[10px] font-bold text-[#1C5253] hover:underline mt-1"
+            className="text-xs font-bold text-[#1C5253] hover:underline mt-1 py-1"
           >
             Mejor elegir de la lista
           </button>
@@ -105,6 +106,7 @@ export const BreedSelect = ({ species, value, onChange }) => {
             setAbierto(true);
           }}
           placeholder={value || 'Buscar raza...'}
+          aria-label="Raza"
           className="w-full py-2 pl-8 pr-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-xs text-[#1C5253]"
         />
       </div>

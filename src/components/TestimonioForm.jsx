@@ -120,13 +120,15 @@ export const TestimonioForm = () => {
             150 puntos (una sola vez).
           </p>
 
-          <div className="flex gap-1">
+          <div className="flex -mx-2" role="group" aria-label="Calificación">
             {[1, 2, 3, 4, 5].map((i) => (
               <button
                 key={i}
                 type="button"
                 onClick={() => setRating(i)}
-                className="p-0.5"
+                aria-label={`${i} ${i === 1 ? 'estrella' : 'estrellas'}`}
+                aria-pressed={i <= rating}
+                className="p-2"
               >
                 <Star
                   className={`w-6 h-6 ${i <= rating ? 'fill-[#88D49E] text-[#88D49E]' : 'fill-gray-200 text-gray-200'}`}
@@ -140,6 +142,7 @@ export const TestimonioForm = () => {
             onChange={(e) => setTexto(e.target.value)}
             rows={3}
             placeholder="¿Cómo te ha ayudado CURPitas?"
+            aria-label="Tu testimonio"
             className="w-full py-2 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-xs text-[#1C5253]"
           />
 
@@ -147,10 +150,11 @@ export const TestimonioForm = () => {
             value={ciudad}
             onChange={(e) => setCiudad(e.target.value)}
             placeholder="Tu ciudad (opcional)"
+            aria-label="Tu ciudad (opcional)"
             className="w-full py-2 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-xs text-[#1C5253]"
           />
 
-          {error && <p className="text-[10px] text-red-500">{error}</p>}
+          {error && <p className="text-xs text-red-600">{error}</p>}
 
           <button
             type="submit"

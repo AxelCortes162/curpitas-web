@@ -282,6 +282,7 @@ export const PerfilMascota = () => {
 
   return (
     <>
+      <title>{`${pet.name} | CURPitas`}</title>
       <PetProfile pet={pet} />
       {mostrarAviso && (
         <AvisoUbicacion

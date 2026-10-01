@@ -5,13 +5,14 @@ import { ArrowLeft } from 'lucide-react';
 export const AvisoPrivacidad = () => {
   return (
     <div className="min-h-screen bg-[#E8F3F1] py-10 px-4 font-sans antialiased">
+      <title>Aviso de privacidad | CURPitas</title>
       <div className="max-w-2xl mx-auto bg-white rounded-[24px] shadow-xl border border-emerald-100/60 p-8">
         <Link to="/" className="inline-flex items-center gap-1.5 text-xs font-bold text-[#1C5253] hover:underline mb-6">
           <ArrowLeft className="w-3.5 h-3.5" /> Volver al inicio
         </Link>
 
         <h1 className="text-2xl font-black text-[#1C5253] mb-1">Aviso de Privacidad</h1>
-        <p className="text-xs text-gray-400 mb-8">Última actualización: 19 de agosto de 2026</p>
+        <p className="text-xs text-gray-400 mb-8">Última actualización: 1 de octubre de 2026</p>
 
         <div className="space-y-6 text-sm text-gray-600 leading-relaxed">
           <section>
@@ -33,6 +34,7 @@ export const AvisoPrivacidad = () => {
               <li>Número de teléfono celular</li>
               <li>Correo electrónico</li>
               <li>Datos de la(s) mascota(s) que registras (nombre, raza, fecha de nacimiento, información médica, fotografía) — estos datos corresponden a tu mascota, no son datos personales tuyos, pero los tratamos con la misma seriedad.</li>
+              <li>Ubicación de quien escanea la placa de una mascota reportada como perdida, solo si esa persona da permiso en su navegador. Se usa para avisarle al tutor dónde está su mascota y marcar la zona en el mapa de mascotas perdidas.</li>
             </ul>
             <p className="mt-2">
               No recabamos datos personales sensibles (origen étnico, salud, religión, preferencias
@@ -67,6 +69,10 @@ export const AvisoPrivacidad = () => {
               políticas de seguridad y privacidad. No vendemos ni compartimos tus datos personales con
               terceros para fines de mercadotecnia ajenos a CURPitas.
             </p>
+            <p className="mt-2">
+              Los pagos se procesan con Mercado Pago. CURPitas no recibe ni guarda los datos de tu
+              tarjeta. El sitio está alojado en Vercel.
+            </p>
           </section>
 
           <section>
@@ -91,7 +97,19 @@ export const AvisoPrivacidad = () => {
           </section>
 
           <section>
-            <h2 className="font-black text-[#1C5253] text-base mb-2">7. Cambios a este aviso</h2>
+            <h2 className="font-black text-[#1C5253] text-base mb-2">7. Cookies y tecnologías similares</h2>
+            <p>
+              No usamos cookies de publicidad ni de rastreo. Solo guardamos en tu navegador lo
+              necesario para mantener tu sesión iniciada y recordar el folio de una placa que estás
+              activando. Para saber cuántas personas visitan el sitio usamos Vercel Web Analytics, que
+              no usa cookies ni te identifica personalmente. Al iniciar sesión o registrarte, hCaptcha
+              revisa que no seas un robot y puede usar sus propias cookies para ello. Puedes borrar estos datos desde la
+              configuración de tu navegador; si lo haces, se cerrará tu sesión.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="font-black text-[#1C5253] text-base mb-2">8. Cambios a este aviso</h2>
             <p>
               Cualquier modificación a este Aviso de Privacidad será publicada en esta misma página. Te
               recomendamos revisarla periódicamente.

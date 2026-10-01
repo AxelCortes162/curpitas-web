@@ -192,6 +192,7 @@ export const PetEditorCard = ({ pet, onUpdated, onDeleted, onPerdidaCambiada }) 
           onClick={() => form.photo_url && abrirFoto()}
           className="w-20 h-20 rounded-full overflow-hidden bg-[#E8F3F1] border-2 border-emerald-100 shrink-0 flex items-center justify-center"
           disabled={!form.photo_url}
+          aria-label={form.photo_url ? `Ver foto de ${form.name || 'tu mascota'} en grande` : 'Sin foto todavía'}
         >
           {form.photo_url ? (
             <img src={form.photo_url} alt="" className="w-full h-full object-cover" />
@@ -205,7 +206,7 @@ export const PetEditorCard = ({ pet, onUpdated, onDeleted, onPerdidaCambiada }) 
         <Link
           to={`/mascota/${pet.curpita}`}
           target="_blank"
-          className="inline-flex items-center gap-1 text-[10px] font-bold text-gray-400 hover:text-[#1C5253]"
+          className="inline-flex items-center gap-1 py-1.5 text-xs font-bold text-gray-500 hover:text-[#1C5253]"
         >
           Ver perfil público <ExternalLink className="w-2.5 h-2.5" />
         </Link>
@@ -264,6 +265,7 @@ export const PetEditorCard = ({ pet, onUpdated, onDeleted, onPerdidaCambiada }) 
           />
           <button
             onClick={cerrarFoto}
+            aria-label="Cerrar foto"
             className={`absolute top-4 right-4 text-white bg-white/20 hover:bg-white/30 rounded-full p-2 transition-opacity duration-200 ${
               animando ? 'opacity-100' : 'opacity-0'
             }`}
@@ -281,6 +283,7 @@ export const PetEditorCard = ({ pet, onUpdated, onDeleted, onPerdidaCambiada }) 
             <input
               value={form.name}
               onChange={(e) => handleChange('name', e.target.value)}
+              aria-label="Nombre"
               className="w-full mt-0.5 py-2 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-xs text-[#1C5253]"
             />
           </div>
@@ -296,6 +299,7 @@ export const PetEditorCard = ({ pet, onUpdated, onDeleted, onPerdidaCambiada }) 
                   key={valor}
                   type="button"
                   onClick={() => handleEspecieChange(valor)}
+                  aria-pressed={form.species === valor}
                   className={`flex-1 flex flex-col items-center gap-0.5 py-2 rounded-lg text-xs font-bold border transition-colors ${
                     form.species === valor
                       ? 'bg-[#1C5253] text-white border-[#1C5253]'
@@ -324,6 +328,7 @@ export const PetEditorCard = ({ pet, onUpdated, onDeleted, onPerdidaCambiada }) 
               type="date"
               value={form.birth_date}
               onChange={(e) => handleChange('birth_date', e.target.value)}
+              aria-label="Fecha de nacimiento"
               className="w-full mt-0.5 py-2 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-xs text-[#1C5253]"
             />
           </div>
@@ -333,16 +338,17 @@ export const PetEditorCard = ({ pet, onUpdated, onDeleted, onPerdidaCambiada }) 
               value={form.city}
               onChange={(e) => handleChange('city', e.target.value)}
               placeholder="Ej. Lindavista, CDMX"
+              aria-label="Colonia o zona"
               className="w-full mt-0.5 py-2 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-xs text-[#1C5253]"
             />
-            <p className="text-[10px] text-amber-600 mt-1">
+            <p className="text-xs text-amber-700 mt-1">
               ⚠️ Por seguridad, no pongas tu dirección exacta (calle y número) — este dato es público.
             </p>
           </div>
           <div className="col-span-2">
             <label className="text-xs font-semibold text-[#1C5253]">Foto</label>
             <div className="mt-0.5">
-              <label>
+              <label className="inline-block rounded-lg has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#1C5253]">
                 <span className="inline-flex items-center gap-1.5 py-2 px-3 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-xs font-bold text-[#1C5253] cursor-pointer hover:bg-emerald-50">
                   {subiendoFoto ? (
                     <>
@@ -359,17 +365,18 @@ export const PetEditorCard = ({ pet, onUpdated, onDeleted, onPerdidaCambiada }) 
                   accept="image/*"
                   onChange={handleFotoSeleccionada}
                   disabled={subiendoFoto}
-                  className="hidden"
+                  className="sr-only"
                 />
               </label>
             </div>
-            {fotoError && <p className="text-[10px] text-red-500 mt-1">{fotoError}</p>}
+            {fotoError && <p className="text-xs text-red-600 mt-1">{fotoError}</p>}
           </div>
           <div className="col-span-2">
             <label className="text-xs font-semibold text-[#1C5253]">Info médica</label>
             <textarea
               value={form.medical_info}
               onChange={(e) => handleChange('medical_info', e.target.value)}
+              aria-label="Info médica"
               rows={2}
               className="w-full mt-0.5 py-2 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-xs text-[#1C5253]"
             />

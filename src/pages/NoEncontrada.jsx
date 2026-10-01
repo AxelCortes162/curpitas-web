@@ -5,6 +5,8 @@ import Logotipo from '../components/Logotipo';
 
 export const NoEncontrada = () => (
   <div className="min-h-screen bg-[#E8F3F1] flex flex-col items-center justify-center px-6 py-10 text-center">
+    <title>Página no encontrada | CURPitas</title>
+    <meta name="robots" content="noindex" />
     <Link to="/" className="flex items-center gap-2 mb-10">
       <img src="/logo.png" alt="" className="w-9 h-9 object-contain" />
       <Logotipo className="text-lg" />

@@ -100,22 +100,26 @@ export const CarruselMascotas = ({ pets, indice, onCambiar }) => {
         <>
           <button
             onClick={() => avanzar(-1)}
-            className="absolute left-0 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 shadow-md flex items-center justify-center text-[#1C5253] z-20"
+            aria-label="Mascota anterior"
+            className="absolute left-0 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 shadow-md flex items-center justify-center text-[#1C5253] z-20"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
           <button
             onClick={() => avanzar(1)}
-            className="absolute right-0 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 shadow-md flex items-center justify-center text-[#1C5253] z-20"
+            aria-label="Mascota siguiente"
+            className="absolute right-0 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 shadow-md flex items-center justify-center text-[#1C5253] z-20"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
-          <div className="flex justify-center gap-1.5 mt-2">
-            {pets.map((_, i) => (
+          <div className="flex justify-center mt-1">
+            {pets.map((p, i) => (
               <button
                 key={i}
                 onClick={() => onCambiar(i)}
-                className={`w-1.5 h-1.5 rounded-full ${i === indice ? 'bg-[#1C5253]' : 'bg-emerald-100'}`}
+                aria-label={`Ver a ${p.name || 'mascota ' + (i + 1)}`}
+                aria-current={i === indice ? 'true' : undefined}
+                className={`w-1.5 h-1.5 p-2 box-content bg-clip-content rounded-full ${i === indice ? 'bg-[#1C5253]' : 'bg-emerald-100'}`}
               />
             ))}
           </div>

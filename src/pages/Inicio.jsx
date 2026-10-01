@@ -19,7 +19,6 @@ import {
   Star,
   ChevronLeft,
   ChevronRight,
-  MapPin,
   Heart,
   ShieldAlert,
 } from 'lucide-react';
@@ -71,28 +70,28 @@ const NavBar = ({ user }) => (
     <div className="flex items-center gap-2.5 sm:gap-5">
       <Link
         to="/mapa"
-        className="text-xs sm:text-sm font-bold text-[#1C5253] hover:text-[#88D49E] transition-colors whitespace-nowrap"
+        className="py-3 -my-3 text-xs sm:text-sm font-bold text-[#1C5253] hover:text-[#88D49E] transition-colors whitespace-nowrap"
       >
         <span className="sm:hidden">Mapa</span>
         <span className="hidden sm:inline">Mapa de perdidas</span>
       </Link>
       <Link
         to="/adopciones"
-        className="text-xs sm:text-sm font-bold text-[#1C5253] hover:text-[#88D49E] transition-colors whitespace-nowrap"
+        className="py-3 -my-3 text-xs sm:text-sm font-bold text-[#1C5253] hover:text-[#88D49E] transition-colors whitespace-nowrap"
       >
         Adopción
       </Link>
       {user ? (
         <Link
           to="/mi-cuenta"
-          className="flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm font-bold text-[#1C5253] hover:text-[#88D49E] transition-colors whitespace-nowrap"
+          className="flex items-center gap-1 sm:gap-1.5 py-3 -my-3 text-xs sm:text-sm font-bold text-[#1C5253] hover:text-[#88D49E] transition-colors whitespace-nowrap"
         >
           <User className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Mi cuenta
         </Link>
       ) : (
         <Link
           to="/iniciar-sesion"
-          className="text-xs sm:text-sm font-bold text-[#1C5253] hover:text-[#88D49E] transition-colors whitespace-nowrap"
+          className="py-3 -my-3 text-xs sm:text-sm font-bold text-[#1C5253] hover:text-[#88D49E] transition-colors whitespace-nowrap"
         >
           <span className="sm:hidden">Entrar</span>
           <span className="hidden sm:inline">Iniciar sesión</span>

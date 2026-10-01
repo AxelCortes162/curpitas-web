@@ -400,7 +400,7 @@ export const MiCuenta = () => {
           </Link>
           <button
             onClick={signOut}
-            className="flex items-center gap-1 text-xs font-bold text-red-500 hover:underline"
+            className="flex items-center gap-1 py-3 -my-3 text-xs font-bold text-red-500 hover:underline"
           >
             <LogOut className="w-3.5 h-3.5" /> Salir
           </button>
@@ -472,6 +472,7 @@ export const MiCuenta = () => {
               value={folio}
               onChange={(e) => setFolio(e.target.value.toUpperCase().replace(/\s/g, ''))}
               placeholder="Ej. CURPITA80233025"
+              aria-label="Folio CURPITA de la placa"
               className="flex-1 py-2.5 px-3 rounded-xl border border-emerald-100 bg-[#F4F9F8] text-xs font-mono text-[#1C5253]"
             />
             <button

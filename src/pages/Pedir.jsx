@@ -129,6 +129,7 @@ export const Pedir = () => {
 
   return (
     <div className="min-h-screen bg-[#F7F9F8] px-4 py-8">
+      <title>Pide tu placa | CURPitas</title>
       <div className="max-w-lg mx-auto">
         <BrandHeader />
 

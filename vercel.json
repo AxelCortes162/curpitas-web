@@ -1,5 +1,11 @@
 {
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/(mascota|mi-cuenta|mis-perros|admin|vendedor|pedido|gracias|pago-fallido|restablecer-contrasena|olvide-mi-contrasena|iniciar-sesion|registro)(.*)",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex" }]
+    }
   ]
 }
