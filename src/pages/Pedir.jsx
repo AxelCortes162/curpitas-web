@@ -439,6 +439,13 @@ export const Pedir = () => {
             <ShieldCheck className="w-3.5 h-3.5" />
             El pago lo procesa Mercado Pago. No guardamos datos de tu tarjeta.
           </p>
+          <p className="text-center text-xs text-gray-500">
+            Al pagar aceptas los{' '}
+            <Link to="/terminos-y-condiciones" target="_blank" className="font-bold text-[#1C5253] underline underline-offset-2">
+              Términos y Condiciones
+            </Link>
+            , incluida la política de cambios y devoluciones.
+          </p>
         </form>
       </div>
     </div>

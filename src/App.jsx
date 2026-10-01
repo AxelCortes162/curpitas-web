@@ -10,6 +10,7 @@ import Inicio from './pages/Inicio';
 import RutaAdmin from './context/RutaAdmin';
 const Admin = lazy(() => import('./pages/Admin'));
 const AvisoPrivacidad = lazy(() => import('./pages/AvisoPrivacidad'));
+const TerminosCondiciones = lazy(() => import('./pages/TerminosCondiciones'));
 const Mapa = lazy(() => import('./pages/Mapa'));
 import RutaRescatista from './context/RutaRescatista';
 const MisPerros = lazy(() => import('./pages/MisPerros'));
@@ -50,6 +51,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Inicio />} />
           <Route path="/aviso-de-privacidad" element={<AvisoPrivacidad />} />
+          <Route path="/terminos-y-condiciones" element={<TerminosCondiciones />} />
           <Route path="/mapa" element={<Mapa />} />
           <Route path="/adopciones" element={<Adopciones />} />
           <Route path="/pedir" element={<Pedir />} />

@@ -224,6 +224,10 @@ export const Registro = () => {
               <Link to="/aviso-de-privacidad" target="_blank" className="text-[#1C5253] font-bold hover:underline">
                 Aviso de Privacidad
               </Link>
+              {' '}y los{' '}
+              <Link to="/terminos-y-condiciones" target="_blank" className="text-[#1C5253] font-bold hover:underline">
+                Términos y Condiciones
+              </Link>
               , incluyendo que mi teléfono se mostrará públicamente en el perfil de mi mascota.
             </span>
           </label>

@@ -615,6 +615,7 @@ export const Inicio = () => {
             <Link to="/iniciar-sesion" className="hover:text-[#1C5253]">Iniciar sesión</Link>
             <Link to="/registro" className="hover:text-[#1C5253]">Crear cuenta</Link>
             <Link to="/aviso-de-privacidad" className="hover:text-[#1C5253]">Aviso de Privacidad</Link>
+            <Link to="/terminos-y-condiciones" className="hover:text-[#1C5253]">Términos y Condiciones</Link>
           </div>
           <div className="flex items-center gap-3">
             <a
