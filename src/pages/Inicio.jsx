@@ -612,8 +612,14 @@ export const Inicio = () => {
             <Logotipo className="text-xs" />
           </div>
           <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-gray-500 font-medium whitespace-nowrap">
-            <Link to="/iniciar-sesion" className="hover:text-[#1C5253]">Iniciar sesión</Link>
-            <Link to="/registro" className="hover:text-[#1C5253]">Crear cuenta</Link>
+            {user ? (
+              <Link to="/mi-cuenta" className="hover:text-[#1C5253]">Mi cuenta</Link>
+            ) : (
+              <>
+                <Link to="/iniciar-sesion" className="hover:text-[#1C5253]">Iniciar sesión</Link>
+                <Link to="/registro" className="hover:text-[#1C5253]">Crear cuenta</Link>
+              </>
+            )}
             <Link to="/aviso-de-privacidad" className="hover:text-[#1C5253]">Aviso de Privacidad</Link>
             <Link to="/terminos-y-condiciones" className="hover:text-[#1C5253]">Términos y Condiciones</Link>
           </div>

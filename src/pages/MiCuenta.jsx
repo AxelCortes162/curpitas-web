@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import PetEditorCard from '../components/PetEditorCard';
 import TestimonioForm from '../components/TestimonioForm';
 import CarruselMascotas from '../components/CarruselMascotas';
+import InstalarApp from '../components/InstalarApp';
 
 // ---------------------------------------------------------------------------
 // REFIERE Y GANA — la mitad del programa de puntos para dueños de mascotas
@@ -405,6 +406,8 @@ export const MiCuenta = () => {
             <LogOut className="w-3.5 h-3.5" /> Salir
           </button>
         </div>
+
+        <InstalarApp />
 
         {esRescatista && (
           <Link
