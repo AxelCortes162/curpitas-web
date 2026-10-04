@@ -52,6 +52,7 @@ export const Vendedores = () => {
       conReintentoDeSesion(() => supabase.from('pedidos')
         .select('id, vendedor_id, forma, color, cantidad, total, estado, pagado_en, comision_pct_aplicado, comision_pagada')
         .not('vendedor_id', 'is', null)
+        .in('estado', ['pagado', 'en_produccion', 'listo', 'enviado', 'entregado'])
         .order('pagado_en', { ascending: true })),
     ]);
 
@@ -346,7 +347,7 @@ export const Vendedores = () => {
                   <div className="mt-3 pt-3 border-t border-gray-100 space-y-1.5">
                     {pedidosV.map((p) => {
                       const comision = Math.round((p.total * p.comision_pct_aplicado / 100) * 100) / 100;
-                      const liberada = p.estado === 'entregado';
+                      const liberada = p.estado === 'entregado' && p.pagado_en;
                       return (
                         <div key={p.id} className="flex items-center justify-between gap-2 text-[11px]">
                           <span className="text-gray-500 truncate">
@@ -358,7 +359,7 @@ export const Vendedores = () => {
                             <button
                               onClick={() => alternarPagada(p)}
                               disabled={!liberada}
-                              title={liberada ? '' : 'Se libera cuando la placa queda entregada'}
+                              title={liberada ? '' : 'Se libera cuando la placa queda entregada y pagada'}
                               className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full disabled:opacity-40 disabled:cursor-not-allowed ${
                                 p.comision_pagada ? 'bg-[#0B7345]/10 text-[#0B7345]' : 'bg-amber-50 text-amber-600'
                               }`}

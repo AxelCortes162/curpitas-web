@@ -9,10 +9,14 @@ import { FORMAS, COLORES, MAX_NOMBRE } from '../lib/placa';
 
 // ---------------------------------------------------------------------------
 // PEDIDO MANUAL — para cuando alguien compra por WhatsApp o en persona, no en
-// línea. Lo llena Esmeralda o Axel. El pedido entra directo como "pagado"
-// (ya se cobró aparte, en efectivo o transferencia) y de ahí en adelante es
-// un pedido normal: aparece en /admin/producción, y el cliente puede seguirlo
-// en /pedido/:id igual que si hubiera pagado con Mercado Pago.
+// línea. Lo llena Esmeralda o Axel. El pedido entra directo a producción
+// aunque no se haya cobrado todo: se anota cuánto pagó, y lo que falte se
+// abona después desde /admin/produccion. Cuenta en la calculadora hasta que
+// se liquida. El cliente puede seguirlo en /pedido/:id igual que si hubiera
+// pagado con Mercado Pago.
+//
+// Si el cliente se llevó una placa que ya estaba hecha, se descuenta del
+// inventario suelto y entra directo como entregada.
 //
 // El total se sugiere solo (misma lista de precios que la venta en línea),
 // pero es editable — puede haber un trato especial, descuento o cortesía que
@@ -41,6 +45,9 @@ export const PedidoManual = () => {
   const [canal, setCanal] = useState('whatsapp');
   const [notaExtra, setNotaExtra] = useState('');
   const [codigoVendedor, setCodigoVendedor] = useState('');
+  const [pago, setPago] = useState('todo'); // 'todo' | 'parte' | 'nada'
+  const [abono, setAbono] = useState('');
+  const [yaHecha, setYaHecha] = useState(false); // se la llevó en el momento, del inventario suelto
 
   const [total, setTotal] = useState('');
   const [totalTocado, setTotalTocado] = useState(false);
@@ -80,6 +87,9 @@ export const PedidoManual = () => {
     setCanal('whatsapp');
     setNotaExtra('');
     setCodigoVendedor('');
+    setPago('todo');
+    setAbono('');
+    setYaHecha(false);
     setTotal('');
     setTotalTocado(false);
     setResultado(null);
@@ -93,8 +103,11 @@ export const PedidoManual = () => {
     if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return 'El correo no es válido.';
     const n = Number(total);
     if (!Number.isFinite(n) || n <= 0) return 'El total tiene que ser un número mayor a 0.';
+    if (pago === 'parte' && !(Number(abono) > 0 && Number(abono) < n)) return 'Lo que dejó tiene que ser más de 0 y menos que el total.';
     return '';
   };
+
+  const pagado = pago === 'todo' ? Number(total) || 0 : pago === 'nada' ? 0 : Number(abono) || 0;
 
   const registrar = async (e) => {
     e.preventDefault();
@@ -118,6 +131,9 @@ export const PedidoManual = () => {
       total: Number(total),
       notas,
       codigo_vendedor: codigoVendedor.trim(),
+      pagado,
+      entregada: yaHecha,
+      de_inventario: yaHecha,
     }));
 
     setEnviando(false);
@@ -159,9 +175,9 @@ export const PedidoManual = () => {
           <h1 className="text-xl font-black text-[#1C5253]">Pedido manual</h1>
         </div>
         <p className="text-xs text-gray-400 mb-4">
-          Para un pedido que se cerró por WhatsApp o en persona — se registra
-          igual que uno pagado en línea, y al cliente le llega su link de
-          seguimiento.
+          Para un pedido que se cerró por WhatsApp o en persona, pagado o no
+          — se registra igual que uno en línea, y al cliente le llega su link
+          de seguimiento.
         </p>
 
         {resultado ? (
@@ -171,6 +187,11 @@ export const PedidoManual = () => {
             <p className="text-sm text-gray-500 mt-1">
               {pesos(resultado.total)} · pedido {String(resultado.pedido_id).slice(0, 8).toUpperCase()}
             </p>
+            {resultado.debe > 0 && (
+              <p className="text-xs font-bold text-red-600 mt-1">
+                Queda debiendo {pesos(resultado.debe)}. Regístralo en Producción cuando pague.
+              </p>
+            )}
 
             <div className="mt-4 pt-4 border-t border-gray-100 text-left">
               {resultado.correo_enviado ? (
@@ -342,6 +363,47 @@ export const PedidoManual = () => {
               )}
             </label>
 
+            {/* Cuánto pagó */}
+            <div>
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">¿Cuánto pagó?</p>
+              <div className="grid grid-cols-3 gap-2">
+                {[['todo', 'Todo'], ['parte', 'Una parte'], ['nada', 'Nada aún']].map(([id, txt]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setPago(id)}
+                    className={`py-2.5 rounded-xl text-xs font-bold border transition-colors ${
+                      pago === id ? 'bg-[#1C5253] border-[#1C5253] text-white' : 'bg-[#F4F9F8] border-emerald-100 text-[#1C5253]'
+                    }`}
+                  >
+                    {txt}
+                  </button>
+                ))}
+              </div>
+              {pago === 'parte' && (
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={abono}
+                  onChange={(e) => setAbono(e.target.value)}
+                  placeholder="Cuánto dejó"
+                  className="mt-2 w-full py-2.5 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-sm text-[#1C5253] font-bold outline-none focus:border-[#1C5253]"
+                />
+              )}
+              {pago !== 'todo' && Number(total) > pagado && (
+                <span className="text-[11px] text-red-500 mt-1 block">
+                  Queda debiendo {pesos(Number(total) - pagado)}. Entra a producción igual, pero cuenta en los números hasta que liquide.
+                </span>
+              )}
+            </div>
+
+            {/* Placa ya hecha que se llevó en el momento */}
+            <label className="flex items-center gap-2 text-xs text-gray-600">
+              <input type="checkbox" checked={yaHecha} onChange={(e) => setYaHecha(e.target.checked)} className="accent-[#1C5253]" />
+              Ya estaba hecha y se la llevó (sale del inventario suelto y entra como entregada)
+            </label>
+
             {/* Nota extra */}
             <label className="block">
               <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Nota (opcional)</span>
@@ -376,7 +438,7 @@ export const PedidoManual = () => {
               className="w-full py-3 bg-[#1C5253] hover:bg-[#164343] text-white text-sm font-bold rounded-xl disabled:opacity-60 flex items-center justify-center gap-2"
             >
               {enviando && <Loader2 className="w-4 h-4 animate-spin" />}
-              Registrar pedido pagado
+              Registrar pedido
             </button>
           </form>
         )}

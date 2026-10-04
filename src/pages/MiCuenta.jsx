@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  LogOut, Link2, Heart, Gift, Copy, Loader2, Phone,
+  LogOut, Link2, Heart, Gift, Copy, Loader2, Phone, ShieldCheck,
 } from 'lucide-react';
 import { supabase, conReintentoDeSesion } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
@@ -311,6 +311,7 @@ export const MiCuenta = () => {
   const [pets, setPets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [esRescatista, setEsRescatista] = useState(false);
+  const [esAdmin, setEsAdmin] = useState(false);
   const [mascotaActiva, setMascotaActiva] = useState(0);
 
   const [folio, setFolio] = useState(() => {
@@ -335,10 +336,13 @@ export const MiCuenta = () => {
     cargarMascotas();
     supabase
       .from('profiles')
-      .select('is_rescuer')
+      .select('is_rescuer, is_admin')
       .eq('id', user.id)
       .single()
-      .then(({ data }) => setEsRescatista(data?.is_rescuer === true));
+      .then(({ data }) => {
+        setEsRescatista(data?.is_rescuer === true);
+        setEsAdmin(data?.is_admin === true);
+      });
   }, [cargarMascotas, user.id]);
 
   // Si se borra la mascota activa (o cambia la lista tras vincular/cargar),
@@ -408,6 +412,19 @@ export const MiCuenta = () => {
         </div>
 
         <InstalarApp />
+
+        {/* Solo lo ven los admins; RutaAdmin y el RLS siguen siendo el candado real. */}
+        {esAdmin && (
+          <Link
+            to="/admin"
+            className="flex items-center justify-between bg-[#1C5253] text-white rounded-2xl px-4 py-3 mb-3"
+          >
+            <span className="flex items-center gap-2 text-sm font-bold">
+              <ShieldCheck className="w-4 h-4 text-[#88D49E]" /> Panel de administrador
+            </span>
+            <span className="text-[#88D49E]">→</span>
+          </Link>
+        )}
 
         {esRescatista && (
           <Link

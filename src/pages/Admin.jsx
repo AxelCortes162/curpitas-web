@@ -753,7 +753,7 @@ export const Admin = () => {
                 Producción
               </span>
               <span className="block text-[11px] text-gray-400 leading-tight">
-                Pedidos pagados, en qué van, e inventario suelto
+                Pedidos, en qué van, quién debe e inventario suelto
               </span>
             </span>
           </span>
@@ -771,7 +771,7 @@ export const Admin = () => {
                 Pedido manual
               </span>
               <span className="block text-[11px] text-gray-400 leading-tight">
-                Registrar una venta cerrada por WhatsApp o en persona
+                Registrar una venta por WhatsApp o en persona, pagada o no
               </span>
             </span>
           </span>

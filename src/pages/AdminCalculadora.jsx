@@ -14,6 +14,9 @@ import { useAuth } from '../context/AuthContext';
  * ------------------------------------------------------------------ */
 
 const CLAVE = 'calculadora';
+// Historial de veces que se liberó la utilidad de los cuatro: { historial: [{ fecha, monto, por }] }.
+const CLAVE_LIBERADO = 'reparto_liberado';
+const claveMes = (d) => `${d.getFullYear()}-${d.getMonth()}`;
 
 const MATERIALES = [
   ['m_resina', 'Resina'],
@@ -69,18 +72,30 @@ const pctTxt = (n) => `${(Math.round((n || 0) * 10) / 10).toLocaleString('es-MX'
 function calcular(S, piezasReales) {
   const base = MATERIALES.reduce((a, [k]) => a + (Number(S[k]) || 0), 0);
 
-  const lineas = S.tiers.map((t) => {
+  // Cada precio cobrado va a la línea de precio más cercano: una venta en
+  // persona con descuento sigue siendo de su línea, pero cuenta lo que de
+  // verdad se cobró.
+  const porLinea = S.tiers.map(() => ({ piezas: 0, ingreso: 0 }));
+  Object.entries(piezasReales || {}).forEach(([precio, n]) => {
+    const p = Number(precio);
+    let li = 0;
+    S.tiers.forEach((t, j) => { if (Math.abs(t.precio - p) < Math.abs(S.tiers[li].precio - p)) li = j; });
+    porLinea[li].piezas += n;
+    porLinea[li].ingreso += p * n;
+  });
+
+  const lineas = S.tiers.map((t, i) => {
     // Solo la parte que se cobra con tarjeta paga comisión de pasarela. El
     // método de pago varía venta por venta, no por producto.
     const com = t.precio * (S.comisionPct / 100) * ((Number(t.tarjetaPct) || 0) / 100);
     const costo = base + com;
     const deja = t.precio - costo;
-    const piezas = piezasReales ? (Number(piezasReales[t.precio]) || 0) : 0;
+    const { piezas, ingreso } = porLinea[i];
     return {
       t, costo, deja,
       margen: t.precio > 0 ? (deja / t.precio) * 100 : 0,
-      ingreso: t.precio * piezas,
-      utilidad: deja * piezas,
+      ingreso,
+      utilidad: ingreso - costo * piezas,
       piezas,
     };
   });
@@ -178,10 +193,50 @@ export const AdminCalculadora = () => {
   const [meta, setMeta] = useState(null);
   const [activadas, setActivadas] = useState(null);
   const [comisionVendedores, setComisionVendedores] = useState(null);
-  const [piezasReales, setPiezasReales] = useState(null);
+  const [pedidosPagados, setPedidosPagados] = useState(null);
+  const [liberaciones, setLiberaciones] = useState([]);
+  const [liberando, setLiberando] = useState(null);
+  const [porCobrar, setPorCobrar] = useState(null);
+
+  // Piezas pagadas agrupadas por mes y luego por precio.
+  const porMes = useMemo(() => {
+    if (!pedidosPagados) return null;
+    const m = {};
+    pedidosPagados.forEach((p) => {
+      const k = claveMes(new Date(p.pagado_en));
+      const precio = Number(p.precio_unitario);
+      m[k] = m[k] || {};
+      m[k][precio] = (m[k][precio] || 0) + (Number(p.cantidad) || 0);
+    });
+    return m;
+  }, [pedidosPagados]);
+  const piezasReales = porMes ? (porMes[claveMes(new Date())] || {}) : null;
 
   const sucio = useMemo(() => JSON.stringify(S) !== JSON.stringify(original), [S, original]);
   const r = useMemo(() => calcular(S, piezasReales), [S, piezasReales]);
+
+  // Todo lo vendido desde siempre, con el precio real de cada pedido.
+  const historico = useMemo(() => (pedidosPagados || []).reduce((a, p) => ({
+    piezas: a.piezas + (Number(p.cantidad) || 0),
+    venta: a.venta + (Number(p.precio_unitario) || 0) * (Number(p.cantidad) || 0),
+  }), { piezas: 0, venta: 0 }), [pedidosPagados]);
+
+  // Utilidad repartible acumulada: la suma de cada mes desde la primera venta
+  // (los meses sin venta también pagan fijos), menos lo que ya se liberó.
+  // ponytail: se recalcula con la configuración actual; si cambian costos,
+  // los meses viejos también cambian. Guardar el repartible por mes si eso importa.
+  const acumulado = useMemo(() => {
+    if (!pedidosPagados?.length) return 0;
+    const primero = new Date(Math.min(...pedidosPagados.map((p) => new Date(p.pagado_en))));
+    const hoy = new Date();
+    let total = 0;
+    for (let d = new Date(primero.getFullYear(), primero.getMonth(), 1); d <= hoy; d.setMonth(d.getMonth() + 1)) {
+      total += calcular(S, porMes[claveMes(d)] || {}).repartible;
+    }
+    return total;
+  }, [S, pedidosPagados, porMes]);
+  const yaLiberado = liberaciones.reduce((a, l) => a + (Number(l.monto) || 0), 0);
+  const sinLiberar = acumulado - yaLiberado;
 
   /* ---------- carga ---------- */
   useEffect(() => {
@@ -217,34 +272,44 @@ export const AdminCalculadora = () => {
       .not('owner_id', 'is', null)
       .then(({ count }) => { if (vivo && typeof count === 'number') setActivadas(count); });
 
-    // Piezas reales de este mes, agrupadas por precio (que es lo que
-    // identifica a qué línea pertenece cada pedido: sencilla $169,
-    // personalizada $249, mayoreo $100). Ya no se captura a mano en la tabla
-    // de líneas -- en cuanto un pedido se marca pagado, ya está contado
-    // aquí. Se usa `pagado_en` (no `estado`) porque lo que define "venta del
-    // mes" es que ya entró el dinero, sin importar en qué etapa de
-    // producción vaya.
-    (() => {
-      const inicioMes = new Date();
-      inicioMes.setDate(1);
-      inicioMes.setHours(0, 0, 0, 0);
+    // Todos los pedidos pagados. De aquí salen las piezas del mes (agrupadas
+    // por precio, que es lo que identifica la línea: sencilla $169,
+    // personalizada $249, mayoreo $100), el total histórico y la utilidad
+    // acumulada sin liberar. Se usa `pagado_en` (no `estado`) porque lo que
+    // define una venta es que ya entró el dinero, sin importar en qué etapa
+    // de producción vaya.
+    // ponytail: Supabase regresa máximo 1000 filas; paginar o pasar a un RPC al acercarse.
+    supabase
+      .from('pedidos')
+      .select('precio_unitario, cantidad, pagado_en')
+      .not('pagado_en', 'is', null)
+      .then(({ data, error: errPedidos }) => {
+        if (!vivo) return;
+        setPedidosPagados(errPedidos ? [] : data || []);
+      });
 
-      supabase
-        .from('pedidos')
-        .select('precio_unitario, cantidad')
-        .not('pagado_en', 'is', null)
-        .gte('pagado_en', inicioMes.toISOString())
-        .then(({ data, error: errPedidos }) => {
-          if (!vivo) return;
-          if (errPedidos) { setPiezasReales({}); return; }
-          const porPrecio = {};
-          (data || []).forEach((p) => {
-            const precio = Number(p.precio_unitario);
-            porPrecio[precio] = (porPrecio[precio] || 0) + (Number(p.cantidad) || 0);
-          });
-          setPiezasReales(porPrecio);
-        });
-    })();
+    // Pedidos reales (no checkouts abandonados ni cancelados) que no se han
+    // liquidado: todavía no cuentan arriba, pero ya se deben.
+    supabase
+      .from('pedidos')
+      .select('total, monto_pagado')
+      .is('pagado_en', null)
+      .in('estado', ['pagado', 'en_produccion', 'listo', 'enviado', 'entregado'])
+      .then(({ data }) => {
+        if (!vivo || !data) return;
+        setPorCobrar(data.reduce((a, p) => ({
+          pedidos: a.pedidos + 1,
+          debe: a.debe + (Number(p.total) - Number(p.monto_pagado)),
+          anticipos: a.anticipos + Number(p.monto_pagado),
+        }), { pedidos: 0, debe: 0, anticipos: 0 }));
+      });
+
+    supabase
+      .from('app_config')
+      .select('datos')
+      .eq('clave', CLAVE_LIBERADO)
+      .maybeSingle()
+      .then(({ data }) => { if (vivo) setLiberaciones(data?.datos?.historial || []); });
 
     // Comisión real ya generada por vendedores externos — dinero de verdad,
     // no una simulación. Se muestra aparte del cálculo de arriba porque ese
@@ -286,6 +351,42 @@ export const AdminCalculadora = () => {
     setTimeout(() => setMensaje(''), 4000);
   };
 
+  /* ---------- liberar la utilidad de un socio ---------- */
+  // Cada quien decide si retira su parte o la deja acumulada.
+  const liberar = async (i) => {
+    const s = S.socios[i];
+    const monto = Math.round(sinLiberarDe(i) * 100) / 100;
+    if (!window.confirm(`¿Marcar ${money(monto)} como liberados para ${s.nombre}? Su parte acumulada vuelve a empezar desde cero.`)) return;
+    setLiberando(i);
+    setError('');
+
+    // Se relee antes de agregar para no pisar una liberación que otro haya hecho.
+    const { data, error: errLeer } = await supabase
+      .from('app_config').select('datos').eq('clave', CLAVE_LIBERADO).maybeSingle();
+    if (errLeer) {
+      setLiberando(null);
+      setError('No se pudo liberar: ' + errLeer.message);
+      return;
+    }
+    const historial = [
+      ...(data?.datos?.historial || []),
+      { socio: i, nombre: s.nombre, fecha: new Date().toISOString(), monto, por: user.id },
+    ];
+    const { error: errGuardar } = await supabase.from('app_config').upsert(
+      { clave: CLAVE_LIBERADO, datos: { historial }, updated_at: new Date().toISOString(), updated_by: user.id },
+      { onConflict: 'clave' },
+    );
+
+    setLiberando(null);
+    if (errGuardar) {
+      setError('No se pudo liberar: ' + errGuardar.message);
+      return;
+    }
+    setLiberaciones(historial);
+    setMensaje(`Utilidad de ${s.nombre} marcada como liberada.`);
+    setTimeout(() => setMensaje(''), 4000);
+  };
+
   /* ---------- helpers de edición ---------- */
   const set = useCallback((k, v) => setS((p) => ({ ...p, [k]: v })), []);
 
@@ -306,6 +407,16 @@ export const AdminCalculadora = () => {
   const sumaPct = S.socios.reduce((a, s) => a + (s.enReparto ? Number(s.pct) || 0 : 0), 0);
   const parteDe = (s) =>
     s.enReparto && r.repartible > 0 && sumaPct > 0 ? r.repartible * ((Number(s.pct) || 0) / sumaPct) : 0;
+
+  // Lo que le toca a cada socio de la utilidad acumulada, menos lo que ya retiró.
+  // Las liberaciones se identifican por posición del socio (el nombre se puede editar).
+  // ponytail: se reparte con los % actuales; si cambian, el saldo viejo también cambia.
+  const liberacionesDe = (i) => liberaciones.filter((l) => l.socio === i);
+  const sinLiberarDe = (i) => {
+    const s = S.socios[i];
+    const toca = s.enReparto && acumulado > 0 && sumaPct > 0 ? acumulado * ((Number(s.pct) || 0) / sumaPct) : 0;
+    return toca - liberacionesDe(i).reduce((a, l) => a + (Number(l.monto) || 0), 0);
+  };
 
   if (cargando) {
     return (
@@ -395,8 +506,9 @@ export const AdminCalculadora = () => {
         )}
 
         {/* resumen */}
-        <div className="bg-[#1C5253] rounded-2xl p-4 grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 shadow-lg">
+        <div className="bg-[#1C5253] rounded-2xl p-4 grid grid-cols-2 md:grid-cols-5 gap-4 mb-4 shadow-lg">
           {[
+            ['Vendidas en total', `${historico.piezas.toLocaleString('es-MX')} piezas`, `${money(historico.venta)} desde el inicio`],
             ['Venta del mes', money(r.ingresos), `${r.piezas.toLocaleString('es-MX')} piezas · margen ${pctTxt(r.margenProm)}`],
             ['Utilidad repartible', money(r.repartible), r.repartible > 0 ? 'después de fondos y fiscal' : 'no alcanza para repartir', true],
             ['Pago por trabajo', money(r.sueldos + r.comisiones), `${money(r.sueldos)} fijo · ${money(r.comisiones)} variable`],
@@ -541,6 +653,32 @@ export const AdminCalculadora = () => {
               <p className="text-[11px] text-gray-400 mt-3 leading-snug">
                 Los sueldos no van aquí: viven en la tabla de pago por trabajo.
               </p>
+            </Panel>
+
+            <Panel
+              titulo="Por cobrar"
+              nota="Pedidos que no se han terminado de pagar. No cuentan en los números de arriba hasta que se liquidan."
+            >
+              {porCobrar ? (
+                <div className="space-y-1.5 text-[13px]">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Anticipos ya recibidos</span>
+                    <span className="font-mono tabular-nums">{money(porCobrar.anticipos)}</span>
+                  </div>
+                  <div className="flex justify-between pt-1.5 border-t border-emerald-100 font-bold text-red-600">
+                    <span>Falta cobrar ({porCobrar.pedidos} pedido{porCobrar.pedidos === 1 ? '' : 's'})</span>
+                    <span className="font-mono tabular-nums">{money(porCobrar.debe)}</span>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-[12px] text-gray-400">Cargando...</p>
+              )}
+              <Link
+                to="/admin/produccion"
+                className="inline-block mt-3 text-[11px] font-bold text-[#1C5253] hover:underline"
+              >
+                Registrar pagos en producción →
+              </Link>
             </Panel>
 
             <Panel
@@ -708,6 +846,48 @@ export const AdminCalculadora = () => {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </Panel>
+
+            <Panel
+              titulo="Utilidad sin liberar"
+              nota="La utilidad repartible se acumula mes con mes. Cada quien decide si retira su parte o la deja guardada; los meses en pérdida se descuentan antes de repartir."
+            >
+              <p className={`font-black text-3xl tracking-tight tabular-nums ${sinLiberar >= 0 ? 'text-[#1C5253]' : 'text-red-500'}`}>
+                {pedidosPagados === null ? <Loader2 className="w-5 h-5 animate-spin text-gray-300" /> : money(sinLiberar)}
+              </p>
+              <p className="text-[11px] text-gray-400">total acumulado del negocio, sin lo ya retirado</p>
+
+              <div className="mt-3 divide-y divide-emerald-100">
+                {S.socios.map((s, i) => {
+                  if (!s.enReparto && liberacionesDe(i).length === 0) return null;
+                  const saldo = sinLiberarDe(i);
+                  const ultima = liberacionesDe(i).at(-1);
+                  return (
+                    <div key={i} className="py-2 flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-[13px] font-bold text-[#1C5253]">{s.nombre}</p>
+                        <p className="text-[10.5px] text-gray-400">
+                          {ultima
+                            ? `Retiró ${money(ultima.monto)} el ${new Date(ultima.fecha).toLocaleDateString('es-MX', { dateStyle: 'long' })}`
+                            : 'No ha retirado nada'}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="font-mono tabular-nums font-semibold text-[13.5px] text-[#1C5253]">{money(saldo)}</span>
+                        <button
+                          onClick={() => liberar(i)}
+                          disabled={liberando !== null || sucio || saldo <= 0}
+                          title={sucio ? 'Guarda los cambios antes de liberar' : ''}
+                          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#88D49E] hover:bg-[#78c98e] text-[#1C5253] font-black text-[11.5px] disabled:opacity-40"
+                        >
+                          {liberando === i ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                          Liberar
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </Panel>
 

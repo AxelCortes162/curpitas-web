@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { supabase, conReintentoDeSesion, esErrorDeSesionVencida } from '../supabaseClient';
 import { FORMAS, COLORES, formaPorId, colorPorId } from '../lib/placa';
+import { pesos } from '../lib/pagos';
 
 // ---------------------------------------------------------------------------
 // PRODUCCIÓN — el panel de Esmeralda: en qué va cada pedido pagado, y cuánto
@@ -21,17 +22,21 @@ import { FORMAS, COLORES, formaPorId, colorPorId } from '../lib/placa';
 // admins), que actualiza pedidos.estado y deja el evento en pedido_eventos
 // en la misma transacción — de ahí sale la línea de tiempo que ve el
 // cliente en /pedido/:id.
+//
+// Las ventas que no pasan por Mercado Pago se registran en /admin/pedido-manual.
+// Entran a producción aunque no se haya pagado nada; lo que falta se abona
+// aquí con registrar_abono, o se cancela con cancelar_pedido si nunca pagan.
+// La calculadora cuenta la venta hasta que se liquida (pagado_en).
 // ---------------------------------------------------------------------------
 
 const ETAPAS = [
-  { id: 'pagado', nombre: 'Pagado', siguiente: 'en_produccion', accion: 'Iniciar producción', icono: Package },
+  { id: 'pagado', nombre: 'Por iniciar', siguiente: 'en_produccion', accion: 'Iniciar producción', icono: Package },
   { id: 'en_produccion', nombre: 'En producción', siguiente: 'listo', accion: 'Marcar lista', icono: Factory },
   { id: 'listo', nombre: 'Lista para enviar', siguiente: 'enviado', accion: 'Marcar enviada', icono: CheckCircle2 },
   { id: 'enviado', nombre: 'Enviada', siguiente: 'entregado', accion: 'Marcar entregada', icono: Truck },
   { id: 'entregado', nombre: 'Entregada', siguiente: null, accion: null, icono: PartyPopper },
 ];
 
-const IDS_ETAPAS = ETAPAS.map((e) => e.id);
 const etapaPorId = (id) => ETAPAS.find((e) => e.id === id) ?? ETAPAS[0];
 
 // Cuántos pedidos se traen por página. La lista es lo único que crece sin
@@ -45,10 +50,45 @@ const FilaPedido = ({ pedido, onCambio }) => {
   const [procesando, setProcesando] = useState(false);
   const [error, setError] = useState('');
 
+  const [abonando, setAbonando] = useState(false);
+  const [monto, setMonto] = useState('');
+
   const etapa = etapaPorId(pedido.estado);
   const forma = formaPorId(pedido.forma);
   const color = colorPorId(pedido.color);
   const folio = pedido.id.slice(0, 8).toUpperCase();
+  // Los de Mercado Pago no llevan monto_pagado: si tienen pagado_en, no deben nada.
+  const debe = pedido.pagado_en ? 0 : Number(pedido.total) - Number(pedido.monto_pagado);
+
+  const abonar = async () => {
+    setProcesando(true);
+    setError('');
+    const { error: err } = await conReintentoDeSesion(() => supabase.rpc('registrar_abono', {
+      p_pedido_id: pedido.id,
+      p_monto: parseFloat(monto) || 0,
+    }));
+    setProcesando(false);
+    if (err) {
+      setError(err.message);
+      return;
+    }
+    setAbonando(false);
+    setMonto('');
+    onCambio();
+  };
+
+  const cancelar = async () => {
+    if (!window.confirm(`¿Cancelar el pedido ${folio} de ${pedido.nombre_cliente}? Sale de producción y de lo que se debe.`)) return;
+    setProcesando(true);
+    setError('');
+    const { error: err } = await conReintentoDeSesion(() => supabase.rpc('cancelar_pedido', { p_pedido_id: pedido.id }));
+    setProcesando(false);
+    if (err) {
+      setError(err.message);
+      return;
+    }
+    onCambio();
+  };
 
   const avanzar = async () => {
     if (!etapa.siguiente) return;
@@ -115,10 +155,66 @@ const FilaPedido = ({ pedido, onCambio }) => {
             )}
           </div>
         </div>
-        <span className="shrink-0 text-[10px] font-bold px-2 py-1 rounded-full bg-[#F4F9F8] text-[#1C5253] whitespace-nowrap">
-          {etapa.nombre}
-        </span>
+        <div className="shrink-0 flex flex-col items-end gap-1">
+          <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-[#F4F9F8] text-[#1C5253] whitespace-nowrap">
+            {etapa.nombre}
+          </span>
+          {debe > 0 && (
+            <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-red-50 text-red-600 whitespace-nowrap">
+              Debe {pesos(debe)}
+            </span>
+          )}
+        </div>
       </div>
+
+      {debe > 0 && (
+        <div className="mt-3 pt-3 border-t border-gray-100">
+          {abonando ? (
+            <div className="flex gap-2">
+              <input
+                type="number"
+                min="0"
+                inputMode="decimal"
+                autoFocus
+                value={monto}
+                onChange={(e) => setMonto(e.target.value)}
+                placeholder={`Cuánto pagó (debe ${pesos(debe)})`}
+                className="flex-1 min-w-0 py-2 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-xs text-[#1C5253] outline-none focus:border-[#1C5253]"
+              />
+              <button
+                onClick={abonar}
+                disabled={procesando || !(parseFloat(monto) > 0)}
+                className="px-3 py-2 bg-[#1C5253] text-white text-xs font-bold rounded-xl disabled:opacity-50"
+              >
+                Guardar
+              </button>
+              <button
+                onClick={() => setMonto(String(debe))}
+                className="px-3 py-2 bg-[#F4F9F8] text-[#1C5253] text-xs font-bold rounded-xl"
+              >
+                Todo
+              </button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <button
+                onClick={() => setAbonando(true)}
+                className="flex-1 py-2 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold rounded-xl"
+              >
+                Registrar pago
+              </button>
+              <button
+                onClick={cancelar}
+                disabled={procesando}
+                className="px-3 py-2 bg-[#F4F9F8] hover:bg-gray-100 text-gray-500 text-xs font-bold rounded-xl disabled:opacity-50"
+              >
+                Cancelar pedido
+              </button>
+            </div>
+          )}
+          {!etapa.siguiente && error && <p className="text-[11px] text-red-500 mt-2">{error}</p>}
+        </div>
+      )}
 
       {etapa.siguiente && (
         <div className="mt-3 pt-3 border-t border-gray-100">
@@ -198,6 +294,7 @@ export const Produccion = () => {
   // son solo la página actual. Así las tarjetas siempre muestran el total
   // real, sin importar en qué página estés parada.
   const [resumen, setResumen] = useState({});
+  const [totalFiltro, setTotalFiltro] = useState(0);
 
   const cargarResumen = useCallback(async () => {
     const { data } = await conReintentoDeSesion(() => supabase.rpc('resumen_produccion'));
@@ -213,15 +310,24 @@ export const Produccion = () => {
     setCargando(true);
     const desde = (pagina - 1) * POR_PAGINA;
     const hasta = desde + POR_PAGINA - 1;
-    const { data, error } = await conReintentoDeSesion(() => {
+    const { data, count, error } = await conReintentoDeSesion(() => {
       const base = supabase
         .from('pedidos')
-        .select('id, forma, color, nombre_mascota, cantidad, nombre_cliente, telefono, email, estado, pagado_en, creado_en, origen, vendedor:vendedores(codigo), referido:profiles!pedidos_referido_por_fkey(full_name)')
-        .order('pagado_en', { ascending: true })
+        .select('id, forma, color, nombre_mascota, cantidad, nombre_cliente, telefono, email, estado, pagado_en, creado_en, origen, total, monto_pagado, vendedor:vendedores(codigo), referido:profiles!pedidos_referido_por_fkey(full_name)', { count: 'exact' })
+        // Pendientes: los más viejos primero (la fila de trabajo). Entregadas:
+        // las más recientes primero (el historial).
+        .order('creado_en', { ascending: filtro !== 'entregado' })
         .range(desde, hasta);
-      return filtro === 'todos' ? base.in('estado', IDS_ETAPAS) : base.eq('estado', filtro);
+      // "Todos" es solo lo que falta: por producir o entregar, o entregado
+      // que todavía debe. Lo entregado y pagado se ve al tocar "Entregada".
+      return filtro === 'todos'
+        ? base.or('estado.in.(pagado,en_produccion,listo,enviado),and(estado.eq.entregado,pagado_en.is.null)')
+        : base.eq('estado', filtro);
     });
-    if (!error) setPedidos(data || []);
+    if (!error) {
+      setPedidos(data || []);
+      setTotalFiltro(count ?? 0);
+    }
     setCargando(false);
   }, [filtro, pagina]);
 
@@ -277,11 +383,9 @@ export const Produccion = () => {
   );
 
   // Cuántos pedidos hay en total bajo el filtro actual (para "página X de Y")
-  // — sale del resumen agregado, no de contar `pedidos` (que es solo la
+  // — lo cuenta la misma consulta de la lista, no `pedidos` (que es solo la
   // página actual).
-  const totalPedidosFiltro = filtro === 'todos'
-    ? Object.values(resumen).reduce((acc, r) => acc + (r?.pedidos ?? 0), 0)
-    : resumen[filtro]?.pedidos ?? 0;
+  const totalPedidosFiltro = totalFiltro;
   const totalPaginas = Math.max(1, Math.ceil(totalPedidosFiltro / POR_PAGINA));
 
   // Si al avanzar un pedido la página actual se queda sin nada (era el
@@ -306,8 +410,15 @@ export const Produccion = () => {
           <h1 className="text-xl font-black text-[#1C5253]">Producción</h1>
         </div>
         <p className="text-xs text-gray-400 mb-4">
-          Pedidos pagados, en qué etapa van, y cuántas placas hay listas.
+          Pedidos, en qué etapa van, quién debe, y cuántas placas hay listas.
         </p>
+
+        <Link
+          to="/admin/pedido-manual"
+          className="block w-full mb-5 py-2.5 bg-[#88D49E] hover:bg-[#78c98e] text-[#1C5253] text-xs font-black rounded-xl text-center"
+        >
+          + Registrar venta (en persona o por WhatsApp)
+        </Link>
 
         {/* Resumen por etapa — doble como filtro: tócalo para ver solo esas */}
         <div className="grid grid-cols-2 gap-2 mb-5">
@@ -338,7 +449,7 @@ export const Produccion = () => {
           <div className="bg-white rounded-2xl border border-emerald-100/80 p-6 text-center mb-6">
             <p className="text-sm font-bold text-[#1C5253]">No hay pedidos aquí</p>
             <p className="text-xs text-gray-400 mt-1">
-              {filtro === 'todos' ? 'Nada pagado todavía.' : 'Prueba otra etapa.'}
+              {filtro === 'todos' ? 'Todo está entregado y cobrado.' : 'Prueba otra etapa.'}
             </p>
           </div>
         )}

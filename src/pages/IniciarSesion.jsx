@@ -53,9 +53,16 @@ export const IniciarSesion = () => {
     }
 
     // Un vendedor externo cae directo a su panel, no al de dueño de mascota
-    // — no tiene nada que hacer en /mi-cuenta.
+    // — no tiene nada que hacer en /mi-cuenta. Un admin, directo al suyo.
     const userId = data?.user?.id;
     if (userId) {
+      const { data: perfil } = await conReintentoDeSesion(() => supabase
+        .from('profiles').select('is_admin').eq('id', userId).maybeSingle());
+      if (perfil?.is_admin) {
+        navigate('/admin');
+        return;
+      }
+
       const { data: vendedor } = await conReintentoDeSesion(() => supabase
         .from('vendedores').select('activo').eq('id', userId).maybeSingle());
       if (vendedor?.activo) {
