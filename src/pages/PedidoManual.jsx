@@ -51,6 +51,10 @@ export const PedidoManual = () => {
 
   const [total, setTotal] = useState('');
   const [totalTocado, setTotalTocado] = useState(false);
+  // Precio de mayoreo aunque sea una sola placa: conocidos, placas con algún
+  // defecto, etc.
+  // Cae en la línea de mayoreo de la calculadora porque se cobra a ese precio.
+  const [descuentoAplicado, setDescuentoAplicado] = useState(false);
 
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState('');
@@ -71,8 +75,9 @@ export const PedidoManual = () => {
   // Esmeralda lo edita una vez, se respeta lo que ella puso — no se le borra
   // solo por cambiar la cantidad después.
   useEffect(() => {
-    if (!totalTocado && sugerido) setTotal(String(sugerido.total));
-  }, [sugerido, totalTocado]);
+    if (totalTocado || !sugerido) return;
+    setTotal(String(descuentoAplicado ? Math.round(precios.mayoreo * sugerido.cantidad * 100) / 100 : sugerido.total));
+  }, [sugerido, totalTocado, descuentoAplicado, precios]);
 
   const formaElegida = FORMAS.find((f) => f.id === forma) ?? FORMAS[0];
 
@@ -87,6 +92,7 @@ export const PedidoManual = () => {
     setCanal('whatsapp');
     setNotaExtra('');
     setCodigoVendedor('');
+    setDescuentoAplicado(false);
     setPago('todo');
     setAbono('');
     setYaHecha(false);
@@ -118,7 +124,7 @@ export const PedidoManual = () => {
     setError('');
 
     const canalElegido = CANALES.find((c) => c.id === canal) ?? CANALES[0];
-    const notas = notaExtra.trim() ? `${canalElegido.nota} — ${notaExtra.trim()}` : canalElegido.nota;
+    const notas = [canalElegido.nota, descuentoAplicado && 'Descuento aplicado', notaExtra.trim()].filter(Boolean).join(' — ');
 
     const { data, error: err } = await conReintentoDeSesion(() => invocarFuncion('pedido-manual', {
       forma,
@@ -362,6 +368,18 @@ export const PedidoManual = () => {
                 </span>
               )}
             </label>
+
+            {precios && (
+              <label className="flex items-center gap-2 text-xs text-gray-600 -mt-2">
+                <input
+                  type="checkbox"
+                  checked={descuentoAplicado}
+                  onChange={(e) => { setDescuentoAplicado(e.target.checked); setTotalTocado(false); }}
+                  className="accent-[#1C5253]"
+                />
+                Descuento aplicado: precio de mayoreo ({pesos(precios.mayoreo)} c/u) aunque sea una
+              </label>
+            )}
 
             {/* Cuánto pagó */}
             <div>
