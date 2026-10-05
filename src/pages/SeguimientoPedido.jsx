@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import BrandHeader from '../components/BrandHeader';
 import { consultarPedido } from '../lib/pagos';
-import { formaPorId, colorPorId } from '../lib/placa';
+import { describirPedido } from '../lib/placa';
 
 // ---------------------------------------------------------------------------
 // SEGUIMIENTO DEL PEDIDO — la línea de tiempo pública que ve el cliente.
@@ -31,8 +31,6 @@ const ETAPAS = [
   { id: 'entregado', titulo: 'Entregada', campo: null },
 ];
 
-const nombreForma = (id) => formaPorId(id).nombre;
-const nombreColor = (id) => colorPorId(id).nombre;
 
 const formatoFecha = (iso) => {
   if (!iso) return '';
@@ -122,9 +120,7 @@ export const SeguimientoPedido = () => {
             <>
               <h1 className="text-lg font-black text-[#1C5253] mb-1">Tu CURPita va así</h1>
               <p className="text-xs text-gray-400 mb-6">
-                {nombreForma(pedido.forma)} {nombreColor(pedido.color).toLowerCase()}
-                {pedido.nombre_mascota ? ` — "${pedido.nombre_mascota}"` : ''}
-                {pedido.cantidad > 1 ? ` × ${pedido.cantidad}` : ''}
+                {describirPedido(pedido)}
               </p>
 
               <ol>

@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { CheckCircle2, Clock, Loader2, MessageCircle, XCircle } from 'lucide-react';
 import BrandHeader from '../components/BrandHeader';
 import { consultarPedido, pesos } from '../lib/pagos';
-import { formaPorId, colorPorId } from '../lib/placa';
+import { describirPedido } from '../lib/placa';
 
 // ---------------------------------------------------------------------------
 // GRACIAS — a donde Mercado Pago regresa al cliente después de pagar.
@@ -22,8 +22,6 @@ const WHATSAPP = 'https://wa.me/525661868461';
 const CADA_MS = 2000;
 const HASTA_MS = 30000;
 
-const nombreForma = (id) => formaPorId(id).nombre;
-const nombreColor = (id) => colorPorId(id).nombre;
 
 export const Gracias = () => {
   const [params] = useSearchParams();
@@ -157,8 +155,7 @@ export const Gracias = () => {
               <div className="flex justify-between gap-4">
                 <dt className="text-gray-400">Placa</dt>
                 <dd className="text-[#1C5253] font-bold text-right">
-                  {nombreForma(pedido.forma)} {nombreColor(pedido.color).toLowerCase()}
-                  {pedido.nombre_mascota ? ` — “${pedido.nombre_mascota}”` : ''}
+                  {describirPedido(pedido)}
                 </dd>
               </div>
               <div className="flex justify-between gap-4">

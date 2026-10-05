@@ -67,6 +67,17 @@ export const FORMAS_SOLO_MANUAL = [
 export const formaPorId = (id) => [...FORMAS, ...FORMAS_SOLO_MANUAL].find((f) => f.id === id) ?? FORMAS[0];
 export const colorPorId = (id) => COLORES.find((c) => c.id === id) ?? COLORES[0];
 
+// Un pedido puede mezclar formas y colores: cada línea va en pedidos.piezas
+// ({ forma, color, cantidad, nombre_mascota, precio_unitario }). Los pedidos
+// de antes no traen piezas y se leen como una sola línea con los campos de
+// siempre.
+export const piezasDe = (p) => (p.piezas?.length ? p.piezas : [p]);
+export const describirPieza = (x) =>
+  `${formaPorId(x.forma).nombre} ${colorPorId(x.color).nombre.toLowerCase()}`
+  + (x.nombre_mascota ? ` — "${x.nombre_mascota}"` : '')
+  + (x.cantidad > 1 ? ` × ${x.cantidad}` : '');
+export const describirPedido = (p) => piezasDe(p).map(describirPieza).join(' · ');
+
 /* ---------------------------------------------------------------------------
    HUESO — medido de la foto del producto.
 

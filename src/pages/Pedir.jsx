@@ -1,12 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Loader2, Lock, MessageCircle, ShieldCheck, Clock } from 'lucide-react';
+import { ArrowLeft, Loader2, Lock, MessageCircle, ShieldCheck, Clock, Plus, X } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import BrandHeader from '../components/BrandHeader';
 import Placa3D from '../components/Placa3D';
 import { COLORES, FORMAS, MAX_NOMBRE, colorPorId, formaPorId } from '../lib/placa';
 import {
-  obtenerPrecios, calcularTotal, iniciarPago, textoCotizacion, pesos,
+  obtenerPrecios, calcularTotal, cantidadValida, iniciarPago, textoCotizacion, pesos,
 } from '../lib/pagos';
 
 // ---------------------------------------------------------------------------
@@ -35,12 +35,28 @@ export const Pedir = () => {
   const colorInicial = COLORES.some((c) => c.id === params.get('color'))
     ? params.get('color') : 'verde';
 
-  const [forma, setForma] = useState(formaInicial);
-  const [color, setColor] = useState(colorInicial);
-  const [nombreMascota, setNombreMascota] = useState('');
-  const [cantidad, setCantidad] = useState(
-    Math.max(1, Math.min(100, parseInt(params.get('cantidad'), 10) || 1)),
-  );
+  // Un pedido puede llevar varias placas distintas (forma y color). El
+  // formulario de arriba edita la placa activa; las demás quedan en la lista.
+  const [piezas, setPiezas] = useState([{
+    forma: formaInicial,
+    color: colorInicial,
+    nombreMascota: '',
+    cantidad: cantidadValida(params.get('cantidad')),
+  }]);
+  const [activa, setActiva] = useState(0);
+  const { forma, color, nombreMascota, cantidad } = piezas[activa];
+  const cambiar = (cambios) => setPiezas((ps) => ps.map((p, i) => (i === activa ? { ...p, ...cambios } : p)));
+  const setColor = (c) => cambiar({ color: c });
+  const setNombreMascota = (n) => cambiar({ nombreMascota: n });
+  const setCantidad = (c) => cambiar({ cantidad: c });
+  const agregarPieza = () => {
+    setPiezas((ps) => [...ps, { forma, color, nombreMascota: '', cantidad: 1 }]);
+    setActiva(piezas.length);
+  };
+  const quitarPieza = (i) => {
+    setPiezas((ps) => ps.filter((_, j) => j !== i));
+    setActiva((a) => (a >= i && a > 0 ? a - 1 : a));
+  };
   const [nombreCliente, setNombreCliente] = useState('');
   const [telefono, setTelefono] = useState('');
   const [email, setEmail] = useState('');
@@ -64,35 +80,37 @@ export const Pedir = () => {
     return () => { vivo = false; };
   }, []);
 
+  // Hay stock solo si alcanza para TODAS las placas del pedido.
+  // ponytail: dos líneas iguales (misma forma y color) se revisan por separado.
+  const firmaStock = piezas.map((p) => `${p.forma}-${p.color}-${p.cantidad}`).join('|');
   useEffect(() => {
     let vivo = true;
-    const piezas = parseInt(cantidad, 10) || 1;
-    supabase
-      .rpc('hay_stock', { p_forma: forma, p_color: color, p_cantidad: piezas })
-      .then(({ data, error: err }) => {
-        if (vivo) setHayStock(err ? null : data === true);
-      });
+    Promise.all(piezas.map((p) => supabase.rpc('hay_stock', {
+      p_forma: p.forma, p_color: p.color, p_cantidad: cantidadValida(p.cantidad),
+    }))).then((rs) => {
+      if (vivo) setHayStock(rs.some((r) => r.error) ? null : rs.every((r) => r.data === true));
+    });
     return () => { vivo = false; };
-  }, [forma, color, cantidad]);
+    // Solo forma/color/cantidad importan: escribir el nombre no debe volver a consultar.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firmaStock]);
 
   // Al cambiar a una forma que no lleva nombre grabado, el nombre se limpia en
   // el mismo clic. Si no, el cliente pagaría precio de personalizada por una
   // placa donde el nombre no va a aparecer.
   const elegirForma = (f) => {
-    setForma(f.id);
-    if (!f.grabaNombre) setNombreMascota('');
+    cambiar(f.grabaNombre ? { forma: f.id } : { forma: f.id, nombreMascota: '' });
   };
 
-  const cuenta = useMemo(
-    () => calcularTotal(precios, { forma, cantidad, nombreMascota }),
-    [precios, forma, cantidad, nombreMascota],
-  );
+  const cuenta = useMemo(() => calcularTotal(precios, piezas), [precios, piezas]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
-    if (formaActual.grabaNombre && !nombreMascota.trim()) {
+    const sinNombre = piezas.findIndex((p) => formaPorId(p.forma).grabaNombre && !p.nombreMascota.trim());
+    if (sinNombre >= 0) {
+      setActiva(sinNombre);
       return setError('La placa de hueso lleva el nombre de tu mascota: escríbelo arriba.');
     }
     if (!nombreCliente.trim()) return setError('Escribe tu nombre.');
@@ -104,7 +122,7 @@ export const Pedir = () => {
     setEnviando(true);
     try {
       const { url } = await iniciarPago({
-        forma, color, cantidad, nombreMascota,
+        piezas,
         nombreCliente: nombreCliente.trim(), telefono, email: email.trim(),
         codigoVendedor: codigoVendedor.trim(),
       });
@@ -119,12 +137,12 @@ export const Pedir = () => {
   };
 
   const linkCotizar = `${WHATSAPP}?text=${encodeURIComponent(
-    textoCotizacion({
-      forma: formaActual.nombre,
-      color: colorPorId(color).nombre,
-      cantidad,
-      nombreMascota,
-    }),
+    textoCotizacion(piezas.map((p) => ({
+      forma: formaPorId(p.forma).nombre,
+      color: colorPorId(p.color).nombre,
+      cantidad: cantidadValida(p.cantidad),
+      nombreMascota: p.nombreMascota,
+    }))),
   )}`;
 
   return (
@@ -274,19 +292,75 @@ export const Pedir = () => {
               )}
               className="w-24 rounded-xl border border-gray-200 px-3 py-2.5 text-[#1C5253] focus:outline-none focus:border-[#1C5253]"
             />
-            {precios && !cuenta?.esMayoreo && !cuenta?.esPersonalizada && (
+            {precios && !cuenta?.esMayoreo && !formaActual.grabaNombre && (
               <p className="text-xs text-gray-400 mt-1">
-                Desde {precios.mayoreo_desde} piezas bajan a {pesos(precios.mayoreo)} cada una.
+                Desde {precios.mayoreo_desde} piezas sin nombre (puedes mezclar formas y colores)
+                bajan a {pesos(precios.mayoreo)} cada una.
               </p>
             )}
             {/* La personalizada no baja de precio por cantidad: cada placa
                 lleva su propio nombre grabado a mano. */}
-            {precios && cuenta?.esPersonalizada && (
+            {precios && formaActual.grabaNombre && (
               <p className="text-xs text-gray-400 mt-1">
                 El nombre grabado no entra en precio de mayoreo: cada placa se cobra a{' '}
                 {pesos(precios.personalizada)}, sin importar cuántas pidas.
               </p>
             )}
+          </div>
+
+          {/* ---------------- Varias placas distintas ----------------
+              El formulario de arriba edita la placa marcada; tocar otra de la
+              lista la vuelve a cargar arriba (y en el modelo 3D). */}
+          <div>
+            {piezas.length > 1 && (
+              <ul className="space-y-2 mb-3">
+                {piezas.map((p, i) => (
+                  <li key={i} className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setActiva(i)}
+                      aria-pressed={i === activa}
+                      className={`flex-1 min-w-0 flex items-center gap-2.5 rounded-xl border-2 bg-white px-3 py-2 text-left text-sm transition-colors ${
+                        i === activa
+                          ? 'border-[#1C5253] text-[#1C5253]'
+                          : 'border-gray-200 text-gray-500 hover:border-emerald-200'
+                      }`}
+                    >
+                      <span
+                        className="w-4 h-4 rounded-full shrink-0"
+                        style={{ background: colorPorId(p.color).hex }}
+                        aria-hidden="true"
+                      />
+                      <span className="truncate font-bold">
+                        {cantidadValida(p.cantidad)} × {formaPorId(p.forma).nombre}{' '}
+                        {colorPorId(p.color).nombre.toLowerCase()}
+                        {p.nombreMascota && ` "${p.nombreMascota}"`}
+                      </span>
+                      {i === activa && (
+                        <span className="ml-auto text-[11px] font-normal shrink-0">editando</span>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => quitarPieza(i)}
+                      aria-label={`Quitar placa ${i + 1}`}
+                      className="shrink-0 w-9 h-9 rounded-xl border border-gray-200 text-gray-400 hover:text-red-600 hover:border-red-200"
+                    >
+                      <X className="w-4 h-4 mx-auto" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <button
+              type="button"
+              onClick={agregarPieza}
+              disabled={piezas.length >= 20}
+              className="w-full rounded-xl border-2 border-dashed border-emerald-200 text-[#1C5253] text-sm font-bold py-2.5 flex items-center justify-center gap-1.5 hover:bg-emerald-50 disabled:opacity-50"
+            >
+              <Plus className="w-4 h-4" />
+              Agregar otra placa con otra forma o color
+            </button>
           </div>
 
           <hr className="border-gray-100" />
@@ -368,10 +442,23 @@ export const Pedir = () => {
               <p className="text-sm text-gray-400">Calculando…</p>
             ) : (
               <>
+                {cuenta.lineas.length > 1 && (
+                  <ul className="text-xs text-gray-500 space-y-1 mb-2 pb-2 border-b border-gray-100">
+                    {cuenta.lineas.map((l, i) => (
+                      <li key={i} className="flex justify-between gap-2">
+                        <span className="truncate">
+                          {l.cantidad} × {formaPorId(l.forma).nombre}{' '}
+                          {colorPorId(l.color).nombre.toLowerCase()} · {pesos(l.unitario)}
+                        </span>
+                        <span className="shrink-0">{pesos(l.subtotal)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
                 <div className="flex items-baseline justify-between">
                   <span className="text-sm text-gray-500">
-                    {cuenta.cantidad} {cuenta.cantidad === 1 ? 'placa' : 'placas'} ×{' '}
-                    {pesos(cuenta.unitario)}
+                    {cuenta.cantidad} {cuenta.cantidad === 1 ? 'placa' : 'placas'}
+                    {cuenta.unitario !== null && ` × ${pesos(cuenta.unitario)}`}
                   </span>
                   <span className="text-2xl font-black text-[#1C5253]">
                     {pesos(cuenta.total)}
@@ -387,8 +474,8 @@ export const Pedir = () => {
                     <Clock className="w-4 h-4 text-[#1C5253] shrink-0 mt-0.5" />
                     <div className="text-xs">
                       <p className={`font-bold ${hayStock ? 'text-[#0B7345]' : 'text-[#1C5253]'}`}>
-                        {hayStock && cuenta.esPersonalizada && 'La tenemos lista: grabamos el nombre y sale mañana.'}
-                        {hayStock && !cuenta.esPersonalizada && 'La tenemos lista: sale hoy o mañana.'}
+                        {hayStock && cuenta.hayPersonalizada && 'La tenemos lista: grabamos el nombre y sale mañana.'}
+                        {hayStock && !cuenta.hayPersonalizada && 'La tenemos lista: sale hoy o mañana.'}
                         {!hayStock && 'Se hace a mano para ti: queda lista en unos 4 días.'}
                       </p>
                       <p className="text-gray-400 mt-0.5">Más el tiempo de envío a tu ciudad.</p>

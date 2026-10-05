@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, Save, Loader2, RotateCcw, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { supabase, conReintentoDeSesion } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
+import { piezasDe } from '../lib/placa';
 
 /* ------------------------------------------------------------------ *
  * Calculadora de unidad económica y reparto.
@@ -202,12 +203,13 @@ export const AdminCalculadora = () => {
   const porMes = useMemo(() => {
     if (!pedidosPagados) return null;
     const m = {};
-    pedidosPagados.forEach((p) => {
+    // Un pedido mezclado cuenta cada línea con su propio precio.
+    pedidosPagados.forEach((p) => piezasDe(p).forEach((x) => {
       const k = claveMes(new Date(p.pagado_en));
-      const precio = Number(p.precio_unitario);
+      const precio = Number(x.precio_unitario);
       m[k] = m[k] || {};
-      m[k][precio] = (m[k][precio] || 0) + (Number(p.cantidad) || 0);
-    });
+      m[k][precio] = (m[k][precio] || 0) + (Number(x.cantidad) || 0);
+    }));
     return m;
   }, [pedidosPagados]);
   const piezasReales = porMes ? (porMes[claveMes(new Date())] || {}) : null;
@@ -281,7 +283,7 @@ export const AdminCalculadora = () => {
     // ponytail: Supabase regresa máximo 1000 filas; paginar o pasar a un RPC al acercarse.
     supabase
       .from('pedidos')
-      .select('precio_unitario, cantidad, pagado_en')
+      .select('precio_unitario, cantidad, pagado_en, piezas')
       .not('pagado_en', 'is', null)
       .then(({ data, error: errPedidos }) => {
         if (!vivo) return;

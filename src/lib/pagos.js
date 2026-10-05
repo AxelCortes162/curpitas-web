@@ -53,37 +53,55 @@ export async function obtenerPrecios() {
 // mano, así que el trabajo no baja por pedir más. Antes se revisaba primero
 // la cantidad, así que un pedido grande de placas con nombre se cobraba al
 // precio de mayoreo por error — se perdía el costo del grabado en cada una.
-export function calcularTotal(precios, { forma, cantidad }) {
-  if (!precios) return null;
-  const n = Math.max(1, Math.min(100, parseInt(cantidad, 10) || 1));
-  const esPersonalizada = forma === 'hueso';
-  const esMayoreo = !esPersonalizada && n >= precios.mayoreo_desde;
-  let unitario;
-  if (esPersonalizada) unitario = precios.personalizada;
-  else if (esMayoreo) unitario = precios.mayoreo;
-  else unitario = precios.sencilla;
+//
+// Un pedido puede mezclar formas y colores (piezas). El mayoreo se decide con
+// la suma de TODAS las placas sin grabado del pedido, no línea por línea: 5
+// círculos verdes + 5 cuadrados azules son 10 placas y van a mayoreo.
+export const cantidadValida = (c) => Math.max(1, Math.min(100, parseInt(c, 10) || 1));
+
+export function calcularTotal(precios, piezas) {
+  if (!precios || !piezas?.length) return null;
+  const sencillas = piezas
+    .filter((p) => p.forma !== 'hueso')
+    .reduce((a, p) => a + cantidadValida(p.cantidad), 0);
+  const esMayoreo = sencillas >= precios.mayoreo_desde;
+  const lineas = piezas.map((p) => {
+    const cantidad = cantidadValida(p.cantidad);
+    let unitario;
+    if (p.forma === 'hueso') unitario = precios.personalizada;
+    else if (esMayoreo) unitario = precios.mayoreo;
+    else unitario = precios.sencilla;
+    return { ...p, cantidad, unitario, subtotal: unitario * cantidad };
+  });
+  const cantidad = lineas.reduce((a, l) => a + l.cantidad, 0);
   return {
-    unitario,
-    cantidad: n,
-    total: Math.round(unitario * n * 100) / 100,
+    lineas,
+    // El unitario solo tiene sentido cuando todas las placas cuestan lo mismo.
+    unitario: lineas.every((l) => l.unitario === lineas[0].unitario) ? lineas[0].unitario : null,
+    cantidad,
+    total: Math.round(lineas.reduce((a, l) => a + l.subtotal, 0) * 100) / 100,
     esMayoreo,
-    esPersonalizada,
+    esPersonalizada: lineas.every((l) => l.forma === 'hueso'),
+    hayPersonalizada: lineas.some((l) => l.forma === 'hueso'),
   };
 }
 
 // Crea el pedido y la orden de pago. Devuelve { pedido_id, total, url }.
 // La url es la página de Mercado Pago: el que llama redirige ahí.
+// piezas: [{ forma, color, cantidad, nombreMascota }]
 export async function iniciarPago({
-  forma, color, cantidad, nombreMascota, nombreCliente, telefono, email, codigoVendedor,
+  piezas, nombreCliente, telefono, email, codigoVendedor,
 }) {
   const res = await fetch(`${BASE}/crear-pago`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
-      forma,
-      color,
-      cantidad,
-      nombre_mascota: nombreMascota || '',
+      piezas: piezas.map((p) => ({
+        forma: p.forma,
+        color: p.color,
+        cantidad: cantidadValida(p.cantidad),
+        nombre_mascota: p.nombreMascota || '',
+      })),
       nombre_cliente: nombreCliente,
       telefono,
       email,
@@ -107,15 +125,13 @@ export async function consultarPedido(pedidoId) {
 
 // Mensaje para cotizar por WhatsApp, con lo que ya eligió el cliente. Es la
 // otra puerta: quien no quiere pagar en línea escribe, y no se pierde la venta.
-export function textoCotizacion({ forma, color, cantidad, nombreMascota }) {
-  const partes = [
+// lineas: [{ forma, color, cantidad, nombreMascota }] con nombres legibles.
+export function textoCotizacion(lineas) {
+  return [
     'Hola, quiero cotizar una CURPita.',
-    forma ? `Forma: ${forma}` : null,
-    color ? `Color: ${color}` : null,
-    nombreMascota ? `Nombre: ${nombreMascota}` : null,
-    cantidad ? `Cantidad: ${cantidad}` : null,
-  ].filter(Boolean);
-  return partes.join('\n');
+    ...lineas.map((l) => `${l.cantidad} × ${l.forma} ${l.color.toLowerCase()}`
+      + (l.nombreMascota ? ` (nombre: ${l.nombreMascota})` : '')),
+  ].join('\n');
 }
 
 export const pesos = (n) =>

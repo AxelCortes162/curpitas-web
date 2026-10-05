@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  ChevronLeft, Loader2, CheckCircle2, Copy, ClipboardList, Mail, MessageCircle,
+  ChevronLeft, Loader2, CheckCircle2, Copy, ClipboardList, Mail, MessageCircle, Plus, X,
 } from 'lucide-react';
 import { conReintentoDeSesion, esErrorDeSesionVencida, invocarFuncion } from '../supabaseClient';
-import { obtenerPrecios, calcularTotal, pesos } from '../lib/pagos';
+import { obtenerPrecios, calcularTotal, cantidadValida, pesos } from '../lib/pagos';
 import { FORMAS as FORMAS_TIENDA, FORMAS_SOLO_MANUAL, COLORES, MAX_NOMBRE } from '../lib/placa';
 
 const FORMAS = [...FORMAS_TIENDA, ...FORMAS_SOLO_MANUAL];
@@ -34,13 +34,14 @@ const CANALES = [
   { id: 'persona', nombre: 'En persona', nota: 'Pedido en persona' },
 ];
 
+const PIEZA_NUEVA = { forma: 'hueso', color: 'verde', cantidad: 1, nombreMascota: '' };
+
 export const PedidoManual = () => {
   const [precios, setPrecios] = useState(null);
 
-  const [forma, setForma] = useState('hueso');
-  const [color, setColor] = useState('verde');
-  const [cantidad, setCantidad] = useState(1);
-  const [nombreMascota, setNombreMascota] = useState('');
+  // Cada línea es una forma/color distinta del mismo pedido.
+  const [piezas, setPiezas] = useState([PIEZA_NUEVA]);
+  const cambiarPieza = (i, cambios) => setPiezas((ps) => ps.map((p, j) => (j === i ? { ...p, ...cambios } : p)));
   const [nombreCliente, setNombreCliente] = useState('');
   const [telefono, setTelefono] = useState('');
   const [email, setEmail] = useState('');
@@ -67,10 +68,7 @@ export const PedidoManual = () => {
     obtenerPrecios().then(setPrecios).catch(() => setPrecios(null));
   }, []);
 
-  const sugerido = useMemo(
-    () => calcularTotal(precios, { forma, cantidad, nombreMascota }),
-    [precios, forma, cantidad, nombreMascota],
-  );
+  const sugerido = useMemo(() => calcularTotal(precios, piezas), [precios, piezas]);
 
   // Mientras nadie haya tocado el campo de Total a mano, se sigue el precio
   // sugerido en automático conforme cambian forma/cantidad/nombre. En cuanto
@@ -81,13 +79,8 @@ export const PedidoManual = () => {
     setTotal(String(descuentoAplicado ? Math.round(precios.mayoreo * sugerido.cantidad * 100) / 100 : sugerido.total));
   }, [sugerido, totalTocado, descuentoAplicado, precios]);
 
-  const formaElegida = FORMAS.find((f) => f.id === forma) ?? FORMAS[0];
-
   const limpiarFormulario = () => {
-    setForma('hueso');
-    setColor('verde');
-    setCantidad(1);
-    setNombreMascota('');
+    setPiezas([PIEZA_NUEVA]);
     setNombreCliente('');
     setTelefono('');
     setEmail('');
@@ -105,7 +98,7 @@ export const PedidoManual = () => {
   };
 
   const validar = () => {
-    if (forma === 'hueso' && !nombreMascota.trim()) return 'La placa de hueso siempre lleva el nombre de la mascota.';
+    if (piezas.some((p) => p.forma === 'hueso' && !p.nombreMascota.trim())) return 'La placa de hueso siempre lleva el nombre de la mascota.';
     if (!nombreCliente.trim()) return 'Falta el nombre del cliente.';
     if (telefono.replace(/\D/g, '').length < 10) return 'El teléfono debe traer 10 dígitos.';
     if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return 'El correo no es válido.';
@@ -129,10 +122,12 @@ export const PedidoManual = () => {
     const notas = [canalElegido.nota, descuentoAplicado && 'Descuento aplicado', notaExtra.trim()].filter(Boolean).join(' — ');
 
     const { data, error: err } = await conReintentoDeSesion(() => invocarFuncion('pedido-manual', {
-      forma,
-      color,
-      cantidad,
-      nombre_mascota: nombreMascota.trim(),
+      piezas: piezas.map((p) => ({
+        forma: p.forma,
+        color: p.color,
+        cantidad: p.cantidad,
+        nombre_mascota: p.nombreMascota.trim(),
+      })),
       nombre_cliente: nombreCliente.trim(),
       telefono: telefono.replace(/\D/g, ''),
       email: email.trim(),
@@ -267,54 +262,81 @@ export const PedidoManual = () => {
               </div>
             </div>
 
-            {/* Forma y color */}
-            <div className="grid grid-cols-2 gap-2">
-              <label className="block">
-                <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Forma</span>
-                <select
-                  value={forma}
-                  onChange={(e) => setForma(e.target.value)}
-                  className="mt-1 w-full py-2.5 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-sm text-[#1C5253] font-bold outline-none focus:border-[#1C5253]"
-                >
-                  {FORMAS.map((f) => <option key={f.id} value={f.id}>{f.nombre}</option>)}
-                </select>
-              </label>
-              <label className="block">
-                <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Color</span>
-                <select
-                  value={color}
-                  onChange={(e) => setColor(e.target.value)}
-                  className="mt-1 w-full py-2.5 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-sm text-[#1C5253] font-bold outline-none focus:border-[#1C5253]"
-                >
-                  {COLORES.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-                </select>
-              </label>
-            </div>
-
-            {/* Cantidad y nombre de mascota */}
-            <div className="grid grid-cols-2 gap-2">
-              <label className="block">
-                <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Cantidad</span>
-                <input
-                  type="number"
-                  min="1"
-                  max="100"
-                  value={cantidad}
-                  onChange={(e) => setCantidad(Math.max(1, Math.min(100, parseInt(e.target.value, 10) || 1)))}
-                  className="mt-1 w-full py-2.5 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-sm text-[#1C5253] font-bold outline-none focus:border-[#1C5253]"
-                />
-              </label>
-              <label className="block">
-                <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                  Nombre mascota {!formaElegida.grabaNombre && '(opcional)'}
-                </span>
-                <input
-                  value={nombreMascota}
-                  onChange={(e) => setNombreMascota(e.target.value.slice(0, MAX_NOMBRE))}
-                  placeholder={formaElegida.grabaNombre ? 'Se graba en la placa' : 'Sin grabado'}
-                  className="mt-1 w-full py-2.5 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-sm text-[#1C5253] outline-none focus:border-[#1C5253]"
-                />
-              </label>
+            {/* Placas: una línea por cada forma/color distinto del pedido */}
+            <div className="space-y-2">
+              {piezas.map((p, i) => {
+                const graba = FORMAS.find((f) => f.id === p.forma)?.grabaNombre;
+                return (
+                  <div key={i} className="rounded-xl border border-emerald-100 p-2.5 space-y-2">
+                    {piezas.length > 1 && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Placa {i + 1}</span>
+                        <button
+                          type="button"
+                          onClick={() => setPiezas((ps) => ps.filter((_, j) => j !== i))}
+                          className="text-[11px] font-bold text-gray-400 hover:text-red-500 flex items-center gap-0.5"
+                        >
+                          <X className="w-3.5 h-3.5" /> Quitar
+                        </button>
+                      </div>
+                    )}
+                    <div className="grid grid-cols-2 gap-2">
+                      <label className="block">
+                        <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Forma</span>
+                        <select
+                          value={p.forma}
+                          onChange={(e) => cambiarPieza(i, { forma: e.target.value })}
+                          className="mt-1 w-full py-2.5 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-sm text-[#1C5253] font-bold outline-none focus:border-[#1C5253]"
+                        >
+                          {FORMAS.map((f) => <option key={f.id} value={f.id}>{f.nombre}</option>)}
+                        </select>
+                      </label>
+                      <label className="block">
+                        <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Color</span>
+                        <select
+                          value={p.color}
+                          onChange={(e) => cambiarPieza(i, { color: e.target.value })}
+                          className="mt-1 w-full py-2.5 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-sm text-[#1C5253] font-bold outline-none focus:border-[#1C5253]"
+                        >
+                          {COLORES.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+                        </select>
+                      </label>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <label className="block">
+                        <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Cantidad</span>
+                        <input
+                          type="number"
+                          min="1"
+                          max="100"
+                          value={p.cantidad}
+                          onChange={(e) => cambiarPieza(i, { cantidad: cantidadValida(e.target.value) })}
+                          className="mt-1 w-full py-2.5 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-sm text-[#1C5253] font-bold outline-none focus:border-[#1C5253]"
+                        />
+                      </label>
+                      <label className="block">
+                        <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                          Nombre mascota {!graba && '(opcional)'}
+                        </span>
+                        <input
+                          value={p.nombreMascota}
+                          onChange={(e) => cambiarPieza(i, { nombreMascota: e.target.value.slice(0, MAX_NOMBRE) })}
+                          placeholder={graba ? 'Se graba en la placa' : 'Sin grabado'}
+                          className="mt-1 w-full py-2.5 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-sm text-[#1C5253] outline-none focus:border-[#1C5253]"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                );
+              })}
+              <button
+                type="button"
+                onClick={() => setPiezas((ps) => [...ps, { ...ps[ps.length - 1], cantidad: 1, nombreMascota: '' }])}
+                disabled={piezas.length >= 20}
+                className="w-full py-2 rounded-xl border-2 border-dashed border-emerald-200 text-[#1C5253] text-xs font-bold flex items-center justify-center gap-1 hover:bg-emerald-50 disabled:opacity-50"
+              >
+                <Plus className="w-3.5 h-3.5" /> Agregar otra forma o color
+              </button>
             </div>
 
             {/* Cliente */}

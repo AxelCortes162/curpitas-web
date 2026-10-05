@@ -3,7 +3,7 @@ import { Copy, LogOut, Loader2 } from 'lucide-react';
 import BrandHeader from '../components/BrandHeader';
 import { supabase, conReintentoDeSesion } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
-import { formaPorId, colorPorId } from '../lib/placa';
+import { describirPedido } from '../lib/placa';
 import { pesos } from '../lib/pagos';
 
 // ---------------------------------------------------------------------------
@@ -146,9 +146,7 @@ export const PanelVendedor = () => {
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="text-sm font-bold text-[#1C5253]">
-                          {formaPorId(v.forma).nombre} {colorPorId(v.color).nombre.toLowerCase()}
-                          {v.nombre_mascota ? ` — "${v.nombre_mascota}"` : ''}
-                          {v.cantidad > 1 ? ` × ${v.cantidad}` : ''}
+                          {describirPedido(v)}
                         </p>
                         <p className="text-xs text-gray-400 mt-0.5">{pesos(v.total)} · <EtiquetaEstado estado={v.estado} /></p>
                       </div>

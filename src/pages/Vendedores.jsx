@@ -4,7 +4,7 @@ import {
   ChevronLeft, Loader2, UserPlus, Copy, CheckCircle2, Ban, Play,
 } from 'lucide-react';
 import { supabase, conReintentoDeSesion, esErrorDeSesionVencida, invocarFuncion } from '../supabaseClient';
-import { formaPorId, colorPorId } from '../lib/placa';
+import { describirPedido } from '../lib/placa';
 import { pesos } from '../lib/pagos';
 
 // ---------------------------------------------------------------------------
@@ -50,7 +50,7 @@ export const Vendedores = () => {
       conReintentoDeSesion(() => supabase.from('vendedores').select('*').order('creado_en', { ascending: false })),
       conReintentoDeSesion(() => supabase.rpc('resumen_vendedores')),
       conReintentoDeSesion(() => supabase.from('pedidos')
-        .select('id, vendedor_id, forma, color, cantidad, total, estado, pagado_en, comision_pct_aplicado, comision_pagada')
+        .select('id, vendedor_id, forma, color, cantidad, piezas, nombre_mascota, total, estado, pagado_en, comision_pct_aplicado, comision_pagada')
         .not('vendedor_id', 'is', null)
         .in('estado', ['pagado', 'en_produccion', 'listo', 'enviado', 'entregado'])
         .order('pagado_en', { ascending: true })),
@@ -351,7 +351,7 @@ export const Vendedores = () => {
                       return (
                         <div key={p.id} className="flex items-center justify-between gap-2 text-[11px]">
                           <span className="text-gray-500 truncate">
-                            {formaPorId(p.forma).nombre} {colorPorId(p.color).nombre.toLowerCase()} ×{p.cantidad}
+                            {describirPedido(p)}
                             {' — '}<EtiquetaEstado estado={p.estado} />
                           </span>
                           <div className="flex items-center gap-1.5 shrink-0">

@@ -4,7 +4,7 @@ import {
   Package, Factory, CheckCircle2, Truck, PartyPopper, ChevronLeft, Loader2, Phone, Mail,
 } from 'lucide-react';
 import { supabase, conReintentoDeSesion, esErrorDeSesionVencida } from '../supabaseClient';
-import { FORMAS, COLORES, formaPorId, colorPorId } from '../lib/placa';
+import { FORMAS, COLORES, piezasDe, describirPieza } from '../lib/placa';
 import { pesos } from '../lib/pagos';
 
 // ---------------------------------------------------------------------------
@@ -54,8 +54,6 @@ const FilaPedido = ({ pedido, onCambio }) => {
   const [monto, setMonto] = useState('');
 
   const etapa = etapaPorId(pedido.estado);
-  const forma = formaPorId(pedido.forma);
-  const color = colorPorId(pedido.color);
   const folio = pedido.id.slice(0, 8).toUpperCase();
   // Los de Mercado Pago no llevan monto_pagado: si tienen pagado_en, no deben nada.
   const debe = pedido.pagado_en ? 0 : Number(pedido.total) - Number(pedido.monto_pagado);
@@ -133,11 +131,10 @@ const FilaPedido = ({ pedido, onCambio }) => {
               </span>
             )}
           </p>
-          <p className="text-sm font-bold text-[#1C5253] mt-0.5">
-            {forma.nombre} {color.nombre.toLowerCase()}
-            {pedido.nombre_mascota ? ` — "${pedido.nombre_mascota}"` : ''}
-            {pedido.cantidad > 1 ? ` × ${pedido.cantidad}` : ''}
-          </p>
+          {/* Un renglón por cada forma/color: así se lee lo que hay que hacer. */}
+          {piezasDe(pedido).map((x, i) => (
+            <p key={i} className="text-sm font-bold text-[#1C5253] mt-0.5">{describirPieza(x)}</p>
+          ))}
           <p className="text-xs text-gray-500 mt-0.5">{pedido.nombre_cliente}</p>
           <div className="flex items-center gap-3 mt-1.5 text-[11px] text-gray-400">
             <a
@@ -313,7 +310,7 @@ export const Produccion = () => {
     const { data, count, error } = await conReintentoDeSesion(() => {
       const base = supabase
         .from('pedidos')
-        .select('id, forma, color, nombre_mascota, cantidad, nombre_cliente, telefono, email, estado, pagado_en, creado_en, origen, total, monto_pagado, vendedor:vendedores(codigo), referido:profiles!pedidos_referido_por_fkey(full_name)', { count: 'exact' })
+        .select('id, forma, color, nombre_mascota, cantidad, piezas, nombre_cliente, telefono, email, estado, pagado_en, creado_en, origen, total, monto_pagado, vendedor:vendedores(codigo), referido:profiles!pedidos_referido_por_fkey(full_name)', { count: 'exact' })
         // Pendientes: los más viejos primero (la fila de trabajo). Entregadas:
         // las más recientes primero (el historial).
         .order('creado_en', { ascending: filtro !== 'entregado' })
