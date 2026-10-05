@@ -58,7 +58,13 @@ export const FORMAS = [
   },
 ];
 
-export const formaPorId = (id) => FORMAS.find((f) => f.id === id) ?? FORMAS[0];
+// Formas que solo se venden por pedido manual: no salen en la tienda en
+// línea ni tienen modelo 3D ni fila de inventario suelto.
+export const FORMAS_SOLO_MANUAL = [
+  { id: 'pescado', nombre: 'Pescado', grabaNombre: false },
+];
+
+export const formaPorId = (id) => [...FORMAS, ...FORMAS_SOLO_MANUAL].find((f) => f.id === id) ?? FORMAS[0];
 export const colorPorId = (id) => COLORES.find((c) => c.id === id) ?? COLORES[0];
 
 /* ---------------------------------------------------------------------------

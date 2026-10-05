@@ -5,7 +5,9 @@ import {
 } from 'lucide-react';
 import { conReintentoDeSesion, esErrorDeSesionVencida, invocarFuncion } from '../supabaseClient';
 import { obtenerPrecios, calcularTotal, pesos } from '../lib/pagos';
-import { FORMAS, COLORES, MAX_NOMBRE } from '../lib/placa';
+import { FORMAS as FORMAS_TIENDA, FORMAS_SOLO_MANUAL, COLORES, MAX_NOMBRE } from '../lib/placa';
+
+const FORMAS = [...FORMAS_TIENDA, ...FORMAS_SOLO_MANUAL];
 
 // ---------------------------------------------------------------------------
 // PEDIDO MANUAL — para cuando alguien compra por WhatsApp o en persona, no en
