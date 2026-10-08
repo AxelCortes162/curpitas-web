@@ -4,7 +4,7 @@ import {
   Package, Factory, CheckCircle2, Truck, PartyPopper, ChevronLeft, Loader2, Phone, Mail,
 } from 'lucide-react';
 import { supabase, conReintentoDeSesion, esErrorDeSesionVencida } from '../supabaseClient';
-import { FORMAS, FORMAS_SOLO_MANUAL, COLORES, piezasDe, describirPieza } from '../lib/placa';
+import { FORMAS, FORMAS_SOLO_MANUAL, COLORES, MAX_NOMBRE, piezasDe, describirPieza } from '../lib/placa';
 import { pesos } from '../lib/pagos';
 
 // ---------------------------------------------------------------------------
@@ -44,6 +44,8 @@ const etapaPorId = (id) => ETAPAS.find((e) => e.id === id) ?? ETAPAS[0];
 // resumen_produccion() (agregado calculado en la base, siempre 5 filas).
 const POR_PAGINA = 15;
 
+const CAMPO = 'w-full min-w-0 py-1.5 px-2 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-xs text-[#1C5253] outline-none focus:border-[#1C5253]';
+
 const FilaPedido = ({ pedido, onCambio }) => {
   const [nota, setNota] = useState('');
   const [mostrarNota, setMostrarNota] = useState(false);
@@ -54,6 +56,7 @@ const FilaPedido = ({ pedido, onCambio }) => {
   const [monto, setMonto] = useState('');
   const [corrigiendo, setCorrigiendo] = useState(false);
   const [pagadoReal, setPagadoReal] = useState('');
+  const [edicion, setEdicion] = useState(null); // { piezas, cliente, telefono } mientras se edita
 
   const etapa = etapaPorId(pedido.estado);
   const folio = pedido.id.slice(0, 8).toUpperCase();
@@ -74,8 +77,18 @@ const FilaPedido = ({ pedido, onCambio }) => {
       return;
     }
     setCorrigiendo(false);
+    setEdicion(null);
     onCambio();
   };
+
+  const empezarEdicion = () => setEdicion({
+    piezas: piezasDe(pedido).map((x) => ({ forma: x.forma, color: x.color, nombre_mascota: x.nombre_mascota || '' })),
+    cliente: pedido.nombre_cliente,
+    telefono: pedido.telefono,
+  });
+  const editarPieza = (i, campo, v) => setEdicion((e) => ({
+    ...e, piezas: e.piezas.map((x, j) => (j === i ? { ...x, [campo]: v } : x)),
+  }));
 
   const abonar = async () => {
     setProcesando(true);
@@ -263,7 +276,58 @@ const FilaPedido = ({ pedido, onCambio }) => {
       )}
 
       <div className="mt-3 pt-2 border-t border-gray-100">
-        {corrigiendo ? (
+        {edicion ? (
+          <div className="space-y-2">
+            {edicion.piezas.map((x, i) => (
+              <div key={i} className="grid grid-cols-3 gap-1.5">
+                <select value={x.forma} onChange={(e) => editarPieza(i, 'forma', e.target.value)} className={CAMPO}>
+                  {[...FORMAS, ...FORMAS_SOLO_MANUAL].map((f) => <option key={f.id} value={f.id}>{f.nombre}</option>)}
+                </select>
+                <select value={x.color} onChange={(e) => editarPieza(i, 'color', e.target.value)} className={CAMPO}>
+                  {COLORES.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+                </select>
+                <input
+                  value={x.nombre_mascota}
+                  onChange={(e) => editarPieza(i, 'nombre_mascota', e.target.value.slice(0, MAX_NOMBRE))}
+                  placeholder="Nombre mascota"
+                  className={CAMPO}
+                />
+              </div>
+            ))}
+            <div className="grid grid-cols-2 gap-1.5">
+              <input
+                value={edicion.cliente}
+                onChange={(e) => setEdicion((ed) => ({ ...ed, cliente: e.target.value }))}
+                placeholder="Cliente"
+                className={CAMPO}
+              />
+              <input
+                value={edicion.telefono}
+                onChange={(e) => setEdicion((ed) => ({ ...ed, telefono: e.target.value.replace(/\D/g, '').slice(0, 10) }))}
+                inputMode="numeric"
+                placeholder="Teléfono"
+                className={CAMPO}
+              />
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => llamar('editar_pedido', {
+                  p_pedido_id: pedido.id,
+                  p_piezas: edicion.piezas,
+                  p_nombre_cliente: edicion.cliente,
+                  p_telefono: edicion.telefono,
+                })}
+                disabled={procesando}
+                className="flex-1 py-2 bg-[#1C5253] text-white text-xs font-bold rounded-lg disabled:opacity-50"
+              >
+                Guardar cambios
+              </button>
+              <button onClick={() => setEdicion(null)} className="px-3 py-2 bg-[#F4F9F8] text-gray-500 text-xs font-bold rounded-lg">
+                Cancelar
+              </button>
+            </div>
+          </div>
+        ) : corrigiendo ? (
           <div className="flex items-center gap-2">
             <span className="text-[11px] text-gray-500 shrink-0">Pagó en total</span>
             <input
@@ -298,12 +362,17 @@ const FilaPedido = ({ pedido, onCambio }) => {
                 ← Regresar a "{anterior.nombre}"
               </button>
             ) : <span />}
-            <button
-              onClick={() => { setPagadoReal(String(pagadoActual)); setCorrigiendo(true); }}
-              className="hover:text-[#1C5253]"
-            >
-              Corregir pago
-            </button>
+            <span className="flex gap-3">
+              <button onClick={empezarEdicion} className="hover:text-[#1C5253]">
+                Editar pedido
+              </button>
+              <button
+                onClick={() => { setPagadoReal(String(pagadoActual)); setCorrigiendo(true); }}
+                className="hover:text-[#1C5253]"
+              >
+                Corregir pago
+              </button>
+            </span>
           </div>
         )}
         {error && <p className="text-[11px] text-red-500 mt-2">{error}</p>}
