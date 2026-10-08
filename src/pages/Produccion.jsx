@@ -4,7 +4,7 @@ import {
   Package, Factory, CheckCircle2, Truck, PartyPopper, ChevronLeft, Loader2, Phone, Mail,
 } from 'lucide-react';
 import { supabase, conReintentoDeSesion, esErrorDeSesionVencida } from '../supabaseClient';
-import { FORMAS, COLORES, piezasDe, describirPieza } from '../lib/placa';
+import { FORMAS, FORMAS_SOLO_MANUAL, COLORES, piezasDe, describirPieza } from '../lib/placa';
 import { pesos } from '../lib/pagos';
 
 // ---------------------------------------------------------------------------
@@ -568,7 +568,7 @@ export const Produccion = () => {
               </tr>
             </thead>
             <tbody>
-              {FORMAS.map((f) => (
+              {[...FORMAS, ...FORMAS_SOLO_MANUAL].map((f) => (
                 <tr key={f.id}>
                   <td className="text-[11px] font-bold text-[#1C5253] pr-2 py-1 whitespace-nowrap">{f.nombre}</td>
                   {COLORES.map((c) => (

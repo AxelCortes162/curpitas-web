@@ -59,7 +59,7 @@ export const FORMAS = [
 ];
 
 // Formas que solo se venden por pedido manual: no salen en la tienda en
-// línea ni tienen modelo 3D ni fila de inventario suelto.
+// línea ni tienen modelo 3D (sí van en el inventario suelto).
 export const FORMAS_SOLO_MANUAL = [
   { id: 'pescado', nombre: 'Pescado', grabaNombre: false },
 ];
