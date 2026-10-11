@@ -1,0 +1,24 @@
+/mascota*
+  X-Robots-Tag: noindex
+/mi-cuenta*
+  X-Robots-Tag: noindex
+/mis-perros*
+  X-Robots-Tag: noindex
+/admin*
+  X-Robots-Tag: noindex
+/vendedor*
+  X-Robots-Tag: noindex
+/pedido*
+  X-Robots-Tag: noindex
+/gracias*
+  X-Robots-Tag: noindex
+/pago-fallido*
+  X-Robots-Tag: noindex
+/restablecer-contrasena*
+  X-Robots-Tag: noindex
+/olvide-mi-contrasena*
+  X-Robots-Tag: noindex
+/iniciar-sesion*
+  X-Robots-Tag: noindex
+/registro*
+  X-Robots-Tag: noindex
