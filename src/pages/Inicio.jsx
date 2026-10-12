@@ -344,13 +344,13 @@ export const Inicio = () => {
             Identificación digital para mascotas
           </span>
           <h1 style={{ animationDelay: '0.1s' }} className="entrada text-4xl md:text-5xl font-black text-[#1C5253] leading-[1.05] mt-4 tracking-tight">
-            La credencial que le da a tu mascota un camino de regreso a casa.
+            Quien lo encuentre sabrá quién es y a quién llamar.
           </h1>
           <p style={{ animationDelay: '0.2s' }} className="entrada text-gray-500 mt-5 text-base leading-relaxed max-w-md">
             Cada mascota CURPitas tiene un folio único, una placa física con QR
-            y NFC, y un perfil digital con tu teléfono siempre visible — para
-            que cualquiera que la encuentre pueda contactarte al instante, sin
-            instalar nada.
+            y NFC, y un perfil digital con su foto, su información médica y tu
+            teléfono siempre visible. Cualquiera que la encuentre la escanea con
+            su celular, sin instalar nada.
           </p>
           <div style={{ animationDelay: '0.3s' }} className="entrada flex flex-wrap gap-3 mt-8">
             <Link
@@ -593,7 +593,7 @@ export const Inicio = () => {
       {/* CTA FINAL */}
       <section className="aparecer max-w-6xl mx-auto px-6 py-20 text-center">
         <h2 className="text-3xl font-black text-[#1C5253] max-w-lg mx-auto leading-tight">
-          Dale a tu mascota un camino de regreso a casa.
+          Más que un nombre y un teléfono.
         </h2>
         <Link
           to="/pedir"

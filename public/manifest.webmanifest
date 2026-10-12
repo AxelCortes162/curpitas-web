@@ -1,7 +1,7 @@
 {
   "name": "CURPitas",
   "short_name": "CURPitas",
-  "description": "La placa con QR y NFC que lleva a tu mascota de regreso a casa.",
+  "description": "Placa con QR y NFC: quien encuentre a tu mascota sabrá quién es y a quién llamar.",
   "lang": "es-MX",
   "start_url": "/mi-cuenta",
   "scope": "/",
