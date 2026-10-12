@@ -298,6 +298,21 @@ export const Pedir = () => {
                 bajan a {pesos(precios.mayoreo)} cada una.
               </p>
             )}
+            {/* Negocios y refugios no compran aquí: su precio se cotiza por WhatsApp.
+                Va también con mayoreo aplicado, que es justo cuando más le importa. */}
+            {!formaActual.grabaNombre && (
+              <p className="text-xs text-gray-400 mt-1">
+                ¿Tienes veterinaria, tienda o refugio?{' '}
+                <a
+                  href={`${WHATSAPP}?text=${encodeURIComponent('Hola, tengo una veterinaria, tienda o refugio y quiero el precio especial de CURPitas.')}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-bold text-[#1C5253] underline"
+                >
+                  Cotiza por WhatsApp desde $79
+                </a>
+              </p>
+            )}
             {/* La personalizada no baja de precio por cantidad: cada placa
                 lleva su propio nombre grabado a mano. */}
             {precios && formaActual.grabaNombre && (
