@@ -139,7 +139,7 @@ export const SeccionPrecios = () => {
               precios
                 ? `Desde ${precios.mayoreo_desde} piezas`
                 : 'Desde varias piezas',
-              'Para veterinarias y refugios',
+              'Para refugios, grupos o regalar',
               'Mismos materiales',
               'Se puede combinar formas y colores',
               'No incluye nombre grabado',
@@ -158,6 +158,18 @@ export const SeccionPrecios = () => {
             y te los paso.
           </p>
         )}
+
+        <p className="text-sm text-gray-500 text-center mt-6">
+          ¿Tienes veterinaria o tienda de mascotas?{' '}
+          <a
+            href={`${WHATSAPP}?text=${encodeURIComponent('Hola, tengo un negocio y quiero precio de distribuidor de CURPitas.')}`}
+            target="_blank"
+            rel="noreferrer"
+            className="font-bold text-[#1C5253] underline"
+          >
+            Pide precio de distribuidor
+          </a>
+        </p>
 
         <p className="text-sm text-[#1C5253] text-center mt-8 max-w-md mx-auto">
           <span className="font-bold">¿Cuándo está lista?</span> Si la tenemos hecha, sale el mismo
