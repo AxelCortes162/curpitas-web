@@ -292,6 +292,17 @@ export const PetProfile = ({ pet }) => {
             )}
           </div>
 
+          {/* Instrucciones del tutor para quien lo encontró */}
+          {pet.found_instructions && (
+            <div className="bg-[#E8F3F1] border border-emerald-200/80 rounded-2xl p-3 mt-3 text-left flex items-start gap-2.5 text-xs text-[#1C5253] shadow-2xs">
+              <PawPrint className="w-4 h-4 text-[#0B7345] shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold block">Si me encuentras:</span>
+                <span className="text-xs leading-snug block mt-0.5 whitespace-pre-line">{pet.found_instructions}</span>
+              </div>
+            </div>
+          )}
+
           {/* Alerta Médica Importante */}
           {pet.medical_info && (
             <div className="bg-amber-50 border border-amber-200/80 rounded-2xl p-3 mt-3 text-left flex items-start gap-2.5 text-xs text-amber-900 shadow-2xs">

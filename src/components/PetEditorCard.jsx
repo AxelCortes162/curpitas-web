@@ -28,6 +28,7 @@ export const PetEditorCard = ({ pet, onUpdated, onDeleted, onPerdidaCambiada }) 
     city: pet.city || '',
     photo_url: pet.photo_url || '',
     medical_info: pet.medical_info || '',
+    found_instructions: pet.found_instructions || '',
     is_lost: pet.is_lost,
     lost_lat: pet.lost_lat || null,
     lost_lng: pet.lost_lng || null,
@@ -379,6 +380,21 @@ export const PetEditorCard = ({ pet, onUpdated, onDeleted, onPerdidaCambiada }) 
               aria-label="Info médica"
               rows={2}
               className="w-full mt-0.5 py-2 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-xs text-[#1C5253]"
+            />
+          </div>
+          <div className="col-span-2">
+            <label className="text-xs font-semibold text-[#1C5253]">Si me encuentras</label>
+            <p className="text-[11px] text-gray-400 leading-snug">
+              Qué debe hacer quien lo encuentre. Siempre se muestra en el perfil público.
+            </p>
+            <textarea
+              value={form.found_instructions}
+              onChange={(e) => handleChange('found_instructions', e.target.value)}
+              aria-label="Si me encuentras"
+              placeholder="Ej.: Soy miedoso, no me persigas; háblame bajito. No me des pollo, soy alérgico."
+              maxLength={400}
+              rows={3}
+              className="w-full mt-1 py-2 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-xs text-[#1C5253]"
             />
           </div>
         </div>
