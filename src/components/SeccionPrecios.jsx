@@ -139,7 +139,7 @@ export const SeccionPrecios = () => {
               precios
                 ? `Desde ${precios.mayoreo_desde} piezas`
                 : 'Desde varias piezas',
-              'Para refugios, grupos o regalar',
+              'Para refugios, rescatistas o grupos',
               'Mismos materiales',
               'Se puede combinar formas y colores',
               'No incluye nombre grabado',
