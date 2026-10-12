@@ -139,7 +139,7 @@ export const SeccionPrecios = () => {
               precios
                 ? `Desde ${precios.mayoreo_desde} piezas`
                 : 'Desde varias piezas',
-              'Para refugios, rescatistas o grupos',
+              'Para grupos o toda la familia',
               'Mismos materiales',
               'Se puede combinar formas y colores',
               'No incluye nombre grabado',
@@ -160,14 +160,14 @@ export const SeccionPrecios = () => {
         )}
 
         <p className="text-sm text-gray-500 text-center mt-6">
-          ¿Tienes veterinaria o tienda de mascotas?{' '}
+          ¿Tienes veterinaria, tienda o refugio?{' '}
           <a
-            href={`${WHATSAPP}?text=${encodeURIComponent('Hola, tengo un negocio y quiero precio de distribuidor de CURPitas.')}`}
+            href={`${WHATSAPP}?text=${encodeURIComponent('Hola, tengo una veterinaria, tienda o refugio y quiero el precio especial de CURPitas.')}`}
             target="_blank"
             rel="noreferrer"
             className="font-bold text-[#1C5253] underline"
           >
-            Pide precio de distribuidor
+            Pide precio especial
           </a>
         </p>
 
