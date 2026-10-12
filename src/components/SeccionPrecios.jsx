@@ -28,7 +28,8 @@ const Monto = ({ valor }) => (
     : <span className="text-4xl font-black text-[#1C5253]">{pesos(valor)}</span>
 );
 
-const Opcion = ({ titulo, monto, sufijo, puntos, destacada, linkPedir, textoWhats }) => (
+// Sin `linkPedir` la tarjeta no se compra en línea: WhatsApp pasa a ser el botón.
+const Opcion = ({ titulo, monto, prefijo, sufijo, puntos, destacada, linkPedir, textoWhats }) => (
   <div
     className={`relative rounded-3xl bg-white p-6 flex flex-col ${
       destacada ? 'border-2 border-[#1C5253] shadow-lg' : 'border border-emerald-100'
@@ -43,6 +44,7 @@ const Opcion = ({ titulo, monto, sufijo, puntos, destacada, linkPedir, textoWhat
     <h3 className="text-base font-bold text-[#1C5253]">{titulo}</h3>
 
     <p className="mt-2 mb-1">
+      {prefijo && <span className="text-sm text-gray-400 mr-1">{prefijo}</span>}
       <Monto valor={monto} />
       {sufijo && <span className="text-sm text-gray-400 ml-1">{sufijo}</span>}
     </p>
@@ -56,26 +58,40 @@ const Opcion = ({ titulo, monto, sufijo, puntos, destacada, linkPedir, textoWhat
       ))}
     </ul>
 
-    <Link
-      to={linkPedir}
-      className={`mt-5 rounded-xl font-bold py-3 text-center transition-colors ${
-        destacada
-          ? 'bg-[#1C5253] text-white hover:bg-[#16403f]'
-          : 'border-2 border-[#1C5253] text-[#1C5253] hover:bg-emerald-50'
-      }`}
-    >
-      Pedir en línea
-    </Link>
+    {linkPedir ? (
+      <>
+        <Link
+          to={linkPedir}
+          className={`mt-5 rounded-xl font-bold py-3 text-center transition-colors ${
+            destacada
+              ? 'bg-[#1C5253] text-white hover:bg-[#16403f]'
+              : 'border-2 border-[#1C5253] text-[#1C5253] hover:bg-emerald-50'
+          }`}
+        >
+          Pedir en línea
+        </Link>
 
-    <a
-      href={`${WHATSAPP}?text=${encodeURIComponent(textoWhats)}`}
-      target="_blank"
-      rel="noreferrer"
-      className="mt-2 text-sm text-gray-400 hover:text-[#1C5253] flex items-center justify-center gap-1.5 py-1"
-    >
-      <MessageCircle className="w-3.5 h-3.5" />
-      o cotizar por WhatsApp
-    </a>
+        <a
+          href={`${WHATSAPP}?text=${encodeURIComponent(textoWhats)}`}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-2 text-sm text-gray-400 hover:text-[#1C5253] flex items-center justify-center gap-1.5 py-1"
+        >
+          <MessageCircle className="w-3.5 h-3.5" />
+          o cotizar por WhatsApp
+        </a>
+      </>
+    ) : (
+      <a
+        href={`${WHATSAPP}?text=${encodeURIComponent(textoWhats)}`}
+        target="_blank"
+        rel="noreferrer"
+        className="mt-5 rounded-xl font-bold py-3 border-2 border-[#1C5253] text-[#1C5253] hover:bg-emerald-50 transition-colors flex items-center justify-center gap-2"
+      >
+        <MessageCircle className="w-4 h-4" />
+        Cotizar por WhatsApp
+      </a>
+    )}
   </div>
 );
 
@@ -131,21 +147,22 @@ export const SeccionPrecios = () => {
             textoWhats="Hola, quiero cotizar una CURPita con el nombre grabado."
           />
 
+          {/* Escrito aquí a propósito: el precio para negocios no lo cobra la
+              pasarela, se cotiza por WhatsApp. Es el más bajo de la tabla de
+              distribuidor (50+ piezas); si esa tabla cambia, cambiar este número. */}
           <Opcion
-            titulo="Mayoreo"
-            monto={precios?.mayoreo}
-            sufijo="cada una"
+            titulo="Negocios y refugios"
+            prefijo="Desde"
+            monto={79}
+            sufijo="c/u"
             puntos={[
-              precios
-                ? `Desde ${precios.mayoreo_desde} piezas`
-                : 'Desde varias piezas',
-              'Para grupos o toda la familia',
-              'Mismos materiales',
-              'Se puede combinar formas y colores',
+              'Veterinarias, estéticas, tiendas y refugios',
+              'Se pueden combinar formas y colores',
+              'Te llevamos una muestra sin costo',
+              'Exhibidor para mostrador',
               'No incluye nombre grabado',
             ]}
-            linkPedir={`/pedir?cantidad=${precios?.mayoreo_desde ?? 10}`}
-            textoWhats="Hola, quiero cotizar CURPitas en mayoreo."
+            textoWhats="Hola, tengo una veterinaria, tienda o refugio y quiero el precio especial de CURPitas."
           />
         </div>
 
@@ -158,18 +175,6 @@ export const SeccionPrecios = () => {
             y te los paso.
           </p>
         )}
-
-        <p className="text-sm text-gray-500 text-center mt-6">
-          ¿Tienes veterinaria, tienda o refugio?{' '}
-          <a
-            href={`${WHATSAPP}?text=${encodeURIComponent('Hola, tengo una veterinaria, tienda o refugio y quiero el precio especial de CURPitas.')}`}
-            target="_blank"
-            rel="noreferrer"
-            className="font-bold text-[#1C5253] underline"
-          >
-            Pide precio especial
-          </a>
-        </p>
 
         <p className="text-sm text-[#1C5253] text-center mt-8 max-w-md mx-auto">
           <span className="font-bold">¿Cuándo está lista?</span> Si la tenemos hecha, sale el mismo
