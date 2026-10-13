@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronLeft, Plus, MapPin, Phone, Loader2, Search, Navigation } from 'lucide-react';
+import { ChevronLeft, Plus, MapPin, Phone, Loader2, Search, Navigation, Copy, Check } from 'lucide-react';
 import { supabase, conReintentoDeSesion } from '../supabaseClient';
 
 const ESTADOS = [
@@ -27,6 +27,13 @@ const estadoPorId = (id) => {
 
 const POR_PAGINA = 15;
 
+// El mensaje de prospección vive al final de la nota, después de esta marca.
+const MARCA_MENSAJE = 'Mensaje para mandar:';
+const mensajeDe = (nota) => {
+  const i = (nota || '').indexOf(MARCA_MENSAJE);
+  return i === -1 ? '' : nota.slice(i + MARCA_MENSAJE.length).trim();
+};
+
 const limpiar = (texto) => (texto || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
 const distanciaKm = (lat1, lng1, lat2, lng2) => {
@@ -48,6 +55,17 @@ export const Prospectos = () => {
   const [ubicando, setUbicando] = useState(false);
   const [errorPos, setErrorPos] = useState('');
   const [limite, setLimite] = useState(POR_PAGINA);
+  const [copiado, setCopiado] = useState(null);
+
+  const copiarMensaje = async (lugar) => {
+    try {
+      await navigator.clipboard.writeText(mensajeDe(lugar.nota));
+      setCopiado(lugar.id);
+      setTimeout(() => setCopiado((c) => (c === lugar.id ? null : c)), 2000);
+    } catch {
+      alert('No se pudo copiar. Mantén presionada la nota para copiarlo a mano.');
+    }
+  };
 
   const [mostrarForm, setMostrarForm] = useState(false);
   const [nuevo, setNuevo] = useState({ nombre: '', tipo: 'veterinaria', telefono: '', direccion: '', maps_url: '', nota: '' });
@@ -305,6 +323,17 @@ export const Prospectos = () => {
                     <a href={'tel:' + l.telefono} className="px-3 py-1.5 rounded-lg bg-[#F4F9F8] text-[#1C5253] flex items-center">
                       <Phone className="w-4 h-4" />
                     </a>
+                  )}
+                  {mensajeDe(l.nota) && (
+                    <button
+                      type="button"
+                      onClick={() => copiarMensaje(l)}
+                      aria-label="Copiar mensaje"
+                      className="px-3 py-1.5 rounded-lg bg-[#F4F9F8] text-[#1C5253] text-xs font-bold flex items-center gap-1.5"
+                    >
+                      {copiado === l.id ? <Check className="w-4 h-4 text-[#0B7345]" /> : <Copy className="w-4 h-4" />}
+                      {copiado === l.id ? 'Copiado' : 'Mensaje'}
+                    </button>
                   )}
                 </div>
 
