@@ -436,15 +436,18 @@ const FilaMascota = ({ pet, onUpdated }) => {
               <ShieldOff className="w-3 h-3" /> Sin reclamar
             </span>
           )}
-          {pet.placa_edicion && (
+          {pet.placa_edicion ? (
             <span className="block text-[10px] font-bold text-[#C8006E]">
               {TEMAS[pet.placa_edicion]?.nombre || pet.placa_edicion} · placa{' '}
               <span className="font-mono">#{String(pet.placa_numero).padStart(2, '0')}</span>
             </span>
-          )}
-          {pet.tema_incluido && (
+          ) : pet.tema_incluido ? (
             <span className="block text-[10px] font-bold text-[#C8006E]">
               Diseño {TEMAS[pet.tema_incluido]?.nombre || pet.tema_incluido} incluido
+            </span>
+          ) : pet.temas?.includes(EDICION_PLACA) && (
+            <span className="block text-[10px] font-bold text-[#C8006E]">
+              {TEMAS[EDICION_PLACA].nombre} desbloqueado
             </span>
           )}
         </div>
@@ -562,7 +565,7 @@ export const Admin = () => {
 
     let consulta = supabase
       .from('pets')
-      .select('*', { count: 'exact' })
+      .select('*, temas', { count: 'exact' })
       .order('created_at', { ascending: false })
       .range(desde, hasta);
 
