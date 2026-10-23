@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  LogOut, Link2, Heart, Gift, Copy, Loader2, Phone, ShieldCheck,
+  LogOut, Link2, Heart, Gift, Copy, Loader2, Phone, ShieldCheck, Store,
 } from 'lucide-react';
 import { supabase, conReintentoDeSesion } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
@@ -312,6 +312,7 @@ export const MiCuenta = () => {
   const [loading, setLoading] = useState(true);
   const [esRescatista, setEsRescatista] = useState(false);
   const [esAdmin, setEsAdmin] = useState(false);
+  const [esVendedor, setEsVendedor] = useState(false);
   const [mascotaActiva, setMascotaActiva] = useState(0);
 
   const [folio, setFolio] = useState(() => {
@@ -343,6 +344,12 @@ export const MiCuenta = () => {
         setEsRescatista(data?.is_rescuer === true);
         setEsAdmin(data?.is_admin === true);
       });
+    supabase
+      .from('vendedores')
+      .select('activo')
+      .eq('id', user.id)
+      .maybeSingle()
+      .then(({ data }) => setEsVendedor(data?.activo === true));
   }, [cargarMascotas, user.id]);
 
   // Si se borra la mascota activa (o cambia la lista tras vincular/cargar),
@@ -421,6 +428,20 @@ export const MiCuenta = () => {
           >
             <span className="flex items-center gap-2 text-sm font-bold">
               <ShieldCheck className="w-4 h-4 text-[#88D49E]" /> Panel de administrador
+            </span>
+            <span className="text-[#88D49E]">→</span>
+          </Link>
+        )}
+
+        {/* Un vendedor que entró por aquí (sesión guardada, botón "Ir a mi cuenta")
+            no pasa por el login que lo manda a /vendedor; esta es su puerta. */}
+        {esVendedor && (
+          <Link
+            to="/vendedor"
+            className="flex items-center justify-between bg-[#1C5253] text-white rounded-2xl px-4 py-3 mb-3"
+          >
+            <span className="flex items-center gap-2 text-sm font-bold">
+              <Store className="w-4 h-4 text-[#88D49E]" /> Mi panel de vendedor
             </span>
             <span className="text-[#88D49E]">→</span>
           </Link>

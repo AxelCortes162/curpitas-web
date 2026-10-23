@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Copy, LogOut, Loader2 } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Copy, Download, LogOut, Loader2 } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import BrandHeader from '../components/BrandHeader';
 import { supabase, conReintentoDeSesion } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
@@ -46,6 +47,7 @@ export const PanelVendedor = () => {
   const [cargando, setCargando] = useState(true);
   const [copiado, setCopiado] = useState(null); // qué se copió: 'codigo', 'link', 'msg0'…
   const [precios, setPrecios] = useState(null);
+  const guia = useRef(null);
 
   useEffect(() => { obtenerPrecios().then(setPrecios).catch(() => {}); }, []);
 
@@ -81,6 +83,17 @@ export const PanelVendedor = () => {
     } catch { /* el texto ya está visible en pantalla */ }
   };
 
+  // El PDF es la impresión del navegador ("Guardar como PDF"): al imprimir solo
+  // queda la guía (ver las clases print:), y el título de la página es el
+  // nombre que el navegador le propone al archivo.
+  const descargarPdf = () => {
+    guia.current.open = true;
+    const titulo = document.title;
+    document.title = `CURPitas - guia de venta ${perfil.codigo}`;
+    window.print();
+    document.title = titulo;
+  };
+
   // /pedir?v=CODIGO ya llena solo el campo "Código de quien te recomendó".
   const link = perfil ? `${window.location.origin}/pedir?v=${perfil.codigo}` : '';
   const mensajes = perfil ? [
@@ -93,7 +106,7 @@ export const PanelVendedor = () => {
       <div className="w-full max-w-lg mx-auto">
         <BrandHeader />
 
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-4 print:hidden">
           <div>
             <h1 className="text-xl font-black text-[#1C5253]">
               {perfil ? `Hola, ${perfil.nombre.split(' ')[0]}` : 'Tu panel'}
@@ -117,7 +130,7 @@ export const PanelVendedor = () => {
         {!cargando && perfil && (
           <>
             {/* Tu código */}
-            <div className="bg-white rounded-2xl border border-emerald-100/80 p-4 mb-4 flex items-center justify-between gap-2">
+            <div className="bg-white rounded-2xl border border-emerald-100/80 p-4 mb-4 flex items-center justify-between gap-2 print:hidden">
               <div>
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Tu código</p>
                 <p className="text-lg font-black text-[#1C5253] font-mono">{perfil.codigo}</p>
@@ -134,18 +147,29 @@ export const PanelVendedor = () => {
             {copiado === 'codigo' && <p className="text-[11px] text-[#0B7345] -mt-3 mb-3 text-right">Copiado.</p>}
 
             {/* Ayudas para vender */}
-            <details className="bg-white rounded-2xl border border-emerald-100/80 p-4 mb-4">
-              <summary className="text-sm font-black text-[#1C5253] cursor-pointer select-none">
+            <details ref={guia} className="bg-white rounded-2xl border border-emerald-100/80 p-4 mb-4 print:border-0 print:p-0">
+              <summary className="text-sm font-black text-[#1C5253] cursor-pointer select-none print:hidden">
                 Cómo vender — tu link, mensajes y respuestas
               </summary>
+              <h1 className="hidden print:block text-lg font-black text-[#1C5253]">
+                Guía de venta de {perfil.nombre} · código {perfil.codigo}
+              </h1>
+
+              <button
+                onClick={descargarPdf}
+                className="mt-4 w-full rounded-xl border-2 border-[#1C5253] text-[#1C5253] text-xs font-bold py-2 flex items-center justify-center gap-1.5 hover:bg-emerald-50 print:hidden"
+              >
+                <Download className="w-3.5 h-3.5" /> Descargar en PDF
+              </button>
 
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mt-4">Tu link</p>
               <p className="text-[11px] text-gray-400">Quien compre desde aquí ya lleva tu código puesto.</p>
               <div className="flex items-center gap-2 mt-1">
+                <QRCodeSVG value={link} size={96} fgColor="#1C5253" className="hidden print:block shrink-0" />
                 <p className="text-xs font-mono text-[#1C5253] break-all flex-1">{link}</p>
                 <button
                   onClick={() => copiar(link, 'link')}
-                  className="shrink-0 p-2 rounded-lg bg-[#F4F9F8] hover:bg-emerald-100 text-[#1C5253]"
+                  className="shrink-0 p-2 rounded-lg bg-[#F4F9F8] hover:bg-emerald-100 text-[#1C5253] print:hidden"
                   title="Copiar link"
                 >
                   <Copy className="w-4 h-4" />
@@ -157,7 +181,7 @@ export const PanelVendedor = () => {
               {mensajes.map((m, i) => (
                 <div key={m} className="mt-2 p-3 rounded-xl bg-[#F4F9F8]">
                   <p className="text-xs text-gray-600 leading-relaxed">{m}</p>
-                  <div className="flex gap-3 mt-2 text-[11px] font-bold text-[#1C5253]">
+                  <div className="flex gap-3 mt-2 text-[11px] font-bold text-[#1C5253] print:hidden">
                     <button onClick={() => copiar(m, `msg${i}`)}>
                       {copiado === `msg${i}` ? 'Copiado' : 'Copiar'}
                     </button>
@@ -191,7 +215,8 @@ export const PanelVendedor = () => {
               </dl>
             </details>
 
-            {/* Resumen */}
+            {/* Lo de abajo (comisiones y ventas) no va en el PDF */}
+            <div className="print:hidden">
             <div className="grid grid-cols-3 gap-2 mb-5">
               <div className="p-3 rounded-2xl bg-white border border-emerald-100/80">
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Liberada</p>
@@ -245,6 +270,7 @@ export const PanelVendedor = () => {
                 ))}
               </div>
             )}
+            </div>
           </>
         )}
       </div>

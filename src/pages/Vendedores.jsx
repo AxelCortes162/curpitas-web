@@ -43,6 +43,7 @@ export const Vendedores = () => {
   const [errorForm, setErrorForm] = useState('');
   const [creado, setCreado] = useState(null); // { email, codigo, password_temporal }
   const [copiado, setCopiado] = useState(false);
+  const [accesoCopiado, setAccesoCopiado] = useState(null); // id del vendedor
 
   const cargarTodo = useCallback(async () => {
     setCargando(true);
@@ -112,6 +113,20 @@ export const Vendedores = () => {
       setCopiado(true);
       setTimeout(() => setCopiado(false), 2000);
     } catch { /* el texto ya está visible para copiarlo a mano */ }
+  };
+
+  // Para volver a mandarle sus links si los perdió. La contraseña no se puede
+  // mostrar otra vez; si la olvidó, la cambia él mismo con "olvidé mi contraseña".
+  const copiarAcceso = async (v) => {
+    try {
+      await navigator.clipboard.writeText(
+        `Tu panel de vendedor CURPitas: https://curpitas.com/vendedor\n`
+        + `Tu link para vender: https://curpitas.com/pedir?v=${v.codigo}\n`
+        + `¿Olvidaste tu contraseña? https://curpitas.com/olvide-mi-contrasena`,
+      );
+      setAccesoCopiado(v.id);
+      setTimeout(() => setAccesoCopiado(null), 2000);
+    } catch { /* sin portapapeles no hay nada que hacer */ }
   };
 
   const alternarActivo = async (v) => {
@@ -296,6 +311,12 @@ export const Vendedores = () => {
                   <div className="min-w-0">
                     <p className="text-sm font-bold text-[#1C5253]">{v.nombre}</p>
                     <p className="font-mono text-[11px] text-gray-400">{v.codigo}</p>
+                    <button
+                      onClick={() => copiarAcceso(v)}
+                      className="mt-1 text-[11px] font-bold text-[#1C5253] hover:underline flex items-center gap-1"
+                    >
+                      <Copy className="w-3 h-3" /> {accesoCopiado === v.id ? 'Copiado' : 'Copiar sus links para WhatsApp'}
+                    </button>
                   </div>
                   <button
                     onClick={() => alternarActivo(v)}
