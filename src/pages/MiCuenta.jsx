@@ -324,7 +324,7 @@ export const MiCuenta = () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('pets')
-      .select('*')
+      .select('*, temas')
       .eq('owner_id', user.id)
       .order('created_at', { ascending: false });
 

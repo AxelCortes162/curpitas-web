@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
-import { Plus, Download, ShieldCheck, ShieldOff, Star, Check, X, Tag, Circle, FileSpreadsheet, Ban, RotateCcw, Search, Heart, HeartOff, Calculator, ChevronRight, Factory, ClipboardList, Users, Gift, Store } from 'lucide-react';
+import { Plus, Download, ShieldCheck, ShieldOff, Star, Check, X, Tag, Circle, FileSpreadsheet, Ban, RotateCcw, Search, Heart, HeartOff, Calculator, ChevronRight, Factory, ClipboardList, Users, Gift, Store, Flower2, Palette } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
+import { TEMAS, EDICION_PLACA } from '../lib/temas';
 
 // Genera un folio nuevo con formato CURPITA + 8 dígitos aleatorios
 const generarFolio = () => {
@@ -379,6 +380,29 @@ const FilaMascota = ({ pet, onUpdated }) => {
     onUpdated?.();
   };
 
+  // Marca o desmarca la placa como edición limitada; el número lo pone la base
+  const esEdicion = pet.placa_edicion === EDICION_PLACA;
+  const cambiarEdicion = async () => {
+    if (esEdicion && !window.confirm(`¿Quitarle la placa ${TEMAS[EDICION_PLACA].nombre}? Se libera su número.`)) return;
+    const { error } = await supabase
+      .from('pets')
+      .update({ placa_edicion: esEdicion ? null : EDICION_PLACA })
+      .eq('id', pet.id);
+    if (error) window.alert(error.message);
+    onUpdated?.();
+  };
+
+  // Para placas vendidas antes del cierre que se vinculan después
+  const temaIncluido = pet.tema_incluido === EDICION_PLACA;
+  const cambiarTemaIncluido = async () => {
+    const { error } = await supabase
+      .from('pets')
+      .update({ tema_incluido: temaIncluido ? null : EDICION_PLACA })
+      .eq('id', pet.id);
+    if (error) window.alert(error.message);
+    onUpdated?.();
+  };
+
   return (
     <div className="bg-white rounded-2xl border border-emerald-100/80 shadow-sm p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
       {/* QR más grande, oculto, solo para generar el blíster */}
@@ -410,6 +434,17 @@ const FilaMascota = ({ pet, onUpdated }) => {
           ) : (
             <span className="inline-flex items-center gap-1 text-[10px] font-bold text-gray-400 mt-1">
               <ShieldOff className="w-3 h-3" /> Sin reclamar
+            </span>
+          )}
+          {pet.placa_edicion && (
+            <span className="block text-[10px] font-bold text-[#C8006E]">
+              {TEMAS[pet.placa_edicion]?.nombre || pet.placa_edicion} · placa{' '}
+              <span className="font-mono">#{String(pet.placa_numero).padStart(2, '0')}</span>
+            </span>
+          )}
+          {pet.tema_incluido && (
+            <span className="block text-[10px] font-bold text-[#C8006E]">
+              Diseño {TEMAS[pet.tema_incluido]?.nombre || pet.tema_incluido} incluido
             </span>
           )}
         </div>
@@ -454,6 +489,22 @@ const FilaMascota = ({ pet, onUpdated }) => {
         )}
 
         <button
+          onClick={cambiarEdicion}
+          aria-pressed={esEdicion}
+          className={`p-2.5 rounded-xl shrink-0 ${esEdicion ? 'bg-[#C8006E] text-white' : 'bg-[#F4F9F8] hover:bg-emerald-100 text-[#1C5253]'}`}
+          title={`${esEdicion ? 'Quitar' : 'Marcar como'} placa ${TEMAS[EDICION_PLACA].nombre}`}
+        >
+          <Flower2 className="w-4 h-4" />
+        </button>
+        <button
+          onClick={cambiarTemaIncluido}
+          aria-pressed={temaIncluido}
+          className={`p-2.5 rounded-xl shrink-0 ${temaIncluido ? 'bg-[#C8006E] text-white' : 'bg-[#F4F9F8] hover:bg-emerald-100 text-[#1C5253]'}`}
+          title={`${temaIncluido ? 'Quitar' : 'Incluir'} diseño ${TEMAS[EDICION_PLACA].nombre} (vendida antes del cierre)`}
+        >
+          <Palette className="w-4 h-4" />
+        </button>
+        <button
           onClick={handleBlister}
           className="p-2.5 bg-[#88D49E] hover:bg-[#78c98e] rounded-xl text-[#1C5253] shrink-0"
           title="Generar blíster (8x11 cm vertical, frente + reverso)"
@@ -483,6 +534,7 @@ export const Admin = () => {
   const [pets, setPets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [creando, setCreando] = useState(false);
+  const [crearEdicion, setCrearEdicion] = useState(false);
   const [exportando, setExportando] = useState(false);
   const [mensaje, setMensaje] = useState('');
   const [pendientes, setPendientes] = useState([]);
@@ -613,10 +665,15 @@ export const Admin = () => {
     setMensaje('');
 
     const folio = generarFolio();
-    const { error } = await supabase.from('pets').insert({
-      curpita: folio,
-      owner_id: null,
-    });
+    const { data, error } = await supabase
+      .from('pets')
+      .insert({
+        curpita: folio,
+        owner_id: null,
+        placa_edicion: crearEdicion ? EDICION_PLACA : null,
+      })
+      .select('placa_numero')
+      .single();
 
     setCreando(false);
 
@@ -625,7 +682,7 @@ export const Admin = () => {
       return;
     }
 
-    setMensaje(`Folio ${folio} creado ✓`);
+    setMensaje(`Folio ${folio} creado ✓${data.placa_numero ? ` · placa #${String(data.placa_numero).padStart(2, '0')}` : ''}`);
     await refrescarPanel();
   };
 
@@ -840,6 +897,15 @@ export const Admin = () => {
           <Plus className="w-4 h-4" />
           {creando ? 'Creando...' : 'Crear folio nuevo'}
         </button>
+        <label className="flex items-center justify-center gap-2 text-xs font-bold text-[#1C5253] mb-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={crearEdicion}
+            onChange={(e) => setCrearEdicion(e.target.checked)}
+            className="w-4 h-4 accent-[#C8006E]"
+          />
+          Placa edición {TEMAS[EDICION_PLACA].nombre} (número automático)
+        </label>
         {mensaje && <p className="text-center text-xs text-[#1C5253] mb-4">{mensaje}</p>}
 
         {/* Gestión de rescatistas */}

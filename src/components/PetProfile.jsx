@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Phone, ShieldAlert, MapPin, AlertCircle, CheckCircle2, Cake, X, Loader2, PawPrint } from 'lucide-react';
+import { Phone, ShieldAlert, MapPin, AlertCircle, CheckCircle2, Cake, X, Loader2, PawPrint, Flower2 } from 'lucide-react';
 import { IconoGato, IconoOtraMascota } from './IconosMascotas';
+import { TEMAS, numeroPlaca } from '../lib/temas';
 import { supabase } from '../supabaseClient';
 
 // Elige el ícono correcto según la especie de la mascota
@@ -136,11 +137,11 @@ export const PetProfile = ({ pet }) => {
   const fechaNacimiento = formatFecha(pet.birth_date);
 
   return (
-    <div className="min-h-screen bg-[#E8F3F1] flex items-center justify-center p-4 font-sans antialiased">
+    <div className={`min-h-screen bg-[#E8F3F1] flex items-center justify-center p-4 font-sans antialiased ${pet.theme ? `tema-${pet.theme}` : ''}`}>
       <div className="w-full max-w-sm bg-white rounded-[28px] shadow-2xl overflow-hidden border border-emerald-100/60 relative">
-        
+
         {/* Banner de Estado / Alerta */}
-        <div className={`p-3 text-center text-white text-xs font-black tracking-wider uppercase flex items-center justify-center gap-2 ${isLost ? 'bg-red-500 shadow-inner' : 'bg-[#1C5253]'}`}>
+        <div className={`p-3 text-center text-white text-xs font-black tracking-wider uppercase flex items-center justify-center gap-2 ${isLost ? 'bg-red-500 shadow-inner' : 'bg-[#1C5253] tema-banner'}`}>
           {isLost ? (
             <>
               <ShieldAlert className="w-4 h-4 motion-safe:animate-pulse" />
@@ -155,7 +156,7 @@ export const PetProfile = ({ pet }) => {
         </div>
 
         {/* Encabezado Hero */}
-        <div className="bg-[#1C5253] pt-8 pb-14 px-6 text-center relative overflow-hidden flex flex-col items-center justify-center">
+        <div className="bg-[#1C5253] tema-hero pt-8 pb-14 px-6 text-center relative overflow-hidden flex flex-col items-center justify-center">
           <div className="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none -translate-y-3">
             <img src="/logo.png" alt="" className="w-40 h-40 object-contain brightness-0 invert" />
           </div>
@@ -221,6 +222,24 @@ export const PetProfile = ({ pet }) => {
           <h1 className="text-2xl font-black text-[#1C5253] tracking-wide">{pet.name}</h1>
           <p className="text-[10px] font-bold text-emerald-800/60 uppercase tracking-widest mt-0.5">Credencial Digital de Mascota</p>
 
+          {/* Insignias de edición: se ven aunque tenga puesto el diseño normal */}
+          {pet.temas?.some((id) => TEMAS[id]) && (
+            <div className="flex flex-wrap justify-center gap-1.5 mt-2">
+              {pet.temas.filter((id) => TEMAS[id]).map((id) => (
+                <span
+                  key={id}
+                  className={`insignia-${id} inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold`}
+                >
+                  <Flower2 className="w-3.5 h-3.5" aria-hidden="true" />
+                  {TEMAS[id].nombre}
+                  {pet.placa_edicion === id && pet.placa_numero && (
+                    <span className="font-mono">· {numeroPlaca(pet.placa_numero, pet.placa_total)}</span>
+                  )}
+                </span>
+              ))}
+            </div>
+          )}
+
           {/* Ciudad y edad, solo si hay dato */}
           {(pet.city || edad) && (
             <div className="flex items-center justify-center gap-3 mt-2 text-[11px] text-gray-500 font-semibold">
@@ -255,7 +274,7 @@ export const PetProfile = ({ pet }) => {
           <div className="mt-4 space-y-2">
             <a
               href={`tel:${pet.phone}`}
-              className="w-full py-3.5 bg-[#88D49E] hover:bg-[#78c98e] text-[#1C5253] font-black rounded-2xl flex items-center justify-center gap-2 shadow-md shadow-emerald-900/10 text-sm active:scale-[0.99] transition-transform"
+              className="tema-boton w-full py-3.5 bg-[#88D49E] hover:bg-[#78c98e] text-[#1C5253] font-black rounded-2xl flex items-center justify-center gap-2 shadow-md shadow-emerald-900/10 text-sm active:scale-[0.99] transition-transform"
             >
               <Phone className="w-4 h-4 fill-current" />
               Llamar al Tutor Ahora

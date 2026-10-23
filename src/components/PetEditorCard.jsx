@@ -17,6 +17,7 @@ import BreedSelect from './BreedSelect';
 import { IconoGato, IconoOtraMascota } from './IconosMascotas';
 import SelectorUbicacionPerdida from './SelectorUbicacionPerdida';
 import HistorialEscaneos from './HistorialEscaneos';
+import { TEMAS } from '../lib/temas';
 
 export const PetEditorCard = ({ pet, onUpdated, onDeleted, onPerdidaCambiada }) => {
   const { user } = useAuth();
@@ -36,6 +37,7 @@ export const PetEditorCard = ({ pet, onUpdated, onDeleted, onPerdidaCambiada }) 
     show_birth_date: pet.show_birth_date,
     show_medical_info: pet.show_medical_info,
     show_owner_name: pet.show_owner_name,
+    theme: pet.theme || null,
   };
   const [form, setForm] = useState(valoresIniciales);
   const [guardado, setGuardado] = useState(valoresIniciales);
@@ -397,6 +399,28 @@ export const PetEditorCard = ({ pet, onUpdated, onDeleted, onPerdidaCambiada }) 
               className="w-full mt-1 py-2 px-2.5 rounded-lg border border-emerald-100 bg-[#F4F9F8] text-xs text-[#1C5253]"
             />
           </div>
+          {pet.temas?.length > 0 && (
+            <div className="col-span-2">
+              <label className="text-xs font-semibold text-[#1C5253]">Diseño del perfil</label>
+              <div className="flex flex-wrap gap-1.5 mt-0.5">
+                {[null, ...pet.temas].map((id) => (
+                  <button
+                    key={id || 'normal'}
+                    type="button"
+                    onClick={() => handleChange('theme', id)}
+                    aria-pressed={form.theme === id}
+                    className={`flex-1 py-2 px-2 rounded-lg text-xs font-bold border transition-colors ${
+                      form.theme === id
+                        ? 'bg-[#1C5253] text-white border-[#1C5253]'
+                        : 'bg-[#F4F9F8] text-[#1C5253] border-emerald-100'
+                    }`}
+                  >
+                    {id ? TEMAS[id]?.nombre || id : 'Normal'}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <HistorialEscaneos petId={pet.id} />
