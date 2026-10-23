@@ -4,7 +4,7 @@ import BrandHeader from '../components/BrandHeader';
 import { supabase, conReintentoDeSesion } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import { describirPedido } from '../lib/placa';
-import { pesos } from '../lib/pagos';
+import { obtenerPrecios, pesos } from '../lib/pagos';
 
 // ---------------------------------------------------------------------------
 // PANEL DEL VENDEDOR — lo único que ve un vendedor externo al entrar: su
@@ -26,12 +26,28 @@ const EtiquetaEstado = ({ estado }) => {
   return <span>{mapa[estado] ?? estado}</span>;
 };
 
+// Respuestas a lo que más pregunta la gente. Sale de /terminos-y-condiciones y
+// de la sección de precios — si cambian allá, cambiar aquí.
+const RESPUESTAS = [
+  ['¿Se paga cada mes?', 'No. Se paga una sola vez; la credencial digital y el QR no tienen mensualidad.'],
+  ['¿Hay que instalar una app?', 'No. Quien encuentre a la mascota escanea el QR con la cámara de su celular, o acerca el celular al chip NFC.'],
+  ['¿Funciona en cualquier celular?', 'El QR sí, en todos. El NFC solo en celulares que lo tengan activado.'],
+  ['¿Cuánto tarda?', 'Si la tenemos hecha, sale el mismo día o al siguiente (con nombre grabado, al día siguiente). Si hay que hacerla, unos 4 días.'],
+  ['¿Cómo llega?', 'CDMX y zona metropolitana: entrega en persona, de 1 a 5 días hábiles. Resto de México: paquetería, el costo se cotiza aparte.'],
+  ['¿Y si sale mal?', 'Si llega dañada, con un error nuestro o el QR/NFC no funcionan, se repone sin costo dentro de 90 días.'],
+  ['No quiere pagar con tarjeta en línea', 'Que pida por nuestro WhatsApp y diga tu código — también cuenta como venta tuya.'],
+  ['Es una veterinaria, estética o tienda', 'El precio para negocios se cotiza aparte: pásales nuestro WhatsApp y diles que vienen de tu parte (tu código).'],
+];
+
 export const PanelVendedor = () => {
   const { user, signOut } = useAuth();
   const [perfil, setPerfil] = useState(null);
   const [ventas, setVentas] = useState([]);
   const [cargando, setCargando] = useState(true);
-  const [copiado, setCopiado] = useState(false);
+  const [copiado, setCopiado] = useState(null); // qué se copió: 'codigo', 'link', 'msg0'…
+  const [precios, setPrecios] = useState(null);
+
+  useEffect(() => { obtenerPrecios().then(setPrecios).catch(() => {}); }, []);
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -57,14 +73,20 @@ export const PanelVendedor = () => {
     return acc;
   }, [ventas]);
 
-  const copiarCodigo = async () => {
-    if (!perfil?.codigo) return;
+  const copiar = async (texto, clave) => {
     try {
-      await navigator.clipboard.writeText(perfil.codigo);
-      setCopiado(true);
-      setTimeout(() => setCopiado(false), 2000);
-    } catch { /* el código ya está visible en pantalla */ }
+      await navigator.clipboard.writeText(texto);
+      setCopiado(clave);
+      setTimeout(() => setCopiado(null), 2000);
+    } catch { /* el texto ya está visible en pantalla */ }
   };
+
+  // /pedir?v=CODIGO ya llena solo el campo "Código de quien te recomendó".
+  const link = perfil ? `${window.location.origin}/pedir?v=${perfil.codigo}` : '';
+  const mensajes = perfil ? [
+    `¡Hola! Te comparto CURPitas: una placa para tu mascota con QR y chip NFC. Si se pierde, quien la encuentre la escanea con su celular y ve tu teléfono y sus datos médicos. Se paga una sola vez, sin mensualidad. Pídela aquí: ${link}`,
+    `¡Hola! ¿Pudiste ver lo de la placa CURPitas? Si tienes dudas te ayudo. Puedes pedirla aquí: ${link} — o si prefieres no pagar en línea, escríbeles por WhatsApp al 56 6186 8461 con mi código ${perfil.codigo}.`,
+  ] : [];
 
   return (
     <div className="min-h-screen bg-[#E8F3F1] p-4 font-sans antialiased">
@@ -102,14 +124,72 @@ export const PanelVendedor = () => {
                 <p className="text-[11px] text-gray-400">Ganas {perfil.comision_pct}% de cada venta que cierres</p>
               </div>
               <button
-                onClick={copiarCodigo}
+                onClick={() => copiar(perfil.codigo, 'codigo')}
                 className="shrink-0 p-2.5 rounded-lg bg-[#F4F9F8] hover:bg-emerald-100 text-[#1C5253]"
                 title="Copiar código"
               >
                 <Copy className="w-4 h-4" />
               </button>
             </div>
-            {copiado && <p className="text-[11px] text-[#0B7345] -mt-3 mb-3 text-right">Copiado.</p>}
+            {copiado === 'codigo' && <p className="text-[11px] text-[#0B7345] -mt-3 mb-3 text-right">Copiado.</p>}
+
+            {/* Ayudas para vender */}
+            <details className="bg-white rounded-2xl border border-emerald-100/80 p-4 mb-4">
+              <summary className="text-sm font-black text-[#1C5253] cursor-pointer select-none">
+                Cómo vender — tu link, mensajes y respuestas
+              </summary>
+
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mt-4">Tu link</p>
+              <p className="text-[11px] text-gray-400">Quien compre desde aquí ya lleva tu código puesto.</p>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-xs font-mono text-[#1C5253] break-all flex-1">{link}</p>
+                <button
+                  onClick={() => copiar(link, 'link')}
+                  className="shrink-0 p-2 rounded-lg bg-[#F4F9F8] hover:bg-emerald-100 text-[#1C5253]"
+                  title="Copiar link"
+                >
+                  <Copy className="w-4 h-4" />
+                </button>
+              </div>
+              {copiado === 'link' && <p className="text-[11px] text-[#0B7345] text-right">Copiado.</p>}
+
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mt-5">Mensajes listos</p>
+              {mensajes.map((m, i) => (
+                <div key={m} className="mt-2 p-3 rounded-xl bg-[#F4F9F8]">
+                  <p className="text-xs text-gray-600 leading-relaxed">{m}</p>
+                  <div className="flex gap-3 mt-2 text-[11px] font-bold text-[#1C5253]">
+                    <button onClick={() => copiar(m, `msg${i}`)}>
+                      {copiado === `msg${i}` ? 'Copiado' : 'Copiar'}
+                    </button>
+                    <a href={`https://wa.me/?text=${encodeURIComponent(m)}`} target="_blank" rel="noreferrer">
+                      Mandar por WhatsApp
+                    </a>
+                  </div>
+                </div>
+              ))}
+
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mt-5">Precios</p>
+              {precios ? (
+                <ul className="text-xs text-gray-600 mt-1 space-y-0.5">
+                  <li>Sencilla (círculo, cuadrado o rectángulo): <b>{pesos(precios.sencilla)}</b></li>
+                  <li>Hueso con el nombre grabado: <b>{pesos(precios.personalizada)}</b></li>
+                  <li>Desde {precios.mayoreo_desde} sencillas: <b>{pesos(precios.mayoreo)}</b> c/u</li>
+                  <li>Envío aparte fuera de CDMX.</li>
+                </ul>
+              ) : (
+                <p className="text-xs text-gray-400 mt-1">Los ves en curpitas.com/#precios.</p>
+              )}
+
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mt-5">Lo que te van a preguntar</p>
+              <dl className="mt-1 space-y-2">
+                {RESPUESTAS.map(([p, r]) => (
+                  <div key={p}>
+                    <dt className="text-xs font-bold text-[#1C5253]">{p}</dt>
+                    <dd className="text-xs text-gray-600">{r}</dd>
+                  </div>
+                ))}
+              </dl>
+            </details>
 
             {/* Resumen */}
             <div className="grid grid-cols-3 gap-2 mb-5">
