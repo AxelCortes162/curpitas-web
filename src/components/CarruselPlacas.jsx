@@ -20,8 +20,8 @@ const FOTOS = [
   {
     id: 'hueso-verde',
     src: '/placas/hueso-verde.webp',
-    ancho: 1000,
-    alto: 1129,
+    ancho: 520,
+    alto: 590,
     // El alt lo lee quien no ve la imagen, y también Google.
     alt: 'Placa de hueso en resina verde con glitter, con flores secas, el nombre '
        + 'Bebo grabado y el escudo de CURPitas, colgando de su argolla.',
@@ -30,8 +30,8 @@ const FOTOS = [
   {
     id: 'circulo-menta',
     src: '/placas/circulo-menta.webp',
-    ancho: 1000,
-    alto: 1993,
+    ancho: 275,
+    alto: 560,
     alt: 'Placa redonda en resina verde con glitter y el escudo de CURPitas, '
        + 'colgando de su argolla.',
     pie: 'Círculo verde glitter',
@@ -39,8 +39,8 @@ const FOTOS = [
   {
     id: 'cuadrado-verde',
     src: '/placas/cuadrado-verde.webp',
-    ancho: 1000,
-    alto: 1867,
+    ancho: 414,
+    alto: 785,
     alt: 'Placa cuadrada en resina verde con glitter y el escudo de CURPitas, '
        + 'colgando de su argolla.',
     pie: 'Cuadrada verde glitter',
@@ -48,8 +48,8 @@ const FOTOS = [
   {
     id: 'rect-verde',
     src: '/placas/rect-verde.webp',
-    ancho: 1000,
-    alto: 2120,
+    ancho: 385,
+    alto: 825,
     alt: 'Placa rectangular en resina verde con glitter y el escudo de CURPitas, '
        + 'colgando de su argolla.',
     pie: 'Rectangular verde glitter',
